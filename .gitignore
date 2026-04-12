@@ -1,0 +1,26 @@
+# Зависимости
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Логи и временные файлы
+*.log
+*.tmp
+.DS_Store
+
+# Файлы сборки и кэш
+dist/
+build/
+.vite/
+.cache/
+
+# Переменные окружения (секреты)
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# Системные файлы
+Thumbs.db
