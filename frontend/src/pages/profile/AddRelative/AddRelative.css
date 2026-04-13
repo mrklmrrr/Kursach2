@@ -1,0 +1,35 @@
+.register-content {
+  padding: 20px;
+}
+
+.register-content h2 {
+  font-size: 1.25rem;
+  margin-bottom: 16px;
+  color: #1f2937;
+}
+
+.register-content form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.register-content select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  background: white;
+  color: #1f2937;
+}
+
+body.dark .register-content h2 {
+  color: #f9fafb;
+}
+
+body.dark .register-content select {
+  background: #1f2937;
+  border-color: #374151;
+  color: #f9fafb;
+}

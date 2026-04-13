@@ -1,0 +1,101 @@
+.doctor-profile-content {
+  padding: 20px;
+  padding-bottom: 80px;
+}
+
+.doctor-hero {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.doctor-hero h1 {
+  font-size: 1.5rem;
+  color: #1f2937;
+  margin: 16px 0 8px;
+}
+
+.doctor-specialty {
+  color: #6b7280;
+  font-size: 1rem;
+  margin-bottom: 16px;
+}
+
+.rating-online {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.rating {
+  color: #f59e0b;
+  font-size: 1.125rem;
+}
+
+.rating span {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.online-status {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.online-status.online {
+  color: #22c55e;
+}
+
+.online-status.offline {
+  color: #9ca3af;
+}
+
+.doctor-info-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.doctor-info-card h3 {
+  margin: 0 0 16px;
+  color: #1f2937;
+}
+
+.info-list p {
+  margin: 8px 0;
+  color: #6b7280;
+}
+
+.info-list strong {
+  color: #1f2937;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.not-found {
+  padding: 60px 20px;
+  text-align: center;
+  color: #6b7280;
+}
+
+body.dark .doctor-hero h1,
+body.dark .rating span,
+body.dark .info-list strong,
+body.dark .doctor-info-card h3 {
+  color: #f9fafb;
+}
+
+body.dark .doctor-specialty,
+body.dark .info-list p {
+  color: #9ca3af;
+}
+
+body.dark .doctor-info-card {
+  background: #1f2937;
+}

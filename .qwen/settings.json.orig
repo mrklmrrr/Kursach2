@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/margaritakulakovich/Desktop/курсовая работа часть2/frontend/src/**)"
+    ]
+  }
+}

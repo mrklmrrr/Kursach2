@@ -1,0 +1,94 @@
+.confirm-page {
+  padding: 20px;
+}
+
+.confirm-title {
+  font-size: 1.25rem;
+  color: #1f2937;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.confirm-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.confirm-card h3 {
+  margin: 16px 0 8px;
+  color: #1f2937;
+}
+
+.doctor-specialty-confirm {
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.consultation-details {
+  text-align: left;
+  margin-top: 20px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.detail-label {
+  color: #6b7280;
+}
+
+.detail-value {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.detail-value.price {
+  color: #4f46e5;
+}
+
+.confirm-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.confirm-note {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+body.dark .confirm-title {
+  color: #f9fafb;
+}
+
+body.dark .confirm-card {
+  background: #1f2937;
+}
+
+body.dark .confirm-card h3 {
+  color: #f9fafb;
+}
+
+body.dark .doctor-specialty-confirm,
+body.dark .detail-label,
+body.dark .confirm-note {
+  color: #9ca3af;
+}
+
+body.dark .detail-value {
+  color: #f9fafb;
+}
+
+body.dark .detail-row {
+  border-color: #374151;
+}

@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/margaritakulakovich/Desktop/курсовая работа часть2/frontend/src/**)",
+      "Read(//Users/margaritakulakovich/Desktop/курсовая работа часть2/backend/**)",
+      "Read(//Users/margaritakulakovich/Desktop/курсовая работа часть2/frontend/**)",
+      "Read(//Users/margaritakulakovich/Desktop/курсовая работа часть2/**)",
+      "Read(//Users/margaritakulakovich/Desktop/**)",
+      "Bash(rm *)",
+      "Bash(npm run *)",
+      "Bash(cp *)",
+      "Bash(sleep *)",
+      "Bash(lsof *)",
+      "Bash(netstat *)",
+      "Bash(ls *)",
+      "Bash(rmdir *)",
+      "Bash(git add *)"
+    ]
+  },
+  "$version": 3
+}

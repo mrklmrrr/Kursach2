@@ -1,0 +1,51 @@
+.consultation-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.consultation-card:hover {
+  transform: translateY(-2px);
+}
+
+.consultation-info {
+  flex: 1;
+}
+
+.consultation-doctor {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #1f2937;
+}
+
+.consultation-spec {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.consultation-time {
+  font-size: 0.8rem;
+  color: #4f46e5;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.consultation-price {
+  font-weight: 700;
+  color: #4f46e5;
+  font-size: 1rem;
+}
+
+body.dark .consultation-card {
+  background: #1f2937;
+}
+
+body.dark .consultation-doctor {
+  color: #f9fafb;
+}

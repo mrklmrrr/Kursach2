@@ -1,0 +1,82 @@
+.register-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.register-content h1 {
+  font-size: 1.75rem;
+  margin-bottom: 8px;
+  color: #1f2937;
+}
+
+.register-content > p {
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+.register-content form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.register-content select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  background: white;
+  color: #1f2937;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-align: left;
+}
+
+.checkbox-label a {
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.auth-link {
+  margin-top: 16px;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.auth-link span {
+  color: #4f46e5;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.auth-link span:hover {
+  text-decoration: underline;
+}
+
+body.dark .register-content h1 {
+  color: #f9fafb;
+}
+
+body.dark .register-content > p {
+  color: #9ca3af;
+}
+
+body.dark .register-content select {
+  background: #1f2937;
+  border-color: #374151;
+  color: #f9fafb;
+}

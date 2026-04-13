@@ -1,0 +1,135 @@
+.profile-content {
+  padding: 20px;
+  padding-bottom: 80px;
+}
+
+.profile-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.profile-header h1 {
+  font-size: 1.5rem;
+  color: #1f2937;
+  margin: 16px 0 8px;
+}
+
+.profile-email {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.section-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.section-card h3 {
+  margin: 0 0 16px;
+  color: #1f2937;
+}
+
+.relative-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.relative-name {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.relative-relation {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.add-relative-btn {
+  width: 100%;
+}
+
+.medical-info {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+
+.medical-info li {
+  padding: 8px 0;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.history-item {
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.logout-row {
+  cursor: pointer;
+  color: #ef4444;
+  font-weight: 500;
+  border-bottom: none;
+}
+
+body.dark .profile-header h1 {
+  color: #f9fafb;
+}
+
+body.dark .profile-email {
+  color: #9ca3af;
+}
+
+body.dark .section-card {
+  background: #1f2937;
+}
+
+body.dark .section-card h3 {
+  color: #f9fafb;
+}
+
+body.dark .relative-item {
+  background: #374151;
+}
+
+body.dark .relative-name {
+  color: #f9fafb;
+}
+
+body.dark .relative-relation {
+  color: #9ca3af;
+}
+
+body.dark .medical-info li {
+  color: #9ca3af;
+  border-color: #374151;
+}
+
+body.dark .history-item {
+  background: #374151;
+  color: #9ca3af;
+}
+
+body.dark .setting-row {
+  border-color: #374151;
+}
