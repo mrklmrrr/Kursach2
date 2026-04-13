@@ -78,7 +78,7 @@ async function startApp() {
 
   const authController = new AuthController(authService);
   const doctorController = new DoctorController(doctorService);
-  const consultationController = new ConsultationController(consultationService, userRepository);
+  const consultationController = new ConsultationController(consultationService, userRepository, doctorRepository);
   const paymentController = new PaymentController(paymentService);
   const dependentController = new DependentController(dependentService);
   const adminController = new AdminController(doctorService, consultationService, authService);

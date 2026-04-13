@@ -1,5 +1,7 @@
 const { Consultation } = require('../models');
+const { User } = require('../models');
 const { consultationStatus } = require('../constants');
+const { findById: dbFindById, resolveId } = require('../utils/dbHelpers');
 
 class ConsultationRepository {
   async create(data) {
@@ -12,12 +14,40 @@ class ConsultationRepository {
   }
 
   async findById(id) {
-    const consultation = await Consultation.findById(id);
+    const consultation = await dbFindById(Consultation, id);
     return consultation ? consultation.toObject() : null;
   }
 
   async findByPatientId(patientId) {
-    const consultations = await Consultation.find({ patientId }).sort({ createdAt: -1 });
+    // Пробуем как число (legacyId) и как ObjectId
+    const numId = parseInt(patientId);
+    const query = isNaN(numId) ? { patientId } : { $or: [{ patientId: numId }, { patientId: patientId }] };
+    const consultations = await Consultation.find(query).sort({ createdAt: -1 });
+    return consultations.map(c => c.toObject());
+  }
+
+  async findByDoctorId(doctorId) {
+    // Пробуем ObjectId и legacyId врача
+    const resolved = resolveId(doctorId);
+    if (!resolved) return [];
+
+    const conditions = [];
+    if (resolved.byObjectId) conditions.push({ doctorId: resolved.byObjectId });
+    if (resolved.byLegacyId) conditions.push({ doctorId: resolved.byLegacyId });
+
+    // Дополнительно: ищем врача по ObjectId, получаем его legacyId
+    if (resolved.byObjectId) {
+      try {
+        const user = await User.findById(resolved.byObjectId);
+        if (user && user.legacyId) {
+          conditions.push({ doctorId: user.legacyId });
+        }
+      } catch {
+        // Игнорируем
+      }
+    }
+
+    const consultations = await Consultation.find({ $or: conditions }).sort({ createdAt: -1 });
     return consultations.map(c => c.toObject());
   }
 
@@ -50,29 +80,6 @@ class ConsultationRepository {
       { new: true }
     );
     return consultation ? consultation.toObject() : null;
-  }
-
-  async findByDoctorId(doctorId) {
-    // doctorId из JWT — это ObjectId строка, но в консультации может быть legacyId или ObjectId
-    const consultations = await Consultation.find({ doctorId }).sort({ createdAt: -1 });
-    if (consultations.length > 0) return consultations.map(c => c.toObject());
-
-    // Пробуем найти по legacyId врача
-    const { User } = require('../models');
-    try {
-      const mongoose = require('mongoose');
-      if (mongoose.Types.ObjectId.isValid(doctorId)) {
-        const user = await User.findById(doctorId);
-        if (user && user.legacyId) {
-          const byLegacy = await Consultation.find({ doctorId: user.legacyId }).sort({ createdAt: -1 });
-          return byLegacy.map(c => c.toObject());
-        }
-      }
-    } catch {
-      // Игнорируем
-    }
-
-    return [];
   }
 
   async countAll() {

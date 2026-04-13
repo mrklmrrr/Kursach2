@@ -7,19 +7,19 @@ const messageSchema = new mongoose.Schema({
 }, { _id: false });
 
 const consultationSchema = new mongoose.Schema({
-  doctorId: { type: mongoose.Schema.Types.Mixed, required: true },
+  doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   doctorName: { type: String, required: true },
   specialty: { type: String, required: true },
-  price: { type: Number, required: true },
-  duration: { type: Number },
-  patientId: { type: mongoose.Schema.Types.Mixed },
+  price: { type: Number, required: true, min: 0 },
+  duration: { type: Number, min: 1 },
+  patientId: { type: Number },
   patientName: { type: String, required: true },
-  type: { type: String, default: 'video' },
+  type: { type: String, default: 'video', enum: ['video', 'chat'] },
   status: { type: String, default: 'pending' },
   paymentId: { type: Number, default: null },
   paidAt: { type: String, default: null },
   scheduledAt: { type: String },
-  messages: [messageSchema]
+  messages: { type: [messageSchema], default: [] }
 }, { timestamps: true });
 
 consultationSchema.index({ doctorId: 1, status: 1 });

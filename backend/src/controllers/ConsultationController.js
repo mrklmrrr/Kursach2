@@ -1,12 +1,23 @@
-class ConsultationController {
-  constructor(consultationService, userRepository) {
+const ConsultationController = class {
+  constructor(consultationService, userRepository, doctorRepository) {
     this.consultationService = consultationService;
     this.userRepository = userRepository;
+    this.doctorRepository = doctorRepository;
   }
 
   async create(req, res) {
     try {
       const { doctorId, doctorName, specialty, price, duration, type = 'video' } = req.body;
+
+      // Валидация: врач существует
+      if (!doctorId) {
+        return res.status(400).json({ message: 'doctorId обязателен' });
+      }
+
+      const doctor = await this.doctorRepository.findById(doctorId);
+      if (!doctor) {
+        return res.status(404).json({ message: 'Врач не найден' });
+      }
 
       const user = await this.userRepository.findById(req.userId);
       if (!user) {
@@ -14,10 +25,10 @@ class ConsultationController {
       }
 
       const consultation = await this.consultationService.create({
-        doctorId,
-        doctorName,
-        specialty,
-        price,
+        doctorId: doctor._id,
+        doctorName: doctor.name,
+        specialty: doctor.specialty,
+        price: doctor.price,
         duration,
         patientId: user.legacyId,
         patientName: `${user.firstName} ${user.lastName}`,
@@ -44,12 +55,12 @@ class ConsultationController {
 
   async getByPatientId(req, res) {
     try {
-      const consultations = await this.consultationService.getByPatientId(parseInt(req.params.patientId));
+      const consultations = await this.consultationService.getByPatientId(req.params.patientId);
       res.json(consultations);
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
   }
-}
+};
 
 module.exports = ConsultationController;

@@ -31,12 +31,15 @@ class AuthController {
     }
   }
 
-  updateUser(req, res) {
+  async updateUser(req, res) {
     try {
-      const user = this.authService.updateUser(req.userId, req.body);
+      const user = await this.authService.updateUser(req.userId, req.body);
+      if (!user) {
+        return res.status(404).json({ message: 'Пользователь не найден' });
+      }
       res.json(user);
     } catch (err) {
-      res.status(404).json({ message: err.message });
+      res.status(500).json({ message: err.message });
     }
   }
 }

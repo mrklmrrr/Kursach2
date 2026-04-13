@@ -69,6 +69,16 @@ export default function DoctorPanel() {
     }
   };
 
+  const handleStart = async (id) => {
+    try {
+      await doctorPanelApi.acceptConsultation(id);
+      setUpcomingConsultations(prev => prev.filter(c => c._id !== id));
+      loadData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Ошибка');
+    }
+  };
+
   const handleReject = async (id) => {
     try {
       await doctorPanelApi.rejectConsultation(id);
@@ -158,9 +168,9 @@ export default function DoctorPanel() {
                   </div>
                   <div className="consultation-actions">
                     {c.status === 'paid' && (
-                      <button className="start-btn" onClick={() => handleAccept(c._id)}>Начать</button>
+                      <button className="start-btn" onClick={() => handleStart(c._id)}>Начать</button>
                     )}
-                    {(c.status === 'active' || c.status === 'paid') && (
+                    {c.status === 'active' && (
                       <button className="complete-btn" onClick={() => handleComplete(c._id)}>Завершить</button>
                     )}
                     <button

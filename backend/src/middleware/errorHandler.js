@@ -1,6 +1,6 @@
 const config = require('../config');
 
-function errorHandler(err, req, res) {
+function errorHandler(err, req, res, next) {
   console.error(`[ERROR] ${err.message}`);
 
   if (config.nodeEnv === 'development') {

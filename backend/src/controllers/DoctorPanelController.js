@@ -139,20 +139,23 @@ class DoctorPanelController {
   async getPatients(req, res) {
     try {
       const consultations = await this.consultationService.getByDoctorId(req.userId);
-      const patientIds = [...new Set(consultations.map(c => c.patientId))];
+      const patientIds = [...new Set(consultations.map(c => c.patientId))].filter(Boolean);
 
-      const { User } = require('../models');
-      const users = await User.find({ legacyId: { $in: patientIds } });
+      const { UserRepository } = require('../repositories');
+      const userRepo = new UserRepository();
 
-      const patients = patientIds.map(id => {
-        const user = users.find(u => u.legacyId === id);
-        return user ? {
-          id: user.legacyId,
-          name: user.firstName + ' ' + user.lastName,
-          phone: user.phone,
-          consultationCount: consultations.filter(c => c.patientId === id).length
-        } : null;
-      }).filter(Boolean);
+      const patients = [];
+      for (const id of patientIds) {
+        const user = await userRepo.findById(id);
+        if (user) {
+          patients.push({
+            id: user.legacyId || user.id,
+            name: `${user.firstName} ${user.lastName}`,
+            phone: user.phone,
+            consultationCount: consultations.filter(c => c.patientId === (user.legacyId || user.id)).length
+          });
+        }
+      }
 
       res.json(patients);
     } catch (err) {

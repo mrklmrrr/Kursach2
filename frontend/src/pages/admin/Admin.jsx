@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { adminApi } from '../../services/authApi';
-import PageLayout from '../../components/layout/PageLayout/PageLayout';
+import { Input, Button } from '../../components/ui';
 import './Admin.css';
 
 // --- Компонент дашборда админки (встроен) ---
@@ -65,7 +65,7 @@ function AdminDashboard() {
 
   const handleToggleOnline = async (doctor) => {
     try {
-      await adminApi.toggleDoctorOnline(doctor._id, !doctor.isOnline);
+      await adminApi.toggleDoctorOnline(doctor.id, !doctor.isOnline);
       loadData();
     } catch (err) {
       alert(err.message);
@@ -168,7 +168,7 @@ function AdminDashboard() {
                       onChange={() => handleToggleOnline(doc)} />
                     <span>Онлайн</span>
                   </label>
-                  <button className="delete-btn" onClick={() => handleDeleteDoctor(doc._id)}>
+                  <button className="delete-btn" onClick={() => handleDeleteDoctor(doc.id)}>
                     🗑️
                   </button>
                 </div>
@@ -237,5 +237,3 @@ function AdminLoginForm() {
     </div>
   );
 }
-
-import { Input, Button } from '../../components/ui';

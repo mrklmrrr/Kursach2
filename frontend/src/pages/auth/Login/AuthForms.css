@@ -120,3 +120,39 @@ body.dark .mode-btn {
 body.dark .mode-btn.active {
   background: #6366f1;
 }
+
+/* Ошибки валидации */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.field-error {
+  color: #ef4444;
+  font-size: 0.8rem;
+  padding-left: 4px;
+  min-height: 1.2em;
+}
+
+.form-error {
+  color: #ef4444;
+  font-size: 0.85rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 14px;
+  text-align: center;
+}
+
+body.dark .form-error {
+  background: #451a1a;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+.register-content form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;

@@ -1,4 +1,5 @@
 const { User } = require('../models');
+const { findById, updateById } = require('../utils/dbHelpers');
 
 class UserRepository {
   async create(userData) {
@@ -15,27 +16,8 @@ class UserRepository {
   }
 
   async findById(id) {
-    if (!id) return null;
-
-    // Пробуем по ObjectId
-    try {
-      const mongoose = require('mongoose');
-      if (mongoose.Types.ObjectId.isValid(id)) {
-        const user = await User.findById(id);
-        if (user) return user.toObject();
-      }
-    } catch {
-      // Игнорируем — пробуем legacyId
-    }
-
-    // Пробуем по legacyId (число)
-    const numId = parseInt(id);
-    if (!isNaN(numId)) {
-      const user = await User.findOne({ legacyId: numId });
-      if (user) return user.toObject();
-    }
-
-    return null;
+    const user = await findById(User, id);
+    return user ? user.toObject() : null;
   }
 
   async findByPhone(phone) {
@@ -49,7 +31,7 @@ class UserRepository {
   }
 
   async updateById(id, updates) {
-    const user = await User.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
+    const user = await updateById(User, id, updates);
     return user ? user.toObject() : null;
   }
 }

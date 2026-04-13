@@ -1,11 +1,16 @@
 const mongoose = require('mongoose');
 const config = require('./index');
+const bootstrap = require('../utils/bootstrap');
 
 async function connectDB() {
   try {
     const conn = await mongoose.connect(config.mongoUri);
 
     console.log(`✅ MongoDB подключён: ${conn.connection.host}:${conn.connection.port}/${conn.connection.name}`);
+
+    // Bootstrap: индексы, админ, сид врачей
+    await bootstrap();
+
     return conn;
   } catch (err) {
     console.error('❌ Ошибка подключения к MongoDB:', err.message);

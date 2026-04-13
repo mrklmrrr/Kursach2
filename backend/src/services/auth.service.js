@@ -28,7 +28,7 @@ class AuthService {
     });
 
     const token = jwt.sign(
-      { id: user._id },
+      { id: user._id, role: user.role },
       config.jwt.secret,
       { expiresIn: config.jwt.expiresIn }
     );
@@ -61,7 +61,7 @@ class AuthService {
     }
 
     const token = jwt.sign(
-      { id: user._id },
+      { id: user._id, role: user.role },
       config.jwt.secret,
       { expiresIn: config.jwt.expiresIn }
     );
@@ -94,7 +94,7 @@ class AuthService {
     }
 
     const token = jwt.sign(
-      { id: user._id },
+      { id: user._id, role: user.role },
       config.jwt.secret,
       { expiresIn: config.jwt.expiresIn }
     );
