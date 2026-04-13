@@ -11,10 +11,11 @@ export default function Register() {
   const [form, setForm] = useState({
     lastName: '',
     firstName: '',
-    middleName: '',
     phone: '',
     birthDate: '',
     gender: '',
+    password: '',
+    confirmPassword: ''
   });
   const [agree, setAgree] = useState(false);
 
@@ -28,11 +29,15 @@ export default function Register() {
       alert('Подтвердите согласие на обработку данных');
       return;
     }
+    if (form.password !== form.confirmPassword) {
+      alert('Пароли не совпадают');
+      return;
+    }
     try {
-      await register(form);
+      const { confirmPassword, ...userData } = form;
+      await register(userData);
       navigate('/home');
     } catch (err) {
-      console.error(err);
       alert(err.response?.data?.message || 'Ошибка регистрации');
     }
   };
@@ -40,12 +45,10 @@ export default function Register() {
   return (
     <div className="register-content">
       <h1>Регистрация</h1>
-      <p>Заполните данные один раз — это займёт 1 минуту</p>
       <form onSubmit={handleSubmit}>
-        <Input name="lastName" placeholder="Фамилия" onChange={handleChange} required />
         <Input name="firstName" placeholder="Имя" onChange={handleChange} required />
-        <Input name="middleName" placeholder="Отчество" onChange={handleChange} />
-        <Input name="phone" placeholder="Номер телефона (+375...)" onChange={handleChange} required />
+        <Input name="lastName" placeholder="Фамилия" onChange={handleChange} required />
+        <Input name="phone" placeholder="+375..." onChange={handleChange} required />
         <Input name="birthDate" type="date" onChange={handleChange} required />
         <select name="gender" onChange={handleChange} required>
           <option value="">Пол</option>
@@ -55,6 +58,8 @@ export default function Register() {
             </option>
           ))}
         </select>
+        <Input name="password" type="password" placeholder="Пароль" onChange={handleChange} required />
+        <Input name="confirmPassword" type="password" placeholder="Повторите пароль" onChange={handleChange} required />
         <label className="checkbox-label">
           <input type="checkbox" checked={agree} onChange={() => setAgree(!agree)} required />
           Соглашаюсь с <a href="#">обработкой персональных данных</a>

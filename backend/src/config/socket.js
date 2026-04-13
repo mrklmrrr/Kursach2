@@ -1,22 +1,38 @@
 const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken');
+const config = require('./index');
 
 let io = null;
 
-function setupSocket(server, consultationModel) {
+function setupSocket(server, consultationRepository) {
   if (io) return io;
 
   io = new Server(server, {
-    cors: { origin: "http://localhost:5173", methods: ["GET", "POST"] }
+    cors: { origin: config.frontendUrl, methods: ['GET', 'POST'] }
+  });
+
+  // Аутентификация socket подключений
+  io.use((socket, next) => {
+    const token = socket.handshake.auth.token;
+    if (!token) return next(new Error('Нет токена'));
+
+    try {
+      const decoded = jwt.verify(token, config.jwt.secret);
+      socket.userId = decoded.id;
+      next();
+    } catch {
+      next(new Error('Неверный токен'));
+    }
   });
 
   io.on('connection', (socket) => {
-    console.log('✅ Новый клиент подключился');
+    console.log(`✅ Новый клиент подключился (userId: ${socket.userId})`);
 
-    socket.on('join-chat', (chatId) => {
+    socket.on('join-chat', async (chatId) => {
       socket.join(`chat-${chatId}`);
       console.log(`Клиент присоединился к комнате chat-${chatId}`);
 
-      const consultation = consultationModel.findById(chatId);
+      const consultation = await consultationRepository.findById(chatId);
       if (consultation && consultation.messages) {
         socket.emit('chat-history', consultation.messages);
       } else {
@@ -24,13 +40,13 @@ function setupSocket(server, consultationModel) {
       }
     });
 
-    socket.on('send-message', (data) => {
+    socket.on('send-message', async (data) => {
       const { chatId, message, sender, timestamp } = data;
-      consultationModel.addMessage(chatId, { message, sender, timestamp });
+      await consultationRepository.addMessage(chatId, { message, sender, timestamp });
       io.to(`chat-${chatId}`).emit('new-message', { message, sender, timestamp, chatId });
     });
 
-    socket.on('disconnect', () => console.log('❌ Клиент отключился'));
+    socket.on('disconnect', () => console.log(`❌ Клиент отключился (userId: ${socket.userId})`));
   });
 
   return io;

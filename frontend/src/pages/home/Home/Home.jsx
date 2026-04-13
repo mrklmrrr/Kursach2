@@ -18,6 +18,13 @@ export default function Home() {
   const [doctors, setDoctors] = useState([]);
   const [upcoming] = useState(MOCK_UPCOMING);
 
+  // Редирект врача на его панель
+  useEffect(() => {
+    if (user?.role === 'doctor') {
+      navigate('/doctor');
+    }
+  }, [user]);
+
   useEffect(() => {
     doctorApi.getAll()
       .then((res) => setDoctors(res.data))

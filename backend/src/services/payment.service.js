@@ -1,21 +1,23 @@
+const { consultationStatus } = require('../constants');
+
 class PaymentService {
-  constructor(consultationModel) {
-    this.consultationModel = consultationModel;
+  constructor(consultationRepository) {
+    this.consultationRepository = consultationRepository;
   }
 
-  processPayment(consultationId, cardData) {
+  async processPayment(consultationId, cardData) {
     const { cardNumber, expiry, cvc } = cardData;
 
     if (!cardNumber || !expiry || !cvc) {
       throw new Error('Заполните все поля карты');
     }
 
-    const consultation = this.consultationModel.findById(consultationId);
-    if (consultation) {
-      consultation.status = 'paid';
-      consultation.paymentId = Date.now();
-      consultation.paidAt = new Date().toISOString();
+    const consultation = await this.consultationRepository.findById(consultationId);
+    if (!consultation) {
+      throw new Error('Консультация не найдена');
     }
+
+    await this.consultationRepository.markAsPaid(consultationId);
 
     return {
       success: true,

@@ -80,3 +80,43 @@ body.dark .register-content select {
   border-color: #374151;
   color: #f9fafb;
 }
+
+/* Переключатель режима входа */
+.login-mode-switch {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: #f3f4f6;
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.mode-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.mode-btn.active {
+  background: #4f46e5;
+  color: white;
+  box-shadow: 0 1px 3px rgba(79, 70, 229, 0.3);
+}
+
+body.dark .login-mode-switch {
+  background: #1f2937;
+}
+
+body.dark .mode-btn {
+  color: #9ca3af;
+}
+
+body.dark .mode-btn.active {
+  background: #6366f1;
+}

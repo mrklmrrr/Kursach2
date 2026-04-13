@@ -1,43 +1,107 @@
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const config = require('./config');
+const connectDB = require('./config/database');
+const errorHandler = require('./middleware/errorHandler');
+
+// Repositories
 const {
-  UserModel,
-  ConsultationModel,
-  DependentModel,
-  DoctorModel
-} = require('./models');
+  UserRepository,
+  ConsultationRepository,
+  DependentRepository,
+  DoctorRepository
+} = require('./repositories');
+
+// Services
+const {
+  AuthService,
+  DoctorService,
+  ConsultationService,
+  PaymentService,
+  DependentService
+} = require('./services');
+
+// Controllers
+const {
+  AuthController,
+  DoctorController,
+  ConsultationController,
+  PaymentController,
+  DependentController,
+  AdminController,
+  DoctorPanelController
+} = require('./controllers');
+
+// Routes
+const {
+  authRoutes,
+  doctorRoutes,
+  consultationRoutes,
+  paymentRoutes,
+  dependentRoutes,
+  adminRoutes,
+  doctorPanelRoutes
+} = require('./routes');
+
+// Socket
 const { setupSocket } = require('./config/socket');
-const authRoutes = require('./routes/auth.routes');
-const doctorRoutes = require('./routes/doctor.routes');
-const consultationRoutes = require('./routes/consultation.routes');
-const paymentRoutes = require('./routes/payment.routes');
-const dependentRoutes = require('./routes/dependent.routes');
-const AuthService = require('./services/auth.service');
-const DoctorService = require('./services/doctor.service');
-const ConsultationService = require('./services/consultation.service');
-const PaymentService = require('./services/payment.service');
-const DependentService = require('./services/dependent.service');
 
-const app = express();
-const server = http.createServer(app);
+async function startApp() {
+  // Подключение к MongoDB
+  await connectDB();
 
-app.use(cors());
-app.use(express.json());
+  const app = express();
+  const server = http.createServer(app);
 
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+  // Middleware
+  app.use(cors({
+    origin: config.frontendUrl,
+    credentials: true
+  }));
+  app.use(express.json());
 
-const userModel = new UserModel();
-const consultationModel = new ConsultationModel();
-const dependentModel = new DependentModel();
-const doctorModel = new DoctorModel();
+  // Health check
+  app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-app.use(authRoutes(userModel));
-app.use(doctorRoutes(new DoctorService(doctorModel)));
-app.use(consultationRoutes(new ConsultationService(consultationModel), userModel));
-app.use(paymentRoutes(new PaymentService(consultationModel), consultationModel));
-app.use(dependentRoutes(new DependentService(dependentModel)));
+  // Dependency Injection
+  const userRepository = new UserRepository();
+  const consultationRepository = new ConsultationRepository();
+  const dependentRepository = new DependentRepository();
+  const doctorRepository = new DoctorRepository();
 
-setupSocket(server, consultationModel);
+  const authService = new AuthService(userRepository);
+  const doctorService = new DoctorService(doctorRepository);
+  const consultationService = new ConsultationService(consultationRepository);
+  const paymentService = new PaymentService(consultationRepository);
+  const dependentService = new DependentService(dependentRepository);
 
-module.exports = { app, server };
+  const authController = new AuthController(authService);
+  const doctorController = new DoctorController(doctorService);
+  const consultationController = new ConsultationController(consultationService, userRepository);
+  const paymentController = new PaymentController(paymentService);
+  const dependentController = new DependentController(dependentService);
+  const adminController = new AdminController(doctorService, consultationService, authService);
+  const doctorPanelController = new DoctorPanelController(doctorService, consultationService);
+
+  // Routes
+  app.use(authRoutes(authController));
+  app.use(doctorRoutes(doctorController));
+  app.use(consultationRoutes(consultationController));
+  app.use(paymentRoutes(paymentController));
+  app.use(dependentRoutes(dependentController));
+
+  // Админка и панель врача
+  app.use(adminRoutes(adminController));
+  app.use(doctorPanelRoutes(doctorPanelController));
+
+  // Error handler (должен быть последним)
+  app.use(errorHandler);
+
+  // Socket.IO
+  setupSocket(server, consultationRepository);
+
+  return { app, server };
+}
+
+module.exports = { startApp };

@@ -1,18 +1,34 @@
 class ConsultationService {
-  constructor(consultationModel) {
-    this.consultationModel = consultationModel;
+  constructor(consultationRepository) {
+    this.consultationRepository = consultationRepository;
   }
 
-  create(data) {
-    return this.consultationModel.create(data);
+  async create(data) {
+    return this.consultationRepository.create(data);
   }
 
-  getById(id) {
-    return this.consultationModel.findById(id);
+  async getById(id) {
+    return this.consultationRepository.findById(id);
   }
 
-  getByPatientId(patientId) {
-    return this.consultationModel.findByPatientId(patientId);
+  async getByPatientId(patientId) {
+    return this.consultationRepository.findByPatientId(patientId);
+  }
+
+  async getByDoctorId(doctorId) {
+    return this.consultationRepository.findByDoctorId(doctorId);
+  }
+
+  async countAll() {
+    return this.consultationRepository.countAll();
+  }
+
+  async countByStatus(status) {
+    return this.consultationRepository.countByStatus(status);
+  }
+
+  async updateStatus(id, status) {
+    return this.consultationRepository.updateStatus(id, status);
   }
 }
 

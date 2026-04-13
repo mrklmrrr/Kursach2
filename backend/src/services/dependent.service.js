@@ -1,15 +1,15 @@
 class DependentService {
-  constructor(dependentModel) {
-    this.dependentModel = dependentModel;
+  constructor(dependentRepository) {
+    this.dependentRepository = dependentRepository;
   }
 
-  getByUserId(userId) {
-    return this.dependentModel.findByUserId(userId);
+  async getByUserId(userId) {
+    return this.dependentRepository.findByUserId(userId);
   }
 
-  create(userId, data) {
+  async create(userId, data) {
     const { name, age, relation } = data;
-    return this.dependentModel.create(userId, {
+    return this.dependentRepository.create(userId, {
       name,
       age: parseInt(age),
       relation

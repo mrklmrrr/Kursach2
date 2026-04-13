@@ -32,6 +32,12 @@ import Payment from './pages/payment/Payment/Payment';
 import Confirm from './pages/payment/Confirm/Confirm';
 import LoaderPage from './pages/payment/Loader/Loader';
 
+// Admin
+import Admin from './pages/admin/Admin';
+
+// Doctor Panel
+import DoctorPanel from './pages/doctor/DoctorPanel';
+
 function App() {
   return (
     <BrowserRouter>
@@ -42,7 +48,10 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
 
-        {/* Protected routes */}
+        {/* Админка — вход по email+пароль, затем дашборд */}
+        <Route path="/admin" element={<Admin />} />
+
+        {/* Защищённые маршруты — пациент */}
         <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
         <Route path="/doctors" element={<PrivateRoute><Doctors /></PrivateRoute>} />
         <Route path="/doctor/:id" element={<PrivateRoute><DoctorProfile /></PrivateRoute>} />
@@ -55,6 +64,11 @@ function App() {
         <Route path="/payment" element={<PrivateRoute><Payment /></PrivateRoute>} />
         <Route path="/loader" element={<PrivateRoute><LoaderPage /></PrivateRoute>} />
         <Route path="/consultation/:id" element={<PrivateRoute><Consultation /></PrivateRoute>} />
+
+        {/* Панель врача — только doctor */}
+        <Route path="/doctor" element={
+          <PrivateRoute roles={['doctor']}><DoctorPanel /></PrivateRoute>
+        } />
       </Routes>
     </BrowserRouter>
   );

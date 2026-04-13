@@ -1,8 +1,12 @@
 require('dotenv').config();
-const { app, server } = require('./src/app');
+const { startApp } = require('./src/app');
+const config = require('./src/config');
 
-const PORT = process.env.PORT || 5001;
-
-server.listen(PORT, () => {
-  console.log(`🚀 Сервер запущен на http://localhost:${PORT}`);
+startApp().then(({ server }) => {
+  server.listen(config.port, () => {
+    console.log(`🚀 Сервер запущен на http://localhost:${config.port}`);
+  });
+}).catch((err) => {
+  console.error('❌ Ошибка запуска сервера:', err.message);
+  process.exit(1);
 });

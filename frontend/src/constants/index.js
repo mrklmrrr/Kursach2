@@ -29,3 +29,19 @@ export const GENDER_TYPES = [
   { value: 'male', label: 'Мужской' },
   { value: 'female', label: 'Женский' },
 ];
+
+export const CONSULTATION_STATUS = {
+  PENDING: 'pending',
+  PAID: 'paid',
+  ACTIVE: 'active',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled'
+};
+
+export const STATUS_LABELS = {
+  pending: 'Ожидает оплаты',
+  paid: 'Оплачено',
+  active: 'Активна',
+  completed: 'Завершена',
+  cancelled: 'Отменена'
+};

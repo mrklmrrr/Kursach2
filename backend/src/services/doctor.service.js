@@ -1,14 +1,36 @@
 class DoctorService {
-  constructor(doctorModel) {
-    this.doctorModel = doctorModel;
+  constructor(doctorRepository) {
+    this.doctorRepository = doctorRepository;
   }
 
-  getAll() {
-    return this.doctorModel.findAll();
+  // Публичные методы
+  async getAll(filter = {}) {
+    return this.doctorRepository.findAll(filter);
   }
 
-  getById(id) {
-    return this.doctorModel.findById(id);
+  async getById(id) {
+    return this.doctorRepository.findById(id);
+  }
+
+  // Методы админки
+  async createDoctor(data) {
+    return this.doctorRepository.createDoctor(data);
+  }
+
+  async updateDoctor(id, updates) {
+    return this.doctorRepository.updateDoctor(id, updates);
+  }
+
+  async deleteDoctor(id) {
+    return this.doctorRepository.deleteDoctor(id);
+  }
+
+  async toggleOnline(id, isOnline) {
+    return this.doctorRepository.toggleOnline(id, isOnline);
+  }
+
+  async updatePrice(id, price) {
+    return this.doctorRepository.updatePrice(id, price);
   }
 }
 

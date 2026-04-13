@@ -1,25 +1,37 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const { calculateAge } = require('../utils/helpers');
+const config = require('../config');
+const { roles } = require('../constants');
 
 class AuthService {
-  constructor(userModel) {
-    this.userModel = userModel;
+  constructor(userRepository) {
+    this.userRepository = userRepository;
   }
 
+  /* ---------- Регистрация пациента (с паролем) ---------- */
+
   async register(userData) {
-    const { firstName, lastName, phone, birthDate, gender } = userData;
+    const { firstName, lastName, phone, birthDate, gender, password } = userData;
     const age = calculateAge(birthDate);
 
-    const user = this.userModel.create({
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await this.userRepository.create({
       firstName,
       lastName,
       phone,
       birthDate,
       gender,
-      age
+      age,
+      password: hashedPassword
     });
 
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || 'secretkey', { expiresIn: '30d' });
+    const token = jwt.sign(
+      { id: user._id },
+      config.jwt.secret,
+      { expiresIn: config.jwt.expiresIn }
+    );
 
     return {
       token,
@@ -27,13 +39,65 @@ class AuthService {
     };
   }
 
-  login(phone) {
-    const user = this.userModel.findByPhone(phone);
+  /* ---------- Единый вход: телефон + пароль (пациент / врач) ---------- */
+
+  async login(phone, password) {
+    const user = await this.userRepository.findByPhone(phone);
     if (!user) {
-      throw new Error('Неверный телефон');
+      throw new Error('Пользователь не найден');
     }
 
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET || 'secretkey');
+    if (!user.password) {
+      throw new Error('Учётная запись не имеет пароля');
+    }
+
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      throw new Error('Неверный пароль');
+    }
+
+    if (user.role === roles.ADMIN) {
+      throw new Error('Для администратора используйте /admin');
+    }
+
+    const token = jwt.sign(
+      { id: user._id },
+      config.jwt.secret,
+      { expiresIn: config.jwt.expiresIn }
+    );
+
+    return {
+      token,
+      user: this.formatUser(user)
+    };
+  }
+
+  /* ---------- Вход админа (email + пароль) ---------- */
+
+  async loginAdmin(email, password) {
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) {
+      throw new Error('Пользователь не найден');
+    }
+
+    if (user.role !== roles.ADMIN) {
+      throw new Error('Доступ только для администраторов');
+    }
+
+    if (!user.password) {
+      throw new Error('Учётная запись не имеет пароля');
+    }
+
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      throw new Error('Неверный пароль');
+    }
+
+    const token = jwt.sign(
+      { id: user._id },
+      config.jwt.secret,
+      { expiresIn: config.jwt.expiresIn }
+    );
 
     return {
       token,
@@ -42,7 +106,7 @@ class AuthService {
   }
 
   async getMe(userId) {
-    const user = this.userModel.findById(userId);
+    const user = await this.userRepository.findById(userId);
     if (!user) {
       throw new Error('Пользователь не найден');
     }
@@ -50,31 +114,35 @@ class AuthService {
   }
 
   updateUser(userId, updates) {
-    const user = this.userModel.findById(userId);
-    if (!user) {
-      throw new Error('Пользователь не найден');
-    }
-
-    if (updates.birthDate) {
-      user.birthDate = updates.birthDate;
-      user.age = calculateAge(updates.birthDate);
-    }
-    if (updates.gender) {
-      user.gender = updates.gender;
-    }
-
-    return this.formatUser(user);
+    return this.userRepository.updateById(userId, updates);
   }
 
   formatUser(user) {
-    return {
-      id: user.id,
-      name: `${user.firstName} ${user.lastName}`,
+    const base = {
+      id: user._id,
+      legacyId: user.legacyId,
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
       phone: user.phone,
       birthDate: user.birthDate,
       gender: user.gender,
       age: user.age
     };
+
+    if (user.role === roles.DOCTOR) {
+      return {
+        ...base,
+        specialty: user.specialty,
+        price: user.price,
+        experience: user.experience,
+        description: user.description,
+        isOnline: user.isOnline,
+        rating: user.rating
+      };
+    }
+
+    return base;
   }
 }
 

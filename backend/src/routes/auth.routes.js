@@ -1,46 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth');
-const AuthService = require('../services/auth.service');
 
-module.exports = function(userModel) {
-  const authService = new AuthService(userModel);
+module.exports = function(authController) {
+  // Регистрация (телефон + пароль)
+  router.post('/api/auth/register', (req, res) => authController.register(req, res));
 
-  router.post('/api/auth/register', async (req, res) => {
-    try {
-      const result = await authService.register(req.body);
-      res.json(result);
-    } catch (err) {
-      res.status(400).json({ message: err.message });
-    }
-  });
+  // Единый вход: телефон + пароль (пациент / врач)
+  router.post('/api/auth/login', (req, res) => authController.login(req, res));
 
-  router.post('/api/auth/login', (req, res) => {
-    try {
-      const result = authService.login(req.body.phone);
-      res.json(result);
-    } catch (err) {
-      res.status(401).json({ message: err.message });
-    }
-  });
-
-  router.get('/api/auth/me', authMiddleware, async (req, res) => {
-    try {
-      const user = await authService.getMe(req.userId);
-      res.json(user);
-    } catch (err) {
-      res.status(404).json({ message: err.message });
-    }
-  });
-
-  router.put('/api/auth/user', authMiddleware, (req, res) => {
-    try {
-      const user = authService.updateUser(req.userId, req.body);
-      res.json(user);
-    } catch (err) {
-      res.status(404).json({ message: err.message });
-    }
-  });
+  // Профиль
+  router.get('/api/auth/me', authMiddleware, (req, res) => authController.getMe(req, res));
+  router.put('/api/auth/user', authMiddleware, (req, res) => authController.updateUser(req, res));
 
   return router;
 };

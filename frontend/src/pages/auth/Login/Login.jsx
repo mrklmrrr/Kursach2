@@ -8,11 +8,12 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login(phone);
+      await login(phone, password);
       navigate('/home');
     } catch (err) {
       alert(err.response?.data?.message || 'Ошибка входа');
@@ -22,13 +23,19 @@ export default function Login() {
   return (
     <div className="register-content">
       <h1>Вход</h1>
-      <p>Введите номер телефона</p>
       <form onSubmit={handleSubmit}>
         <Input
           type="tel"
           placeholder="+375..."
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
+          required
+        />
+        <Input
+          type="password"
+          placeholder="Пароль"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           required
         />
         <Button type="submit" variant="primary" size="large" className="huge-btn">

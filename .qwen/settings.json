@@ -14,7 +14,15 @@
       "Bash(netstat *)",
       "Bash(ls *)",
       "Bash(rmdir *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(del *)",
+      "Bash(node *)",
+      "Bash(timeout *)",
+      "Bash(curl *)",
+      "Bash(taskkill *)",
+      "Bash(npm install *)",
+      "Bash(findstr *)",
+      "Bash(cmd *)"
     ]
   },
   "$version": 3
