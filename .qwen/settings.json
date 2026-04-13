@@ -23,7 +23,8 @@
       "Bash(npm install *)",
       "Bash(findstr *)",
       "Bash(cmd *)",
-      "Bash(npx *)"
+      "Bash(npx *)",
+      "Bash(sed *)"
     ]
   },
   "$version": 3

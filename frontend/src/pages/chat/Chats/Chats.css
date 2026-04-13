@@ -6,8 +6,7 @@
 
 .chats-content {
   flex: 1;
-  padding: 20px 16px;
-  padding-bottom: 80px;
+  padding: 16px 400px 80px;
 }
 
 .chats-content .section-title {

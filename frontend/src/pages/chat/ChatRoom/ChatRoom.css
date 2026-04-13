@@ -54,7 +54,7 @@
 /* Messages scroll area */
 .chat-room-messages {
   flex: 1;
-  padding: 20px 16px 16px;
+  padding: 16px 400px 16px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
