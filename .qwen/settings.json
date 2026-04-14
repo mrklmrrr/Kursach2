@@ -24,7 +24,8 @@
       "Bash(findstr *)",
       "Bash(cmd *)",
       "Bash(npx *)",
-      "Bash(sed *)"
+      "Bash(sed *)",
+      "Bash(npm uninstall *)"
     ]
   },
   "$version": 3

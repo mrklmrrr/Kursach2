@@ -1,7 +1,21 @@
 .admin-page {
-  padding: 16px 400px 80px;
+  padding: 16px 20px 80px;
   max-width: 960px;
   margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .admin-page {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .admin-page {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
 }
 
 .admin-dashboard {
