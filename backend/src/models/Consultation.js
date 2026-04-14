@@ -19,10 +19,11 @@ const consultationSchema = new mongoose.Schema({
   paymentId: { type: Number, default: null },
   paidAt: { type: String, default: null },
   scheduledAt: { type: String },
+  appointmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Appointment', default: null },
   messages: { type: [messageSchema], default: [] }
-}, { timestamps: true });
+}, { timestamps: true, autoIndex: false });
 
-consultationSchema.index({ doctorId: 1, status: 1 });
-consultationSchema.index({ patientId: 1 });
+consultationSchema.index({ doctorId: 1, status: 1 }, { name: 'doctor_status_idx' });
+consultationSchema.index({ patientId: 1 }, { name: 'patientId_idx' });
 
 module.exports = mongoose.model('Consultation', consultationSchema);

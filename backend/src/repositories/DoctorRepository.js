@@ -6,8 +6,11 @@ const DOCTOR_FILTER = { role: roles.DOCTOR };
 
 class DoctorRepository {
   async findAll() {
-    const doctors = await User.find(DOCTOR_FILTER).sort({ rating: -1 });
-    return doctors.map(d => this._format(d.toObject()));
+    const doctors = await User.find(DOCTOR_FILTER)
+      .select('firstName lastName specialty price rating isOnline avatar')
+      .sort({ rating: -1 })
+      .lean();
+    return doctors.map((d) => this._format(d));
   }
 
   async findById(id) {
@@ -45,9 +48,10 @@ class DoctorRepository {
   }
 
   _format(doc) {
+    const id = doc._id?.toString ? doc._id.toString() : doc._id;
     return {
       ...doc,
-      id: doc._id,
+      id,
       name: `${doc.firstName} ${doc.lastName}`
     };
   }

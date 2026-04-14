@@ -1,17 +1,34 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doctorPanelApi } from '../../services/doctorPanelApi';
+import { appointmentApi } from '../../services/appointmentApi';
 import { useAuth } from '../../hooks/useAuth';
 import PageLayout from '../../components/layout/PageLayout/PageLayout';
 import './DoctorPanel.css';
 
-const STATUS_LABELS = {
-  pending: 'Ожидает',
-  paid: 'Оплачена',
-  active: 'Активна',
+const APPOINTMENT_STATUS_LABELS = {
+  scheduled: 'Запланирована',
+  confirmed: 'Подтверждена',
   completed: 'Завершена',
   cancelled: 'Отменена'
 };
+
+const CONSULTATION_TYPE_LABELS = {
+  online: '🌐 Онлайн',
+  offline: '🏥 Офлайн',
+  video: '🌐 Онлайн',
+  chat: '🏥 Офлайн'
+};
+
+const DAY_MAP = [
+  { value: 'mon', label: 'Пн' },
+  { value: 'tue', label: 'Вт' },
+  { value: 'wed', label: 'Ср' },
+  { value: 'thu', label: 'Чт' },
+  { value: 'fri', label: 'Пт' },
+  { value: 'sat', label: 'Сб' },
+  { value: 'sun', label: 'Вс' }
+];
 
 export default function DoctorPanel() {
   const navigate = useNavigate();
@@ -19,22 +36,88 @@ export default function DoctorPanel() {
   const [tab, setTab] = useState('requests');
   const [profile, setProfile] = useState(null);
   const [pendingConsultations, setPendingConsultations] = useState([]);
-  const [upcomingConsultations, setUpcomingConsultations] = useState([]);
   const [patients, setPatients] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [workingHours, setWorkingHours] = useState({ start: '09:00', end: '18:00' });
+  const [workingDays, setWorkingDays] = useState(['mon', 'tue', 'wed', 'thu', 'fri']);
   const [loading, setLoading] = useState(true);
+
+  // Форма назначения записи
+  const [appointmentForm, setAppointmentForm] = useState({
+    patientId: '',
+    date: '',
+    time: '',
+    type: 'online',
+    consultationType: 'online',
+    duration: 30
+  });
+
+  const patientById = useMemo(() => {
+    const map = new Map();
+    patients.forEach((patient) => {
+      map.set(String(patient.id), patient);
+    });
+    return map;
+  }, [patients]);
+
+  const upcomingSchedule = useMemo(() => {
+    const now = new Date();
+    return appointments
+      .filter((item) => item.status === 'scheduled' || item.status === 'confirmed')
+      .map((item) => {
+        const dateTime = new Date(`${item.date}T${item.time}:00`);
+        return { ...item, dateTime };
+      })
+      .filter((item) => !Number.isNaN(item.dateTime.getTime()) && item.dateTime >= now)
+      .sort((a, b) => a.dateTime - b.dateTime);
+  }, [appointments]);
 
   const loadData = useCallback(async () => {
     try {
-      const [profileRes, pendingRes, upcomingRes, patientsRes] = await Promise.all([
+      const [profileRes, pendingRes, patientsRes, appointmentsRes, workingHoursRes] = await Promise.allSettled([
         doctorPanelApi.getProfile(),
         doctorPanelApi.getPendingConsultations(),
-        doctorPanelApi.getUpcomingConsultations(),
-        doctorPanelApi.getPatients()
+        doctorPanelApi.getPatients(),
+        appointmentApi.getDoctorAppointments(),
+        appointmentApi.getWorkingHours()
       ]);
-      setProfile(profileRes.data);
-      setPendingConsultations(pendingRes.data);
-      setUpcomingConsultations(upcomingRes.data);
-      setPatients(patientsRes.data);
+
+      if (profileRes.status === 'fulfilled') {
+        setProfile(profileRes.value.data);
+      } else {
+        console.error('Ошибка загрузки профиля врача:', profileRes.reason);
+      }
+
+      if (pendingRes.status === 'fulfilled') {
+        setPendingConsultations(pendingRes.value.data);
+      } else {
+        setPendingConsultations([]);
+        console.error('Ошибка загрузки заявок:', pendingRes.reason);
+      }
+
+      if (patientsRes.status === 'fulfilled') {
+        setPatients(patientsRes.value.data);
+      } else {
+        setPatients([]);
+        console.error('Ошибка загрузки пациентов:', patientsRes.reason);
+      }
+
+      if (appointmentsRes.status === 'fulfilled') {
+        setAppointments(appointmentsRes.value.data);
+      } else {
+        setAppointments([]);
+        console.error('Ошибка загрузки записей врача:', appointmentsRes.reason);
+      }
+
+      if (workingHoursRes.status === 'fulfilled') {
+        setWorkingHours(workingHoursRes.value.data.workingHours || { start: '09:00', end: '18:00' });
+        setWorkingDays(workingHoursRes.value.data.workingDays || ['mon', 'tue', 'wed', 'thu', 'fri']);
+      } else {
+        setWorkingHours({ start: '09:00', end: '18:00' });
+        setWorkingDays(['mon', 'tue', 'wed', 'thu', 'fri']);
+        console.error('Ошибка загрузки рабочего времени:', workingHoursRes.reason);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -69,16 +152,6 @@ export default function DoctorPanel() {
     }
   };
 
-  const handleStart = async (id) => {
-    try {
-      await doctorPanelApi.acceptConsultation(id);
-      setUpcomingConsultations(prev => prev.filter(c => c._id !== id));
-      loadData();
-    } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка');
-    }
-  };
-
   const handleReject = async (id) => {
     try {
       await doctorPanelApi.rejectConsultation(id);
@@ -88,12 +161,55 @@ export default function DoctorPanel() {
     }
   };
 
-  const handleComplete = async (id) => {
+  const handleOpenPatientProfile = (patientId, fallbackName) => {
+    const patient = patientById.get(String(patientId));
+    setSelectedPatient(patient || {
+      id: patientId,
+      name: fallbackName || 'Пациент',
+      phone: '—',
+      consultationCount: 0
+    });
+  };
+
+  const handleWorkingDayToggle = (day) => {
+    setWorkingDays(prev =>
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+    );
+  };
+
+  const handleSaveWorkingHours = async () => {
     try {
-      await doctorPanelApi.completeConsultation(id);
-      setUpcomingConsultations(prev => prev.filter(c => c._id !== id));
+      await appointmentApi.updateWorkingHours({ workingHours, workingDays });
+      alert('Рабочее время сохранено');
     } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка');
+      alert(err.response?.data?.message || 'Ошибка сохранения');
+    }
+  };
+
+  const handleAppointmentChange = (e) => {
+    setAppointmentForm({ ...appointmentForm, [e.target.name]: e.target.value });
+  };
+
+  const handleAssignAppointment = async (e) => {
+    e.preventDefault();
+    try {
+      await appointmentApi.assignAppointment(appointmentForm);
+      alert('Запись создана');
+      setAppointmentForm({ patientId: '', date: '', time: '', type: 'online', consultationType: 'online', duration: 30 });
+      loadData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Ошибка создания записи');
+    }
+  };
+
+  const handleCancelAppointment = async (id) => {
+    if (!confirm('Отменить эту запись?')) return;
+    try {
+      await appointmentApi.deleteAppointment(id);
+      setAppointments(prev => prev.filter(a => a._id !== id));
+      loadData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Ошибка отмены');
     }
   };
 
@@ -122,7 +238,12 @@ export default function DoctorPanel() {
             Заявки {pendingConsultations.length > 0 && <span className="badge">{pendingConsultations.length}</span>}
           </button>
           <button className={`d-tab ${tab === 'upcoming' ? 'active' : ''}`} onClick={() => setTab('upcoming')}>
-            Расписание {upcomingConsultations.length > 0 && <span className="badge">{upcomingConsultations.length}</span>}
+            Расписание {upcomingSchedule.length > 0 && <span className="badge">{upcomingSchedule.length}</span>}
+          </button>
+          <button className={`d-tab ${tab === 'appointments' ? 'active' : ''}`} onClick={() => setTab('appointments')}>
+            Записи {appointments.filter(a => a.status === 'scheduled' || a.status === 'confirmed').length > 0 && (
+              <span className="badge">{appointments.filter(a => a.status === 'scheduled' || a.status === 'confirmed').length}</span>
+            )}
           </button>
           <button className={`d-tab ${tab === 'patients' ? 'active' : ''}`} onClick={() => setTab('patients')}>
             Пациенты
@@ -139,7 +260,7 @@ export default function DoctorPanel() {
                 <div key={c._id} className="consultation-card pending">
                   <div className="consultation-info">
                     <h3>{c.patientName}</h3>
-                    <p className="consult-type">{c.type === 'video' ? '📹 Видеоконсультация' : '💬 Чат'}</p>
+                    <p className="consult-type">{c.type === 'offline' || c.type === 'chat' ? '🏥 Офлайн' : '🌐 Онлайн'}</p>
                     <p className="consult-date">{c.createdAt ? new Date(c.createdAt).toLocaleDateString('ru-RU') : '—'}</p>
                   </div>
                   <div className="consultation-actions">
@@ -152,37 +273,137 @@ export default function DoctorPanel() {
           </div>
         )}
 
-        {/* Расписание */}
+        {/* Расписание консультаций */}
         {tab === 'upcoming' && (
           <div className="consultations-list">
-            {upcomingConsultations.length === 0 ? (
+            {upcomingSchedule.length === 0 ? (
               <p className="empty-state">Нет ближайших консультаций</p>
             ) : (
-              upcomingConsultations.map(c => (
-                <div key={c._id} className="consultation-card upcoming">
+              upcomingSchedule.map((item, index) => (
+                <div key={item._id} className="consultation-card upcoming">
                   <div className="consultation-info">
-                    <h3>{c.patientName}</h3>
-                    <p className="consult-type">{c.type === 'video' ? '📹 Видеоконсультация' : '💬 Чат'}</p>
-                    <p className="consult-date">{c.createdAt ? new Date(c.createdAt).toLocaleDateString('ru-RU') : '—'}</p>
-                    <span className={`status-badge ${c.status}`}>{STATUS_LABELS[c.status]}</span>
+                    <h3>
+                      <button
+                        type="button"
+                        className="patient-link"
+                        onClick={() => handleOpenPatientProfile(item.patientId, item.patientName)}
+                      >
+                        {item.patientName}
+                      </button>
+                    </h3>
+                    <p className="consult-type">{item.type === 'online' ? '🌐 Онлайн' : '🏥 Офлайн'} • {CONSULTATION_TYPE_LABELS[item.consultationType] || '🌐 Онлайн'}</p>
+                    <p className="consult-date">{item.date} в {item.time}</p>
+                    {index === 0 && <span className="status-badge active">Ближайшая консультация</span>}
                   </div>
                   <div className="consultation-actions">
-                    {c.status === 'paid' && (
-                      <button className="start-btn" onClick={() => handleStart(c._id)}>Начать</button>
-                    )}
-                    {c.status === 'active' && (
-                      <button className="complete-btn" onClick={() => handleComplete(c._id)}>Завершить</button>
-                    )}
-                    <button
-                      className="chat-btn"
-                      onClick={() => navigate(`/chat/doctor/${c._id}`)}
-                    >
-                      💬 Чат
-                    </button>
+                    <span className={`status-badge ${item.status}`}>{APPOINTMENT_STATUS_LABELS[item.status]}</span>
                   </div>
                 </div>
               ))
             )}
+          </div>
+        )}
+
+        {/* Записи (назначение + управление) */}
+        {tab === 'appointments' && (
+          <div className="appointments-section">
+            {/* Форма назначения */}
+            <section className="section-card">
+              <h3>Назначить запись</h3>
+              <form onSubmit={handleAssignAppointment} className="appointment-form">
+                <div className="form-group">
+                  <label>Пациент</label>
+                  <select name="patientId" value={appointmentForm.patientId} onChange={handleAppointmentChange} required>
+                    <option value="">Выберите пациента</option>
+                    {patients.map((p, i) => (
+                      <option key={i} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Дата</label>
+                  <input type="date" name="date" value={appointmentForm.date} onChange={handleAppointmentChange} required />
+                </div>
+                <div className="form-group">
+                  <label>Время</label>
+                  <input type="time" name="time" value={appointmentForm.time} onChange={handleAppointmentChange} required />
+                </div>
+                <div className="form-group">
+                  <label>Тип приема</label>
+                  <select name="type" value={appointmentForm.type} onChange={handleAppointmentChange}>
+                    <option value="online">Онлайн</option>
+                    <option value="offline">Офлайн</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Тип консультации</label>
+                  <select name="consultationType" value={appointmentForm.consultationType} onChange={handleAppointmentChange}>
+                    <option value="online">Онлайн</option>
+                    <option value="offline">Офлайн</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Продолжительность (мин)</label>
+                  <input type="number" name="duration" value={appointmentForm.duration} onChange={handleAppointmentChange} min="15" step="15" />
+                </div>
+                <button type="submit" className="btn btn-primary">Назначить запись</button>
+              </form>
+            </section>
+
+            {/* Рабочее время */}
+            <section className="section-card">
+              <h3>Рабочее время</h3>
+              <div className="working-hours-form">
+                <div className="form-group">
+                  <label>Начало рабочего дня</label>
+                  <input type="time" value={workingHours.start} onChange={(e) => setWorkingHours({ ...workingHours, start: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Конец рабочего дня</label>
+                  <input type="time" value={workingHours.end} onChange={(e) => setWorkingHours({ ...workingHours, end: e.target.value })} />
+                </div>
+                <div className="form-group">
+                  <label>Рабочие дни</label>
+                  <div className="working-days-grid">
+                    {DAY_MAP.map(day => (
+                      <label key={day.value} className={`day-checkbox ${workingDays.includes(day.value) ? 'active' : ''}`}>
+                        <input
+                          type="checkbox"
+                          checked={workingDays.includes(day.value)}
+                          onChange={() => handleWorkingDayToggle(day.value)}
+                        />
+                        {day.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <button className="btn btn-primary" onClick={handleSaveWorkingHours}>Сохранить рабочее время</button>
+              </div>
+            </section>
+
+            {/* Список записей */}
+            <section className="section-card">
+              <h3>Мои записи</h3>
+              {appointments.length === 0 ? (
+                <p className="empty-state">Нет записей</p>
+              ) : (
+                <div className="appointments-list">
+                  {appointments.map(a => (
+                    <div key={a._id} className="appointment-card">
+                      <div className="appointment-info">
+                        <h4>{a.patientName}</h4>
+                        <p className="appointment-date">{a.date} в {a.time}</p>
+                        <p className="appointment-type">{a.type === 'online' ? '🌐 Онлайн' : '🏥 Офлайн'} • {CONSULTATION_TYPE_LABELS[a.consultationType] || '🌐 Онлайн'} • {a.duration} мин</p>
+                        <span className={`status-badge ${a.status}`}>{APPOINTMENT_STATUS_LABELS[a.status]}</span>
+                      </div>
+                      {(a.status === 'scheduled' || a.status === 'confirmed') && (
+                        <button className="cancel-btn" onClick={() => handleCancelAppointment(a._id)}>Отменить</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
           </div>
         )}
 
@@ -195,13 +416,31 @@ export default function DoctorPanel() {
               patients.map((p, i) => (
                 <div key={i} className="patient-card">
                   <div className="patient-info">
-                    <h3>{p.name}</h3>
+                    <h3>
+                      <button type="button" className="patient-link" onClick={() => handleOpenPatientProfile(p.id, p.name)}>
+                        {p.name}
+                      </button>
+                    </h3>
                     <p>{p.phone || '—'}</p>
                   </div>
                   <span className="consult-count">{p.consultationCount} консульт.</span>
                 </div>
               ))
             )}
+          </div>
+        )}
+
+        {selectedPatient && (
+          <div className="patient-modal-overlay" role="presentation" onClick={() => setSelectedPatient(null)}>
+            <div className="patient-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+              <h3>Профиль пациента</h3>
+              <p><strong>Имя:</strong> {selectedPatient.name}</p>
+              <p><strong>Телефон:</strong> {selectedPatient.phone || '—'}</p>
+              <p><strong>Консультаций:</strong> {selectedPatient.consultationCount ?? 0}</p>
+              <button type="button" className="btn btn-primary" onClick={() => setSelectedPatient(null)}>
+                Закрыть
+              </button>
+            </div>
           </div>
         )}
       </div>

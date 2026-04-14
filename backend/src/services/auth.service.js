@@ -117,6 +117,25 @@ class AuthService {
     return this.userRepository.updateById(userId, updates);
   }
 
+  async changePassword(userId, currentPassword, newPassword) {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new Error('Пользователь не найден');
+    }
+
+    if (!user.password) {
+      throw new Error('Для этой учетной записи пароль не задан');
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+      throw new Error('Текущий пароль неверный');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.userRepository.updateById(userId, { password: hashedPassword });
+  }
+
   formatUser(user) {
     const base = {
       id: user._id,

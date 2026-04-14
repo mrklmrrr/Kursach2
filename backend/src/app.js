@@ -10,7 +10,8 @@ const {
   UserRepository,
   ConsultationRepository,
   DependentRepository,
-  DoctorRepository
+  DoctorRepository,
+  AppointmentRepository
 } = require('./repositories');
 
 // Services
@@ -19,7 +20,8 @@ const {
   DoctorService,
   ConsultationService,
   PaymentService,
-  DependentService
+  DependentService,
+  AppointmentService
 } = require('./services');
 
 // Controllers
@@ -30,7 +32,8 @@ const {
   PaymentController,
   DependentController,
   AdminController,
-  DoctorPanelController
+  DoctorPanelController,
+  AppointmentController
 } = require('./controllers');
 
 // Routes
@@ -41,7 +44,8 @@ const {
   paymentRoutes,
   dependentRoutes,
   adminRoutes,
-  doctorPanelRoutes
+  doctorPanelRoutes,
+  appointmentRoutes
 } = require('./routes');
 
 // Socket
@@ -69,12 +73,14 @@ async function startApp() {
   const consultationRepository = new ConsultationRepository();
   const dependentRepository = new DependentRepository();
   const doctorRepository = new DoctorRepository();
+  const appointmentRepository = new AppointmentRepository();
 
   const authService = new AuthService(userRepository);
   const doctorService = new DoctorService(doctorRepository);
   const consultationService = new ConsultationService(consultationRepository);
   const paymentService = new PaymentService(consultationRepository);
   const dependentService = new DependentService(dependentRepository);
+  const appointmentService = new AppointmentService(appointmentRepository, userRepository);
 
   const authController = new AuthController(authService);
   const doctorController = new DoctorController(doctorService);
@@ -83,6 +89,7 @@ async function startApp() {
   const dependentController = new DependentController(dependentService);
   const adminController = new AdminController(doctorService, consultationService, authService);
   const doctorPanelController = new DoctorPanelController(doctorService, consultationService);
+  const appointmentController = new AppointmentController(appointmentService, userRepository);
 
   // Routes
   app.use(authRoutes(authController));
@@ -90,6 +97,7 @@ async function startApp() {
   app.use(consultationRoutes(consultationController));
   app.use(paymentRoutes(paymentController));
   app.use(dependentRoutes(dependentController));
+  app.use(appointmentRoutes(appointmentController));
 
   // Админка и панель врача
   app.use(adminRoutes(adminController));

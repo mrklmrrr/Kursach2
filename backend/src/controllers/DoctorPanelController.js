@@ -139,7 +139,7 @@ class DoctorPanelController {
   async getPatients(req, res) {
     try {
       const consultations = await this.consultationService.getByDoctorId(req.userId);
-      const patientIds = [...new Set(consultations.map(c => c.patientId))].filter(Boolean);
+      const patientIds = [...new Set(consultations.map(c => String(c.patientId)))].filter(Boolean);
 
       const { UserRepository } = require('../repositories');
       const userRepo = new UserRepository();
@@ -147,14 +147,24 @@ class DoctorPanelController {
       const patients = [];
       for (const id of patientIds) {
         const user = await userRepo.findById(id);
-        if (user) {
-          patients.push({
-            id: user.legacyId || user.id,
-            name: `${user.firstName} ${user.lastName}`,
-            phone: user.phone,
-            consultationCount: consultations.filter(c => c.patientId === (user.legacyId || user.id)).length
-          });
-        }
+        if (!user) continue;
+
+        const objectId = String(user.id || user._id || '');
+        const legacyId = user.legacyId !== undefined && user.legacyId !== null
+          ? String(user.legacyId)
+          : null;
+
+        const consultationCount = consultations.filter((c) => {
+          const consultationPatientId = String(c.patientId);
+          return consultationPatientId === objectId || (legacyId && consultationPatientId === legacyId);
+        }).length;
+
+        patients.push({
+          id: objectId || id,
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+          phone: user.phone || '',
+          consultationCount
+        });
       }
 
       res.json(patients);

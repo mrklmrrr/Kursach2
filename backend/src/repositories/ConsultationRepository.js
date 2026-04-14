@@ -19,35 +19,76 @@ class ConsultationRepository {
   }
 
   async findByPatientId(patientId) {
-    // Пробуем как число (legacyId) и как ObjectId
-    const numId = parseInt(patientId);
-    const query = isNaN(numId) ? { patientId } : { $or: [{ patientId: numId }, { patientId: patientId }] };
-    const consultations = await Consultation.find(query).sort({ createdAt: -1 });
+    // Ищем консультации пациента по legacyId (number) и при необходимости по строковому значению.
+    // Это нужно для совместимости со старыми и новыми данными.
+    const resolved = resolveId(patientId);
+    if (!resolved) return [];
+
+    const patientIds = new Set();
+
+    if (resolved.byLegacyId !== null && resolved.byLegacyId !== undefined) {
+      patientIds.add(resolved.byLegacyId);
+      patientIds.add(String(resolved.byLegacyId));
+    }
+
+    if (resolved.byObjectId) {
+      try {
+        const user = await User.findById(resolved.byObjectId).select('legacyId');
+        if (user && user.legacyId !== null && user.legacyId !== undefined) {
+          patientIds.add(user.legacyId);
+          patientIds.add(String(user.legacyId));
+        }
+      } catch {
+        // Игнорируем и продолжаем с уже собранными id
+      }
+    }
+
+    if (patientIds.size === 0) return [];
+
+    const consultations = await Consultation.find({
+      patientId: { $in: Array.from(patientIds) }
+    }).sort({ createdAt: -1 });
     return consultations.map(c => c.toObject());
   }
 
   async findByDoctorId(doctorId) {
-    // Пробуем ObjectId и legacyId врача
+    // Поле consultation.doctorId хранится как ObjectId.
+    // Ищем только по валидным ObjectId, чтобы избежать CastError.
     const resolved = resolveId(doctorId);
     if (!resolved) return [];
 
-    const conditions = [];
-    if (resolved.byObjectId) conditions.push({ doctorId: resolved.byObjectId });
-    if (resolved.byLegacyId) conditions.push({ doctorId: resolved.byLegacyId });
+    const doctorIds = new Set();
+    if (resolved.byObjectId) doctorIds.add(String(resolved.byObjectId));
 
-    // Дополнительно: ищем врача по ObjectId, получаем его legacyId
+    // Если пришёл legacyId, найдём пользователя и добавим его _id
+    if (resolved.byLegacyId) {
+      try {
+        const userByLegacy = await User.findOne({ legacyId: resolved.byLegacyId }).select('_id');
+        if (userByLegacy && userByLegacy._id) {
+          doctorIds.add(String(userByLegacy._id));
+        }
+      } catch {
+        // Игнорируем и продолжаем с тем, что уже нашли
+      }
+    }
+
+    // Дополнительно: если пришёл _id, можно найти пользователя и проверить связку с legacy
     if (resolved.byObjectId) {
       try {
-        const user = await User.findById(resolved.byObjectId);
-        if (user && user.legacyId) {
-          conditions.push({ doctorId: user.legacyId });
+        const user = await User.findById(resolved.byObjectId).select('_id');
+        if (user && user._id) {
+          doctorIds.add(String(user._id));
         }
       } catch {
         // Игнорируем
       }
     }
 
-    const consultations = await Consultation.find({ $or: conditions }).sort({ createdAt: -1 });
+    if (doctorIds.size === 0) return [];
+
+    const consultations = await Consultation.find({
+      doctorId: { $in: Array.from(doctorIds) }
+    }).sort({ createdAt: -1 });
     return consultations.map(c => c.toObject());
   }
 

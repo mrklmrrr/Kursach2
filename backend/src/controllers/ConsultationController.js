@@ -55,7 +55,9 @@ const ConsultationController = class {
 
   async getByPatientId(req, res) {
     try {
-      const consultations = await this.consultationService.getByPatientId(req.params.patientId);
+      // Историю отдаём для текущего авторизованного пользователя,
+      // чтобы не терять записи из-за разных форматов id на клиенте.
+      const consultations = await this.consultationService.getByPatientId(req.userId);
       res.json(consultations);
     } catch (err) {
       res.status(500).json({ message: err.message });

@@ -34,6 +34,10 @@ class UserRepository {
     const user = await updateById(User, id, updates);
     return user ? user.toObject() : null;
   }
+
+  async updateDoctor(id, updates) {
+    return this.updateById(id, updates);
+  }
 }
 
 module.exports = UserRepository;

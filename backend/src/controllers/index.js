@@ -5,6 +5,7 @@ const PaymentController = require('./PaymentController');
 const DependentController = require('./DependentController');
 const AdminController = require('./AdminController');
 const DoctorPanelController = require('./DoctorPanelController');
+const AppointmentController = require('./AppointmentController');
 
 module.exports = {
   AuthController,
@@ -13,5 +14,6 @@ module.exports = {
   PaymentController,
   DependentController,
   AdminController,
-  DoctorPanelController
+  DoctorPanelController,
+  AppointmentController
 };

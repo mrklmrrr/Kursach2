@@ -85,6 +85,63 @@
   color: #1f2937;
 }
 
+.booking-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.booking-notice-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.booking-notice.success {
+  background: #ecfdf3;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.booking-notice.success .booking-notice-icon {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.booking-notice.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.booking-notice.error .booking-notice-icon {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.booking-notice.info {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.booking-notice.info .booking-notice-icon {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
 .action-buttons {
   display: flex;
   flex-direction: column;
@@ -111,4 +168,22 @@ body.dark .info-list p {
 
 body.dark .doctor-info-card {
   background: #1f2937;
+}
+
+body.dark .booking-notice.success {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #d1fae5;
+}
+
+body.dark .booking-notice.error {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #fee2e2;
+}
+
+body.dark .booking-notice.info {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(96, 165, 250, 0.35);
+  color: #dbeafe;
 }

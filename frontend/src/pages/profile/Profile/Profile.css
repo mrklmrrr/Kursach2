@@ -69,6 +69,44 @@
   width: 100%;
 }
 
+.empty-info {
+  margin: 0 0 14px;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.error-info {
+  margin: 0 0 14px;
+  color: #b91c1c;
+  font-size: 0.9rem;
+}
+
+.password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.password-form input {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+}
+
+.password-message {
+  margin: 2px 0;
+  font-size: 0.85rem;
+}
+
+.password-message.success {
+  color: #166534;
+}
+
+.password-message.error {
+  color: #b91c1c;
+}
+
 .medical-info {
   list-style: none;
   padding: 0;
@@ -88,6 +126,33 @@
   margin-bottom: 8px;
   font-size: 0.875rem;
   color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.history-item-main {
+  flex: 1;
+}
+
+.history-tag {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.history-tag.past {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.history-tag.future {
+  background: #dbeafe;
+  color: #1e40af;
 }
 
 .setting-row {
@@ -143,6 +208,38 @@ body.dark .history-item {
   color: #9ca3af;
 }
 
+body.dark .history-tag.past {
+  background: #4b5563;
+  color: #f3f4f6;
+}
+
+body.dark .history-tag.future {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+
 body.dark .setting-row {
   border-color: #374151;
+}
+
+body.dark .empty-info {
+  color: #9ca3af;
+}
+
+body.dark .error-info {
+  color: #fca5a5;
+}
+
+body.dark .password-form input {
+  background: #374151;
+  color: #f9fafb;
+  border-color: #4b5563;
+}
+
+body.dark .password-message.success {
+  color: #86efac;
+}
+
+body.dark .password-message.error {
+  color: #fca5a5;
 }

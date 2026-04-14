@@ -2,21 +2,29 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { doctorApi } from '../../../services/doctorApi';
+import { appointmentApi } from '../../../services/appointmentApi';
 import { AppHeader, BottomNav } from '../../../components/layout';
 import { DoctorCard } from '../../../components/features';
 import { EmptyState } from '../../../components/ui';
 import './Home.css';
 
-const MOCK_UPCOMING = [
-  { id: 1, doctorName: 'Анна Иванова', specialty: 'Педиатр', time: 'Завтра, 15:30' },
-  { id: 2, doctorName: 'Сергей Петров', specialty: 'Терапевт', time: '18 апреля, 10:00' },
-];
+const DAY_MAP = {
+  mon: 'Пн',
+  tue: 'Вт',
+  wed: 'Ср',
+  thu: 'Чт',
+  fri: 'Пт',
+  sat: 'Сб',
+  sun: 'Вс'
+};
 
 export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [doctors, setDoctors] = useState([]);
-  const [upcoming] = useState(MOCK_UPCOMING);
+  const [upcoming, setUpcoming] = useState([]);
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
+  const [loadingAppointments, setLoadingAppointments] = useState(true);
 
   // Редирект врача на его панель
   useEffect(() => {
@@ -31,8 +39,48 @@ export default function Home() {
       .catch((err) => console.error('Ошибка загрузки врачей:', err));
   }, []);
 
+  // Загрузка записей пациента
+  useEffect(() => {
+    if (!user) {
+      setLoadingAppointments(false);
+      return;
+    }
+    appointmentApi.getAll()
+      .then((res) => {
+        const upcomingAppointments = res.data
+          .filter(a => a.status === 'scheduled' || a.status === 'confirmed')
+          .sort((a, b) => {
+            const dateA = new Date(a.date + 'T' + a.time);
+            const dateB = new Date(b.date + 'T' + b.time);
+            return dateA - dateB;
+          })
+          .map(a => {
+            const dateObj = new Date(a.date);
+            const dayOfWeek = DAY_MAP[['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][dateObj.getDay()]] || a.date;
+            return {
+              id: a._id,
+              doctorName: a.doctorName,
+              specialty: a.type === 'online' ? 'Онлайн' : 'Офлайн',
+              time: `${dayOfWeek}, ${a.time}`,
+              dateObj: dateObj
+            };
+          });
+        setUpcoming(upcomingAppointments);
+      })
+      .catch((err) => console.error('Ошибка загрузки записей:', err))
+      .finally(() => setLoadingAppointments(false));
+  }, [user]);
+
+  useEffect(() => {
+    setShowAllUpcoming(false);
+  }, [upcoming.length]);
+
   const onlineCount = doctors.filter((d) => d.isOnline).length;
-  const firstName = user?.name?.split(' ')[0] || 'Гость';
+  const fullNameParts = user?.name?.trim().split(/\s+/).filter(Boolean) || [];
+  const extractedFirstName = fullNameParts.length >= 2 ? fullNameParts[1] : fullNameParts[0];
+  const firstName = user?.firstName || extractedFirstName || 'Пользователь';
+  const visibleUpcoming = showAllUpcoming ? upcoming : upcoming.slice(0, 3);
+  const hasHiddenUpcoming = upcoming.length > 3 && !showAllUpcoming;
 
   return (
     <div className="home-page">
@@ -54,11 +102,11 @@ export default function Home() {
           <span className="material-icons arrow">arrow_forward</span>
         </div>
 
-        {upcoming.length > 0 && (
+        {!loadingAppointments && upcoming.length > 0 && (
           <section className="upcoming-section">
             <div className="section-title">Ближайшие записи</div>
             <div className="upcoming-list">
-              {upcoming.map((item) => (
+              {visibleUpcoming.map((item) => (
                 <div
                   key={item.id}
                   className="upcoming-card"
@@ -72,6 +120,25 @@ export default function Home() {
                 </div>
               ))}
             </div>
+            {hasHiddenUpcoming && (
+              <button
+                type="button"
+                className="upcoming-more-btn"
+                onClick={() => setShowAllUpcoming(true)}
+              >
+                еще
+              </button>
+            )}
+            {showAllUpcoming && upcoming.length > 3 && (
+              <button
+                type="button"
+                className="upcoming-more-btn upcoming-collapse-btn"
+                onClick={() => setShowAllUpcoming(false)}
+                aria-label="Скрыть записи"
+              >
+                <span className="material-icons">keyboard_arrow_up</span>
+              </button>
+            )}
           </section>
         )}
 

@@ -5,6 +5,8 @@ export const authApi = {
   login: (phone, password) => api.post('/auth/login', { phone, password }),
   getMe: () => api.get('/auth/me'),
   updateUser: (updates) => api.put('/auth/user', updates),
+  changePassword: (currentPassword, newPassword) =>
+    api.post('/auth/change-password', { currentPassword, newPassword }),
 };
 
 export const adminApi = {

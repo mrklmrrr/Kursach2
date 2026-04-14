@@ -42,6 +42,25 @@ class AuthController {
       res.status(500).json({ message: err.message });
     }
   }
+
+  async changePassword(req, res) {
+    try {
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: 'Текущий и новый пароль обязательны' });
+      }
+
+      if (String(newPassword).length < 6) {
+        return res.status(400).json({ message: 'Новый пароль должен быть не короче 6 символов' });
+      }
+
+      await this.authService.changePassword(req.userId, currentPassword, newPassword);
+      res.json({ message: 'Пароль успешно изменен' });
+    } catch (err) {
+      res.status(400).json({ message: err.message });
+    }
+  }
 }
 
 module.exports = AuthController;

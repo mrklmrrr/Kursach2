@@ -12,6 +12,7 @@ module.exports = function(authController) {
   // Профиль
   router.get('/api/auth/me', authMiddleware, (req, res) => authController.getMe(req, res));
   router.put('/api/auth/user', authMiddleware, (req, res) => authController.updateUser(req, res));
+  router.post('/api/auth/change-password', authMiddleware, (req, res) => authController.changePassword(req, res));
 
   return router;
 };

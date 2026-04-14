@@ -5,3 +5,4 @@ export { consultationApi } from './consultationApi';
 export { paymentApi } from './paymentApi';
 export { dependentApi } from './dependentApi';
 export { doctorPanelApi } from './doctorPanelApi';
+export { appointmentApi } from './appointmentApi';
