@@ -21,11 +21,13 @@ class UserRepository {
   }
 
   async findByPhone(phone) {
+    if (typeof phone !== 'string') return null;
     const user = await User.findOne({ phone });
     return user ? user.toObject() : null;
   }
 
   async findByEmail(email) {
+    if (typeof email !== 'string') return null;
     const user = await User.findOne({ email });
     return user ? user.toObject() : null;
   }

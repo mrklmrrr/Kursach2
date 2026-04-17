@@ -1,3 +1,5 @@
+const ApiError = require('../utils/ApiError');
+
 class AppointmentController {
   constructor(appointmentService, userRepository) {
     this.appointmentService = appointmentService;
@@ -6,19 +8,13 @@ class AppointmentController {
 
   /** Создать запись (пациент записывается к врачу) */
   async create(req, res) {
-    try {
-      const { doctorId, date, time, type, consultationType, duration } = req.body;
-
-      const appointment = await this.appointmentService.create(
-        doctorId,
-        req.userId,
-        { date, time, type, consultationType, duration: duration || 30 }
-      );
-
-      res.status(201).json(appointment);
-    } catch (err) {
-      res.status(400).json({ message: err.message });
-    }
+    const { doctorId, date, time, type, consultationType, duration } = req.body;
+    const appointment = await this.appointmentService.create(
+      doctorId,
+      req.userId,
+      { date, time, type, consultationType, duration: duration || 30 }
+    );
+    res.status(201).json(appointment);
   }
 
   /** Получить запись по ID */
@@ -36,106 +32,66 @@ class AppointmentController {
 
   /** Получить записи текущего пользователя (пациента) */
   async getByPatient(req, res) {
-    try {
-      const appointments = await this.appointmentService.getByPatientId(req.userId);
-      res.json(appointments);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
+    const appointments = await this.appointmentService.getByPatientId(req.userId);
+    res.json(appointments);
   }
 
   /** Получить записи врача */
   async getByDoctor(req, res) {
-    try {
-      const appointments = await this.appointmentService.getByDoctorId(req.userId);
-      res.json(appointments);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
+    const appointments = await this.appointmentService.getByDoctorId(req.userId);
+    res.json(appointments);
   }
 
   /** Получить доступные слоты для врача на дату */
   async getAvailableSlots(req, res) {
-    try {
-      const { date } = req.query;
-      if (!date) {
-        return res.status(400).json({ message: 'Параметр date обязателен' });
-      }
-
-      const slots = await this.appointmentService.getAvailableSlots(req.params.doctorId, date);
-      res.json({ date, slots });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
+    const { date } = req.query;
+    const slots = await this.appointmentService.getAvailableSlots(req.params.doctorId, date);
+    res.json({ date, slots });
   }
 
   /** Отменить запись */
   async cancel(req, res) {
-    try {
-      const appointment = await this.appointmentService.updateStatus(
-        req.params.id,
-        'cancelled'
-      );
-      if (!appointment) {
-        return res.status(404).json({ message: 'Запись не найдена' });
-      }
-      res.json({ message: 'Запись отменена', appointment });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+    const appointment = await this.appointmentService.cancelByPatient(req.params.id, req.userId);
+    if (!appointment) {
+      throw ApiError.notFound('Запись не найдена');
     }
+    res.json({ message: 'Запись отменена', appointment });
   }
 
   /** Удалить запись (врач может удалить свою запись) */
   async delete(req, res) {
-    try {
-      const deleted = await this.appointmentService.delete(req.params.id);
-      if (!deleted) {
-        return res.status(404).json({ message: 'Запись не найдена' });
-      }
-      res.json({ message: 'Запись удалена' });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+    const deleted = await this.appointmentService.deleteByDoctor(req.params.id, req.userId);
+    if (!deleted) {
+      throw ApiError.notFound('Запись не найдена');
     }
+    res.json({ message: 'Запись удалена' });
   }
 
   /** Назначить запись пациенту (врач/админ) */
   async assignAppointment(req, res) {
-    try {
-      const { patientId, date, time, type, consultationType, duration } = req.body;
-
-      if (!patientId) {
-        return res.status(400).json({ message: 'patientId обязателен' });
-      }
-
-      const patient = await this.userRepository.findById(patientId);
-      if (!patient) {
-        return res.status(404).json({ message: 'Пациент не найден' });
-      }
-
-      const appointment = await this.appointmentService.create(
-        req.userId,
-        patientId,
-        { date, time, type, consultationType, duration: duration || 30 }
-      );
-
-      res.status(201).json(appointment);
-    } catch (err) {
-      res.status(400).json({ message: err.message });
+    const { patientId, date, time, type, consultationType, duration } = req.body;
+    const patient = await this.userRepository.findById(patientId);
+    if (!patient) {
+      throw ApiError.notFound('Пациент не найден');
     }
+
+    const appointment = await this.appointmentService.create(
+      req.userId,
+      patientId,
+      { date, time, type, consultationType, duration: duration || 30 }
+    );
+
+    res.status(201).json(appointment);
   }
 
   /** Врач: обновить комментарий к записи */
   async updateDoctorComment(req, res) {
-    try {
-      const { comment } = req.body;
-      const updated = await this.appointmentService.updateDoctorComment(req.params.id, comment || '');
-      if (!updated) {
-        return res.status(404).json({ message: 'Запись не найдена' });
-      }
-      res.json(updated);
-    } catch (err) {
-      res.status(400).json({ message: err.message });
+    const { comment } = req.body;
+    const updated = await this.appointmentService.updateDoctorCommentByDoctor(req.params.id, req.userId, comment || '');
+    if (!updated) {
+      throw ApiError.notFound('Запись не найдена');
     }
+    res.json(updated);
   }
 
   /** Обновить рабочее время врача */

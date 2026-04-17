@@ -27,11 +27,7 @@ class AuthService {
       password: hashedPassword
     });
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
-    );
+    const token = this._createAccessToken(user);
 
     return {
       token,
@@ -42,6 +38,10 @@ class AuthService {
   /* ---------- Единый вход: телефон + пароль (пациент / врач) ---------- */
 
   async login(phone, password) {
+    if (typeof phone !== 'string' || typeof password !== 'string') {
+      throw new Error('Некорректные данные для входа');
+    }
+
     const user = await this.userRepository.findByPhone(phone);
     if (!user) {
       throw new Error('Пользователь не найден');
@@ -60,11 +60,7 @@ class AuthService {
       throw new Error('Для администратора используйте /admin');
     }
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
-    );
+    const token = this._createAccessToken(user);
 
     return {
       token,
@@ -75,6 +71,10 @@ class AuthService {
   /* ---------- Вход админа (email + пароль) ---------- */
 
   async loginAdmin(email, password) {
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      throw new Error('Некорректные данные для входа');
+    }
+
     const user = await this.userRepository.findByEmail(email);
     if (!user) {
       throw new Error('Пользователь не найден');
@@ -93,11 +93,7 @@ class AuthService {
       throw new Error('Неверный пароль');
     }
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      config.jwt.secret,
-      { expiresIn: config.jwt.expiresIn }
-    );
+    const token = this._createAccessToken(user);
 
     return {
       token,
@@ -162,6 +158,18 @@ class AuthService {
     }
 
     return base;
+  }
+
+  _createAccessToken(user) {
+    return jwt.sign(
+      { id: user._id, role: user.role },
+      config.jwt.secret,
+      {
+        expiresIn: config.jwt.expiresIn,
+        issuer: config.jwt.issuer,
+        audience: config.jwt.audience
+      }
+    );
   }
 }
 

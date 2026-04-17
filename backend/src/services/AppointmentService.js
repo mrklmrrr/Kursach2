@@ -61,6 +61,17 @@ class AppointmentService {
     return this.appointmentRepository.updateStatus(id, status);
   }
 
+  async cancelByPatient(appointmentId, patientId) {
+    const appointment = await this.getById(appointmentId);
+    if (!appointment) return null;
+    if (String(appointment.patientId) !== String(patientId)) {
+      const error = new Error('Нельзя отменять чужую запись');
+      error.status = 403;
+      throw error;
+    }
+    return this.updateStatus(appointmentId, 'cancelled');
+  }
+
   async updateConsultationId(id, consultationId) {
     return this.appointmentRepository.updateConsultationId(id, consultationId);
   }
@@ -69,8 +80,30 @@ class AppointmentService {
     return this.appointmentRepository.updateDoctorComment(id, doctorComment);
   }
 
+  async updateDoctorCommentByDoctor(appointmentId, doctorId, doctorComment) {
+    const appointment = await this.getById(appointmentId);
+    if (!appointment) return null;
+    if (String(appointment.doctorId) !== String(doctorId)) {
+      const error = new Error('Нельзя менять комментарий чужой записи');
+      error.status = 403;
+      throw error;
+    }
+    return this.updateDoctorComment(appointmentId, doctorComment);
+  }
+
   async delete(id) {
     return this.appointmentRepository.delete(id);
+  }
+
+  async deleteByDoctor(appointmentId, doctorId) {
+    const appointment = await this.getById(appointmentId);
+    if (!appointment) return null;
+    if (String(appointment.doctorId) !== String(doctorId)) {
+      const error = new Error('Нельзя удалять чужую запись');
+      error.status = 403;
+      throw error;
+    }
+    return this.delete(appointmentId);
   }
 
   async getAvailableSlots(doctorId, date) {

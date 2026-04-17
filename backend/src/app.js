@@ -2,6 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const path = require('path');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
 const config = require('./config');
 const connectDB = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
@@ -60,15 +63,41 @@ async function startApp() {
   const server = http.createServer(app);
 
   // Middleware
+  app.use(helmet());
   app.use(cors({
-    origin: config.frontendUrl,
+    origin(origin, callback) {
+      if (!origin || config.frontendOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Origin is not allowed by CORS'));
+    },
     credentials: true
   }));
+  app.use(mongoSanitize());
+  app.use(rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 600,
+    standardHeaders: true,
+    legacyHeaders: false
+  }));
   app.use(express.json());
+  app.use('/api/auth/login', rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false
+  }));
+  app.use('/api/admin/login', rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false
+  }));
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Health check
   app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+  app.get('/api/readiness', (req, res) => res.json({ status: 'ready' }));
 
   // Dependency Injection
   const userRepository = new UserRepository();

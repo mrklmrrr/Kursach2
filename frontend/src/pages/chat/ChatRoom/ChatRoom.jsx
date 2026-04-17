@@ -126,6 +126,20 @@ export default function ChatRoom() {
     });
   };
 
+  const isOwnMessage = useCallback((msg) => {
+    if (!msg) return false;
+
+    const currentUserId = user?.id != null ? String(user.id) : '';
+    const messageSenderId = msg.senderId != null ? String(msg.senderId) : '';
+
+    if (currentUserId && messageSenderId) {
+      return currentUserId === messageSenderId;
+    }
+
+    if (isDoctor) return msg.sender === 'doctor';
+    return msg.sender === 'user';
+  }, [isDoctor, user?.id]);
+
   const resolveFileUrl = (url) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
@@ -175,12 +189,14 @@ export default function ChatRoom() {
               Напишите первое сообщение врачу
             </div>
           ) : (
-            messages.map((msg) => (
+            messages.map((msg) => {
+              const own = isOwnMessage(msg);
+              return (
               <div
                 key={msg._id || msg.id || `${msg.timestamp}-${msg.message || 'media'}`}
-                className={`message-wrapper ${msg.sender === 'user' ? 'user' : 'doctor'}`}
+                className={`message-wrapper ${own ? 'user' : 'doctor'}`}
               >
-                {msg.sender === 'doctor' && <Avatar name={chatMeta?.doctorName || doctor.name} size="small" />}
+                {!own && <Avatar name={chatCompanion.name} size="small" />}
                 <div>
                   <div className="message-bubble">
                     {msg.fileUrl && msg.messageType === 'image' && (
@@ -194,7 +210,8 @@ export default function ChatRoom() {
                   <div className="message-time">{formatTime(msg.timestamp)}</div>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
           <div ref={messagesEndRef} />
         </div>

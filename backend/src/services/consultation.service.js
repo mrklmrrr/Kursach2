@@ -42,6 +42,19 @@ class ConsultationService {
   async updateStatus(id, status) {
     return this.consultationRepository.updateStatus(id, status);
   }
+
+  async updateStatusByDoctor(id, doctorId, status) {
+    const consultation = await this.getById(id);
+    if (!consultation) {
+      return null;
+    }
+    if (String(consultation.doctorId) !== String(doctorId)) {
+      const error = new Error('Нельзя менять статус чужой консультации');
+      error.status = 403;
+      throw error;
+    }
+    return this.updateStatus(id, status);
+  }
 }
 
 module.exports = ConsultationService;

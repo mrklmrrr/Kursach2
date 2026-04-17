@@ -2,6 +2,8 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const config = require('./index');
 const { User } = require('../models');
+const logger = require('../utils/logger');
+const { hasConsultationAccess } = require('../utils/chatAccess');
 
 let io = null;
 
@@ -9,7 +11,7 @@ function setupSocket(server, consultationRepository) {
   if (io) return io;
 
   io = new Server(server, {
-    cors: { origin: config.frontendUrl, methods: ['GET', 'POST'] }
+    cors: { origin: config.frontendOrigins, methods: ['GET', 'POST'] }
   });
 
   // Аутентификация socket подключений
@@ -18,7 +20,10 @@ function setupSocket(server, consultationRepository) {
     if (!token) return next(new Error('Нет токена'));
 
     try {
-      const decoded = jwt.verify(token, config.jwt.secret);
+      const decoded = jwt.verify(token, config.jwt.secret, {
+        issuer: config.jwt.issuer,
+        audience: config.jwt.audience
+      });
       socket.userId = decoded.id;
       socket.userRole = decoded.role;
       next();
@@ -28,7 +33,7 @@ function setupSocket(server, consultationRepository) {
   });
 
   io.on('connection', (socket) => {
-    console.log(`✅ Новый клиент подключился (userId: ${socket.userId})`);
+    logger.info('Socket client connected');
 
     socket.on('join-chat', async (chatId) => {
       try {
@@ -38,21 +43,19 @@ function setupSocket(server, consultationRepository) {
           return;
         }
 
-        const isDoctor = String(consultation.doctorId) === String(socket.userId);
-        let isPatient = String(consultation.patientId) === String(socket.userId);
-        if (!isPatient) {
-          const currentUser = await User.findById(socket.userId).select('legacyId');
-          if (currentUser && currentUser.legacyId !== null && currentUser.legacyId !== undefined) {
-            isPatient = String(consultation.patientId) === String(currentUser.legacyId);
-          }
-        }
-        if (!isPatient && !isDoctor && socket.userRole !== 'admin') {
+        const canAccess = await hasConsultationAccess(
+          consultation,
+          socket.userId,
+          socket.userRole,
+          async (id) => User.findById(id).select('legacyId')
+        );
+        if (!canAccess) {
           socket.emit('chat-error', { message: 'Нет доступа к этому чату' });
           return;
         }
 
         socket.join(`chat-${chatId}`);
-        console.log(`Клиент присоединился к комнате chat-${chatId}`);
+        logger.debug('Client joined chat room', { chatId });
         socket.emit('chat-history', consultation.messages || []);
       } catch {
         socket.emit('chat-error', { message: 'Ошибка подключения к чату' });
@@ -71,15 +74,13 @@ function setupSocket(server, consultationRepository) {
           return;
         }
 
-        const isDoctor = String(consultation.doctorId) === String(socket.userId);
-        let isPatient = String(consultation.patientId) === String(socket.userId);
-        if (!isPatient) {
-          const currentUser = await User.findById(socket.userId).select('legacyId');
-          if (currentUser && currentUser.legacyId !== null && currentUser.legacyId !== undefined) {
-            isPatient = String(consultation.patientId) === String(currentUser.legacyId);
-          }
-        }
-        if (!isPatient && !isDoctor && socket.userRole !== 'admin') {
+        const canAccess = await hasConsultationAccess(
+          consultation,
+          socket.userId,
+          socket.userRole,
+          async (id) => User.findById(id).select('legacyId')
+        );
+        if (!canAccess) {
           socket.emit('chat-error', { message: 'Нет доступа к отправке' });
           return;
         }
@@ -98,7 +99,7 @@ function setupSocket(server, consultationRepository) {
       }
     });
 
-    socket.on('disconnect', () => console.log(`❌ Клиент отключился (userId: ${socket.userId})`));
+    socket.on('disconnect', () => logger.info('Socket client disconnected'));
   });
 
   return io;

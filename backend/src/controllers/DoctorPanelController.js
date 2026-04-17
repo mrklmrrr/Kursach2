@@ -1,4 +1,5 @@
-const { roles, consultationStatus } = require('../constants');
+const { consultationStatus } = require('../constants');
+const ApiError = require('../utils/ApiError');
 
 class DoctorPanelController {
   constructor(doctorService, consultationService) {
@@ -89,50 +90,41 @@ class DoctorPanelController {
 
   /** Принять заявку */
   async acceptConsultation(req, res) {
-    try {
-      const consultation = await this.consultationService.updateStatus(
-        req.params.id,
-        consultationStatus.ACTIVE
-      );
-      if (!consultation) {
-        return res.status(404).json({ message: 'Консультация не найдена' });
-      }
-      res.json({ message: 'Заявка принята', consultation });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+    const consultation = await this.consultationService.updateStatusByDoctor(
+      req.params.id,
+      req.userId,
+      consultationStatus.ACTIVE
+    );
+    if (!consultation) {
+      throw ApiError.notFound('Консультация не найдена');
     }
+    res.json({ message: 'Заявка принята', consultation });
   }
 
   /** Отклонить заявку */
   async rejectConsultation(req, res) {
-    try {
-      const consultation = await this.consultationService.updateStatus(
-        req.params.id,
-        consultationStatus.CANCELLED
-      );
-      if (!consultation) {
-        return res.status(404).json({ message: 'Консультация не найдена' });
-      }
-      res.json({ message: 'Заявка отклонена', consultation });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+    const consultation = await this.consultationService.updateStatusByDoctor(
+      req.params.id,
+      req.userId,
+      consultationStatus.CANCELLED
+    );
+    if (!consultation) {
+      throw ApiError.notFound('Консультация не найдена');
     }
+    res.json({ message: 'Заявка отклонена', consultation });
   }
 
   /** Завершить консультацию */
   async completeConsultation(req, res) {
-    try {
-      const consultation = await this.consultationService.updateStatus(
-        req.params.id,
-        consultationStatus.COMPLETED
-      );
-      if (!consultation) {
-        return res.status(404).json({ message: 'Консультация не найдена' });
-      }
-      res.json({ message: 'Консультация завершена', consultation });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+    const consultation = await this.consultationService.updateStatusByDoctor(
+      req.params.id,
+      req.userId,
+      consultationStatus.COMPLETED
+    );
+    if (!consultation) {
+      throw ApiError.notFound('Консультация не найдена');
     }
+    res.json({ message: 'Консультация завершена', consultation });
   }
 
   /** Список пациентов */

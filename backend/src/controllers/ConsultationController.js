@@ -1,3 +1,5 @@
+const { hasConsultationAccess } = require('../utils/chatAccess');
+
 const ConsultationController = class {
   constructor(consultationService, userRepository, doctorRepository) {
     this.consultationService = consultationService;
@@ -66,9 +68,7 @@ const ConsultationController = class {
 
   async getChats(req, res) {
     try {
-      console.log('getChats called with userId:', req.userId, 'userRole:', req.userRole);
       const consultations = await this.consultationService.getChatsForUser(req.userId, req.userRole);
-      console.log('getChats found consultations:', consultations.length);
       const chats = consultations.map((consultation) => {
         const messages = consultation.messages || [];
         const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
@@ -96,9 +96,7 @@ const ConsultationController = class {
 
   async getMessages(req, res) {
     try {
-      console.log('getMessages called with id:', req.params.id, 'userId:', req.userId, 'userRole:', req.userRole);
       const consultation = await this.consultationService.getById(req.params.id);
-      console.log('Consultation found:', !!consultation);
       if (!consultation) {
         return res.status(404).json({ message: 'Чат не найден' });
       }
@@ -181,23 +179,12 @@ const ConsultationController = class {
   }
 
   async _hasChatAccess(consultation, userId, userRole) {
-    if (userRole === 'admin') return true;
-    const userIdAsString = String(userId);
-    console.log('_hasChatAccess - userId:', userId, 'userIdAsString:', userIdAsString);
-    console.log('_hasChatAccess - consultation.doctorId:', consultation.doctorId, 'patientId:', consultation.patientId);
-    const isDoctor = String(consultation.doctorId) === userIdAsString;
-    console.log('_hasChatAccess - isDoctor:', isDoctor);
-    let isPatient = String(consultation.patientId) === userIdAsString;
-    console.log('_hasChatAccess - isPatient (direct):', isPatient);
-    if (!isPatient && this.userRepository) {
-      const currentUser = await this.userRepository.findById(userId);
-      console.log('_hasChatAccess - currentUser:', currentUser?._id, 'legacyId:', currentUser?.legacyId);
-      if (currentUser && currentUser.legacyId !== null && currentUser.legacyId !== undefined) {
-        isPatient = String(consultation.patientId) === String(currentUser.legacyId);
-        console.log('_hasChatAccess - isPatient (via legacyId):', isPatient);
-      }
-    }
-    return isDoctor || isPatient;
+    return hasConsultationAccess(
+      consultation,
+      userId,
+      userRole,
+      this.userRepository ? (id) => this.userRepository.findById(id) : null
+    );
   }
 
   _resolveSender(userRole) {

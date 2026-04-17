@@ -9,8 +9,14 @@ function errorHandler(err, req, res, next) {
 
   const status = err.status || 500;
   const message = status === 500 ? 'Внутренняя ошибка сервера' : err.message;
-
-  res.status(status).json({ message });
+  const payload = { message };
+  if (err.details && status < 500) {
+    payload.details = err.details;
+  }
+  if (config.nodeEnv === 'development' && status >= 500) {
+    payload.debug = { stack: err.stack };
+  }
+  res.status(status).json(payload);
 }
 
 module.exports = errorHandler;

@@ -1,6 +1,21 @@
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+let fileTypeFromFileCompat = null;
+
+async function detectFileType(filePath) {
+  if (!fileTypeFromFileCompat) {
+    const fileTypeModule = await import('file-type');
+    fileTypeFromFileCompat = fileTypeModule.fileTypeFromFile
+      || (fileTypeModule.default && fileTypeModule.default.fileTypeFromFile);
+  }
+
+  if (typeof fileTypeFromFileCompat !== 'function') {
+    throw new Error('file-type detector is unavailable');
+  }
+
+  return fileTypeFromFileCompat(filePath);
+}
 
 const chatUploadDir = path.join(process.cwd(), 'uploads', 'chat');
 
@@ -33,4 +48,25 @@ const chatUpload = multer({
   }
 });
 
-module.exports = { chatUpload };
+async function validateUploadedFile(req, res, next) {
+  if (!req.file || !req.file.path) {
+    return next();
+  }
+
+  try {
+    const detectedType = await detectFileType(req.file.path);
+    const validMime = detectedType && (detectedType.mime.startsWith('image/') || detectedType.mime.startsWith('video/'));
+    if (!validMime) {
+      fs.unlinkSync(req.file.path);
+      return next(new Error('Файл не прошел проверку сигнатуры'));
+    }
+    return next();
+  } catch (error) {
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    return next(new Error('Ошибка проверки загруженного файла'));
+  }
+}
+
+module.exports = { chatUpload, validateUploadedFile };

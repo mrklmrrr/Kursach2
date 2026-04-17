@@ -1,8 +1,9 @@
 const { roles } = require('../constants');
+const ApiError = require('../utils/ApiError');
 
 const requireRole = (...allowedRoles) => (req, res, next) => {
   if (!req.userRole || !allowedRoles.includes(req.userRole)) {
-    return res.status(403).json({ message: 'Доступ запрещён' });
+    return next(ApiError.forbidden('Недостаточно прав для выполнения операции'));
   }
   next();
 };

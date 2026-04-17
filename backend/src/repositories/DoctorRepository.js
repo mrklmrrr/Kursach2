@@ -40,11 +40,11 @@ class DoctorRepository {
   }
 
   async toggleOnline(id, isOnline) {
-    return this.updateById(id, { isOnline });
+    return this.updateDoctor(id, { isOnline });
   }
 
   async updatePrice(id, price) {
-    return this.updateById(id, { price });
+    return this.updateDoctor(id, { price });
   }
 
   _format(doc) {
