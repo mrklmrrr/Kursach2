@@ -19,9 +19,11 @@ class ConsultationRepository {
   }
 
   async findByPatientId(patientId) {
+    console.log('findByPatientId called with patientId:', patientId);
     // Ищем консультации пациента по legacyId (number) и при необходимости по строковому значению.
     // Это нужно для совместимости со старыми и новыми данными.
     const resolved = resolveId(patientId);
+    console.log('resolveId result:', resolved);
     if (!resolved) return [];
 
     const patientIds = new Set();
@@ -93,6 +95,7 @@ class ConsultationRepository {
   }
 
   async findChatsForUser(userId, userRole) {
+    console.log('findChatsForUser called with userId:', userId, 'userRole:', userRole);
     if (userRole === 'doctor') {
       return this.findByDoctorId(userId);
     }

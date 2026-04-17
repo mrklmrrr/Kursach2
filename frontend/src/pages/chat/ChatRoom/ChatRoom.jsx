@@ -33,7 +33,12 @@ export default function ChatRoom() {
         setMessages(Array.isArray(data.messages) ? data.messages : []);
       } catch (err) {
         console.error('Не удалось загрузить сообщения', err);
-        setMessages([]);
+        if (err.response?.status === 404) {
+          setMessages([]);
+          alert('Чат не найден или у вас нет доступа к этому чату');
+        } else {
+          setMessages([]);
+        }
       } finally {
         setLoading(false);
       }

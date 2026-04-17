@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doctorApi } from '../../../services/doctorApi';
 import { appointmentApi } from '../../../services/appointmentApi';
+import { consultationApi } from '../../../services/consultationApi';
 import { AppHeader, BottomNav } from '../../../components/layout';
 import { Avatar } from '../../../components/ui';
 import { Button } from '../../../components/ui';
@@ -22,6 +23,7 @@ export default function DoctorProfile() {
   const [duration, setDuration] = useState(30);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [savingBooking, setSavingBooking] = useState(false);
+  const [startingChat, setStartingChat] = useState(false);
   const [bookingNotice, setBookingNotice] = useState({ type: '', text: '' });
 
   useEffect(() => {
@@ -116,8 +118,28 @@ export default function DoctorProfile() {
     }
   };
 
-  const handleStartChat = () => {
-    navigate(ROUTES.CHAT_ROOM(doctor.id), { state: { doctor } });
+  const handleStartChat = async () => {
+    setStartingChat(true);
+    try {
+      const { data } = await consultationApi.create({
+        doctorId: doctor.id,
+        type: 'chat'
+      });
+
+      const consultationId = data?.consultationId || data?._id;
+      if (!consultationId) {
+        throw new Error('Не удалось получить id чата');
+      }
+
+      navigate(ROUTES.CHAT_ROOM(consultationId), { state: { doctor } });
+    } catch (err) {
+      setBookingNotice({
+        type: 'error',
+        text: err.response?.data?.message || 'Не удалось создать чат с врачом'
+      });
+    } finally {
+      setStartingChat(false);
+    }
   };
 
   return (
@@ -160,8 +182,8 @@ export default function DoctorProfile() {
           <Button variant="primary" size="large" className="huge-btn" onClick={handleBookAppointment}>
             Назначить запись — {doctor.price} BYN
           </Button>
-          <Button variant="outline" size="medium" onClick={handleStartChat}>
-            Начать чат с врачом
+          <Button variant="outline" size="medium" onClick={handleStartChat} disabled={startingChat}>
+            {startingChat ? 'Создание чата...' : 'Начать чат с врачом'}
           </Button>
         </div>
 
