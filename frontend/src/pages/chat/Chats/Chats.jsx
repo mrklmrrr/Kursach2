@@ -3,6 +3,7 @@ import { AppHeader, BottomNav } from '../../../components/layout';
 import { ChatItem } from '../../../components/features';
 import { EmptyState } from '../../../components/ui';
 import { chatApi } from '../../../services/chatApi';
+import { useAuth } from '../../../hooks/useAuth';
 import './Chats.css';
 
 function formatChatTime(value) {
@@ -13,6 +14,7 @@ function formatChatTime(value) {
 }
 
 export default function Chats() {
+  const { user } = useAuth();
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,15 +22,33 @@ export default function Chats() {
     const loadChats = async () => {
       try {
         const { data } = await chatApi.getChats();
+        const isDoctor = user?.role === 'doctor';
         const normalized = data.map((chat) => ({
           id: chat._id,
           doctorId: chat.doctorId,
           doctorName: chat.doctorName || 'Врач',
+          patientName: chat.patientName || 'Пациент',
+          displayName: isDoctor ? (chat.patientName || 'Пациент') : (chat.doctorName || 'Врач'),
           specialty: chat.specialty || 'Специалист',
-          lastMessage: chat.lastMessage?.message || (chat.lastMessage?.fileUrl ? 'Вложение' : 'Нет сообщений'),
+          lastMessage: (() => {
+            const last = chat.lastMessage;
+            if (!last) return 'Нет сообщений';
+
+            const sender = String(last.sender || '').toLowerCase();
+            const senderLabel = sender === 'doctor'
+              ? (isDoctor ? 'Вы' : 'Врач')
+              : sender === 'user'
+                ? (isDoctor ? 'Пациент' : 'Вы')
+                : sender === 'admin'
+                  ? 'Администратор'
+                  : 'Собеседник';
+
+            const content = last.message || (last.fileUrl ? 'Вложение' : 'Сообщение');
+            return `${senderLabel}: ${content}`;
+          })(),
           time: formatChatTime(chat.lastMessage?.timestamp || chat.updatedAt),
           unread: 0,
-          avatar: '👨‍⚕️',
+          avatar: isDoctor ? '🙂' : '👨‍⚕️',
           isOnline: false
         }));
         setChats(normalized);
@@ -41,13 +61,15 @@ export default function Chats() {
     };
 
     loadChats();
-  }, []);
+  }, [user?.role]);
 
   return (
     <div className="chats-page">
       <AppHeader />
       <div className="chats-content">
-        <div className="section-title">Мои чаты с врачами</div>
+        <div className="section-title">
+          {user?.role === 'doctor' ? 'Мои чаты с пациентами' : 'Мои чаты с врачами'}
+        </div>
         {loading ? (
           <div className="empty-state">Загрузка чатов...</div>
         ) : chats.length > 0 ? (

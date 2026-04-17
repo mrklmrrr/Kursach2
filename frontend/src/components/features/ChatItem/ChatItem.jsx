@@ -20,11 +20,11 @@ export default function ChatItem({ chat }) {
   return (
     <div className="chat-item" onClick={handleClick}>
       <div className="chat-avatar-container">
-        <Avatar name={chat.doctorName} emoji={chat.avatar} size="medium" showOnline={chat.isOnline} />
+        <Avatar name={chat.displayName || chat.doctorName} emoji={chat.avatar} size="medium" showOnline={chat.isOnline} />
       </div>
       <div className="chat-info">
         <div className="chat-header-row">
-          <div className="chat-doctor-name">{chat.doctorName}</div>
+          <div className="chat-doctor-name">{chat.displayName || chat.doctorName}</div>
           <div className="chat-time">{chat.time}</div>
         </div>
         <div className="chat-last-message">{chat.lastMessage}</div>

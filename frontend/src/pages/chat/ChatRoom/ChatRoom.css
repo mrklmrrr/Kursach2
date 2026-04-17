@@ -26,6 +26,13 @@
   gap: 12px;
   flex: 1;
   min-width: 0;
+  text-align: left;
+}
+
+button.chat-room-header-info {
+  border: none;
+  background: transparent;
+  cursor: pointer;
 }
 
 .chat-room-doctor-name {
@@ -211,6 +218,33 @@
   margin-bottom: 8px;
 }
 
+.chat-room-profile-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.chat-room-profile-modal {
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.25);
+  padding: 20px;
+}
+
+.chat-room-profile-modal h3 {
+  margin: 0 0 12px;
+}
+
+.chat-room-profile-modal p {
+  margin: 0 0 8px;
+}
+
 .message-wrapper.user .message-time {
   text-align: right;
 }
@@ -258,5 +292,10 @@ body.dark .chat-room-attach-btn {
 body.dark .message-wrapper.doctor .message-bubble {
   background: #374151;
   border-color: #4b5563;
+  color: #f9fafb;
+}
+
+body.dark .chat-room-profile-modal {
+  background: #1f2937;
   color: #f9fafb;
 }

@@ -5,9 +5,15 @@ const { findById: dbFindById, resolveId } = require('../utils/dbHelpers');
 
 class ConsultationRepository {
   async create(data) {
+    const normalizedType = String(data?.type || 'video').toLowerCase();
+    const initialStatus = normalizedType === 'chat'
+      ? consultationStatus.ACTIVE
+      : consultationStatus.PENDING;
+
     const consultation = new Consultation({
       ...data,
-      status: consultationStatus.PENDING
+      type: normalizedType,
+      status: initialStatus
     });
     const saved = await consultation.save();
     return saved.toObject();

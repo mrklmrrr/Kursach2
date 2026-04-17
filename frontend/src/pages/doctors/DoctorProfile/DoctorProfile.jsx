@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doctorApi } from '../../../services/doctorApi';
 import { appointmentApi } from '../../../services/appointmentApi';
 import { consultationApi } from '../../../services/consultationApi';
+import { chatApi } from '../../../services/chatApi';
 import { AppHeader, BottomNav } from '../../../components/layout';
 import { Avatar } from '../../../components/ui';
 import { Button } from '../../../components/ui';
@@ -121,8 +122,24 @@ export default function DoctorProfile() {
   const handleStartChat = async () => {
     setStartingChat(true);
     try {
+      const doctorId = doctor.id || doctor._id;
+      if (!doctorId) {
+        throw new Error('Не удалось определить id врача');
+      }
+
+      const { data: existingChats = [] } = await chatApi.getChats();
+      const normalizedDoctorId = String(doctorId);
+      const existingChat = existingChats.find(
+        (chat) => String(chat.doctorId) === normalizedDoctorId && String(chat.type || '').toLowerCase() === 'chat'
+      );
+
+      if (existingChat?._id) {
+        navigate(ROUTES.CHAT_ROOM(existingChat._id), { state: { doctor } });
+        return;
+      }
+
       const { data } = await consultationApi.create({
-        doctorId: doctor.id,
+        doctorId,
         type: 'chat'
       });
 

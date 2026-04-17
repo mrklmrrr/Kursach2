@@ -2,16 +2,20 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Avatar } from '../../../components/ui';
 import { chatApi } from '../../../services/chatApi';
+import { useAuth } from '../../../hooks/useAuth';
 import './ChatRoom.css';
 
 export default function ChatRoom() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState('');
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [chatMeta, setChatMeta] = useState(null);
+  const [showPatientProfile, setShowPatientProfile] = useState(false);
   const messagesEndRef = useRef(null);
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -22,6 +26,19 @@ export default function ChatRoom() {
     specialty: 'Специалист',
   };
 
+  const isDoctor = user?.role === 'doctor';
+  const chatCompanion = isDoctor
+    ? {
+        id: chatMeta?.patientId,
+        name: chatMeta?.patientName || 'Пациент',
+        specialty: 'Пациент'
+      }
+    : {
+        id: doctor.id || chatMeta?.doctorId,
+        name: doctor.name || chatMeta?.doctorName || 'Врач',
+        specialty: doctor.specialty || chatMeta?.specialty || 'Специалист'
+      };
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -29,8 +46,13 @@ export default function ChatRoom() {
   useEffect(() => {
     const loadMessages = async () => {
       try {
-        const { data } = await chatApi.getMessages(id);
-        setMessages(Array.isArray(data.messages) ? data.messages : []);
+        const [{ data: messagesData }, { data: chatsData = [] }] = await Promise.all([
+          chatApi.getMessages(id),
+          chatApi.getChats()
+        ]);
+        const currentChatMeta = chatsData.find((chat) => String(chat._id) === String(id)) || null;
+        setChatMeta(currentChatMeta);
+        setMessages(Array.isArray(messagesData.messages) ? messagesData.messages : []);
       } catch (err) {
         console.error('Не удалось загрузить сообщения', err);
         if (err.response?.status === 404) {
@@ -110,19 +132,37 @@ export default function ChatRoom() {
     return `${chatApi.getBackendOrigin()}${url}`;
   };
 
+  const handleHeaderProfileClick = () => {
+    if (isDoctor) {
+      setShowPatientProfile(true);
+      return;
+    }
+    const doctorId = chatCompanion.id;
+    if (doctorId) {
+      navigate(`/doctor/${doctorId}`);
+    }
+  };
+
   return (
     <div className="chat-room-page">
       <header className="chat-room-header">
         <button className="back-btn" onClick={() => navigate('/chats')}>
           <span className="material-icons">arrow_back</span>
         </button>
-        <div className="chat-room-header-info">
-          <Avatar name={doctor.name} size="small" />
+        <button
+          type="button"
+          className="chat-room-header-info"
+          onClick={handleHeaderProfileClick}
+        >
+          <Avatar name={chatCompanion.name} size="small" />
           <div>
-            <div className="chat-room-doctor-name">{doctor.name}</div>
-            <div className="chat-room-doctor-spec">{doctor.specialty}</div>
+            <div className="chat-room-doctor-name">{chatCompanion.name}</div>
+            <div className="chat-room-doctor-spec">
+              {chatCompanion.specialty}
+              {isDoctor ? '' : ' • Открыть профиль'}
+            </div>
           </div>
-        </div>
+        </button>
       </header>
 
       <div className="chat-room-container">
@@ -140,7 +180,7 @@ export default function ChatRoom() {
                 key={msg._id || msg.id || `${msg.timestamp}-${msg.message || 'media'}`}
                 className={`message-wrapper ${msg.sender === 'user' ? 'user' : 'doctor'}`}
               >
-                {msg.sender === 'doctor' && <Avatar name={doctor.name} size="small" />}
+                {msg.sender === 'doctor' && <Avatar name={chatMeta?.doctorName || doctor.name} size="small" />}
                 <div>
                   <div className="message-bubble">
                     {msg.fileUrl && msg.messageType === 'image' && (
@@ -182,6 +222,19 @@ export default function ChatRoom() {
           </button>
         </div>
       </div>
+
+      {showPatientProfile && isDoctor && (
+        <div className="chat-room-profile-modal-overlay" role="presentation" onClick={() => setShowPatientProfile(false)}>
+          <div className="chat-room-profile-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <h3>Профиль пациента</h3>
+            <p><strong>Имя:</strong> {chatMeta?.patientName || 'Пациент'}</p>
+            <p><strong>ID:</strong> {chatMeta?.patientId || '—'}</p>
+            <button type="button" className="btn btn-primary" onClick={() => setShowPatientProfile(false)}>
+              Закрыть
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

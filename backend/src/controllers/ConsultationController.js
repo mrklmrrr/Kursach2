@@ -74,6 +74,7 @@ const ConsultationController = class {
         const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
         return {
           _id: consultation._id,
+          type: consultation.type,
           doctorId: consultation.doctorId,
           doctorName: consultation.doctorName,
           patientId: consultation.patientId,
