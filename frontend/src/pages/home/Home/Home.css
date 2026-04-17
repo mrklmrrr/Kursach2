@@ -216,6 +216,86 @@
   color: #4f46e5;
 }
 
+.appointment-details-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(17, 24, 39, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.appointment-details-modal {
+  width: 100%;
+  max-width: 440px;
+  border-radius: 16px;
+  background: #ffffff;
+  padding: 20px 18px 18px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
+  position: relative;
+}
+
+.appointment-details-modal h3 {
+  margin: 0 0 14px;
+  color: #111827;
+  font-size: 1.1rem;
+}
+
+.appointment-details-close {
+  border: none;
+  background: transparent;
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  color: #6b7280;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.appointment-details-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.appointment-details-grid div {
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.appointment-doctor-link {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: #4f46e5;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.appointment-doctor-link:hover {
+  color: #4338ca;
+}
+
+.appointment-details-grid span,
+.appointment-details-comment span {
+  color: #6b7280;
+  margin-right: 6px;
+  font-weight: 600;
+}
+
+.appointment-details-comment {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
 body.dark .greeting,
 body.dark .section-title {
   color: #f9fafb;
@@ -257,4 +337,32 @@ body.dark .upcoming-doctor {
 
 body.dark .upcoming-spec {
   color: #9ca3af;
+}
+
+body.dark .appointment-details-modal {
+  background: #111827;
+}
+
+body.dark .appointment-details-modal h3,
+body.dark .appointment-details-grid div,
+body.dark .appointment-details-comment {
+  color: #f9fafb;
+}
+
+body.dark .appointment-details-grid span,
+body.dark .appointment-details-comment span,
+body.dark .appointment-details-close {
+  color: #9ca3af;
+}
+
+body.dark .appointment-doctor-link {
+  color: #a5b4fc;
+}
+
+body.dark .appointment-doctor-link:hover {
+  color: #c7d2fe;
+}
+
+body.dark .appointment-details-comment {
+  border-top-color: #374151;
 }

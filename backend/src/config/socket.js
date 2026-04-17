@@ -1,6 +1,7 @@
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const config = require('./index');
+const { User } = require('../models');
 
 let io = null;
 
@@ -30,36 +31,71 @@ function setupSocket(server, consultationRepository) {
     console.log(`✅ Новый клиент подключился (userId: ${socket.userId})`);
 
     socket.on('join-chat', async (chatId) => {
-      // Проверка: пользователь имеет доступ к консультации
-      const consultation = await consultationRepository.findById(chatId);
-      if (!consultation) {
-        socket.emit('chat-error', { message: 'Консультация не найдена' });
-        return;
-      }
+      try {
+        const consultation = await consultationRepository.findById(chatId);
+        if (!consultation) {
+          socket.emit('chat-error', { message: 'Консультация не найдена' });
+          return;
+        }
 
-      // Пациент или врач этой консультации
-      const isPatient = String(consultation.patientId) === String(socket.userId);
-      const isDoctor = String(consultation.doctorId) === String(socket.userId);
+        const isDoctor = String(consultation.doctorId) === String(socket.userId);
+        let isPatient = String(consultation.patientId) === String(socket.userId);
+        if (!isPatient) {
+          const currentUser = await User.findById(socket.userId).select('legacyId');
+          if (currentUser && currentUser.legacyId !== null && currentUser.legacyId !== undefined) {
+            isPatient = String(consultation.patientId) === String(currentUser.legacyId);
+          }
+        }
+        if (!isPatient && !isDoctor && socket.userRole !== 'admin') {
+          socket.emit('chat-error', { message: 'Нет доступа к этому чату' });
+          return;
+        }
 
-      if (!isPatient && !isDoctor && socket.userRole !== 'admin') {
-        socket.emit('chat-error', { message: 'Нет доступа к этому чату' });
-        return;
-      }
-
-      socket.join(`chat-${chatId}`);
-      console.log(`Клиент присоединился к комнате chat-${chatId}`);
-
-      if (consultation.messages) {
-        socket.emit('chat-history', consultation.messages);
-      } else {
-        socket.emit('chat-history', []);
+        socket.join(`chat-${chatId}`);
+        console.log(`Клиент присоединился к комнате chat-${chatId}`);
+        socket.emit('chat-history', consultation.messages || []);
+      } catch {
+        socket.emit('chat-error', { message: 'Ошибка подключения к чату' });
       }
     });
 
     socket.on('send-message', async (data) => {
-      const { chatId, message, sender, timestamp } = data;
-      await consultationRepository.addMessage(chatId, { message, sender, timestamp });
-      io.to(`chat-${chatId}`).emit('new-message', { message, sender, timestamp, chatId });
+      try {
+        const { chatId, message } = data || {};
+        const text = String(message || '').trim();
+        if (!chatId || !text) return;
+
+        const consultation = await consultationRepository.findById(chatId);
+        if (!consultation) {
+          socket.emit('chat-error', { message: 'Чат не найден' });
+          return;
+        }
+
+        const isDoctor = String(consultation.doctorId) === String(socket.userId);
+        let isPatient = String(consultation.patientId) === String(socket.userId);
+        if (!isPatient) {
+          const currentUser = await User.findById(socket.userId).select('legacyId');
+          if (currentUser && currentUser.legacyId !== null && currentUser.legacyId !== undefined) {
+            isPatient = String(consultation.patientId) === String(currentUser.legacyId);
+          }
+        }
+        if (!isPatient && !isDoctor && socket.userRole !== 'admin') {
+          socket.emit('chat-error', { message: 'Нет доступа к отправке' });
+          return;
+        }
+
+        const savedMessage = await consultationRepository.addMessage(chatId, {
+          messageType: 'text',
+          message: text,
+          sender: socket.userRole === 'doctor' ? 'doctor' : 'user',
+          senderId: String(socket.userId),
+          timestamp: new Date().toISOString()
+        });
+
+        io.to(`chat-${chatId}`).emit('new-message', savedMessage);
+      } catch {
+        socket.emit('chat-error', { message: 'Ошибка отправки сообщения' });
+      }
     });
 
     socket.on('disconnect', () => console.log(`❌ Клиент отключился (userId: ${socket.userId})`));

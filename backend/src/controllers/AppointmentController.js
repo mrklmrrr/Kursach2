@@ -124,6 +124,20 @@ class AppointmentController {
     }
   }
 
+  /** Врач: обновить комментарий к записи */
+  async updateDoctorComment(req, res) {
+    try {
+      const { comment } = req.body;
+      const updated = await this.appointmentService.updateDoctorComment(req.params.id, comment || '');
+      if (!updated) {
+        return res.status(404).json({ message: 'Запись не найдена' });
+      }
+      res.json(updated);
+    } catch (err) {
+      res.status(400).json({ message: err.message });
+    }
+  }
+
   /** Обновить рабочее время врача */
   async updateWorkingHours(req, res) {
     try {

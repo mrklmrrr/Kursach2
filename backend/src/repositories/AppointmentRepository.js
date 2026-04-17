@@ -45,6 +45,15 @@ class AppointmentRepository {
     return appointment ? appointment.toObject() : null;
   }
 
+  async updateDoctorComment(id, doctorComment) {
+    const appointment = await Appointment.findByIdAndUpdate(
+      id,
+      { doctorComment },
+      { new: true, runValidators: true }
+    );
+    return appointment ? appointment.toObject() : null;
+  }
+
   async delete(id) {
     const result = await Appointment.findByIdAndDelete(id);
     return result ? result.toObject() : null;

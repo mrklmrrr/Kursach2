@@ -42,6 +42,7 @@ export default function DoctorPanel() {
   const [workingHours, setWorkingHours] = useState({ start: '09:00', end: '18:00' });
   const [workingDays, setWorkingDays] = useState(['mon', 'tue', 'wed', 'thu', 'fri']);
   const [loading, setLoading] = useState(true);
+  const [commentModal, setCommentModal] = useState({ open: false, appointment: null, text: '' });
 
   // Форма назначения записи
   const [appointmentForm, setAppointmentForm] = useState({
@@ -213,6 +214,31 @@ export default function DoctorPanel() {
     }
   };
 
+  const handleOpenCommentModal = (appointment) => {
+    setCommentModal({
+      open: true,
+      appointment,
+      text: appointment.doctorComment || ''
+    });
+  };
+
+  const handleSaveComment = async () => {
+    if (!commentModal.appointment?._id) {
+      setCommentModal({ open: false, appointment: null, text: '' });
+      return;
+    }
+    try {
+      const { data } = await appointmentApi.updateDoctorComment(
+        commentModal.appointment._id,
+        commentModal.text
+      );
+      setAppointments(prev => prev.map(a => (a._id === data._id ? data : a)));
+      setCommentModal({ open: false, appointment: null, text: '' });
+    } catch (err) {
+      alert(err.response?.data?.message || 'Не удалось сохранить комментарий');
+    }
+  };
+
   if (loading) return <PageLayout><div className="loading-spinner">Загрузка...</div></PageLayout>;
 
   return (
@@ -291,7 +317,7 @@ export default function DoctorPanel() {
                         {item.patientName}
                       </button>
                     </h3>
-                    <p className="consult-type">{item.type === 'online' ? '🌐 Онлайн' : '🏥 Офлайн'} • {CONSULTATION_TYPE_LABELS[item.consultationType] || '🌐 Онлайн'}</p>
+                    <p className="consult-type">{CONSULTATION_TYPE_LABELS[item.consultationType] || '🌐 Онлайн'}</p>
                     <p className="consult-date">{item.date} в {item.time}</p>
                     {index === 0 && <span className="status-badge active">Ближайшая консультация</span>}
                   </div>
@@ -328,13 +354,7 @@ export default function DoctorPanel() {
                   <label>Время</label>
                   <input type="time" name="time" value={appointmentForm.time} onChange={handleAppointmentChange} required />
                 </div>
-                <div className="form-group">
-                  <label>Тип приема</label>
-                  <select name="type" value={appointmentForm.type} onChange={handleAppointmentChange}>
-                    <option value="online">Онлайн</option>
-                    <option value="offline">Офлайн</option>
-                  </select>
-                </div>
+                {/* Тип приема убран, оставляем только тип консультации */}
                 <div className="form-group">
                   <label>Тип консультации</label>
                   <select name="consultationType" value={appointmentForm.consultationType} onChange={handleAppointmentChange}>
@@ -389,11 +409,15 @@ export default function DoctorPanel() {
               ) : (
                 <div className="appointments-list">
                   {appointments.map(a => (
-                    <div key={a._id} className="appointment-card">
+                    <div
+                      key={a._id}
+                      className="appointment-card"
+                      onDoubleClick={() => handleOpenCommentModal(a)}
+                    >
                       <div className="appointment-info">
                         <h4>{a.patientName}</h4>
                         <p className="appointment-date">{a.date} в {a.time}</p>
-                        <p className="appointment-type">{a.type === 'online' ? '🌐 Онлайн' : '🏥 Офлайн'} • {CONSULTATION_TYPE_LABELS[a.consultationType] || '🌐 Онлайн'} • {a.duration} мин</p>
+                        <p className="appointment-type">{CONSULTATION_TYPE_LABELS[a.consultationType] || '🌐 Онлайн'} • {a.duration} мин</p>
                         <span className={`status-badge ${a.status}`}>{APPOINTMENT_STATUS_LABELS[a.status]}</span>
                       </div>
                       {(a.status === 'scheduled' || a.status === 'confirmed') && (
@@ -404,6 +428,32 @@ export default function DoctorPanel() {
                 </div>
               )}
             </section>
+          </div>
+        )}
+
+        {commentModal.open && (
+          <div className="patient-modal-overlay" role="presentation" onClick={() => setCommentModal({ open: false, appointment: null, text: '' })}>
+            <div className="patient-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+              <h3>Комментарий к записи</h3>
+              <p>
+                {commentModal.appointment?.date} в {commentModal.appointment?.time}{' '}
+                • {CONSULTATION_TYPE_LABELS[commentModal.appointment?.consultationType] || 'Консультация'}
+              </p>
+              <textarea
+                rows={4}
+                value={commentModal.text}
+                onChange={(e) => setCommentModal(prev => ({ ...prev, text: e.target.value }))}
+                placeholder="Введите комментарий врача..."
+              />
+              <div className="patient-modal-actions">
+                <button type="button" className="btn btn-outline" onClick={() => setCommentModal({ open: false, appointment: null, text: '' })}>
+                  Отмена
+                </button>
+                <button type="button" className="btn btn-primary" onClick={handleSaveComment}>
+                  Сохранить
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

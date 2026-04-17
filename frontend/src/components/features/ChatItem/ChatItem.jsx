@@ -5,11 +5,12 @@ export default function ChatItem({ chat }) {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/chat/doctor/${chat.doctorId}`, {
+    navigate(`/chat/${chat.id}`, {
       state: {
         doctor: {
           id: chat.doctorId,
           name: chat.doctorName,
+          specialty: chat.specialty,
           avatar: chat.avatar,
         },
       },

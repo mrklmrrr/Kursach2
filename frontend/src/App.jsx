@@ -1,8 +1,8 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import PrivateRoute from './components/common/PrivateRoute/PrivateRoute';
 
 // Auth pages
-import Splash from './pages/auth/Splash/Splash';
+// import Splash from './pages/auth/Splash/Splash';
 import Register from './pages/auth/Register/Register';
 import Login from './pages/auth/Login/Login';
 
@@ -43,8 +43,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<Splash />} />
-        <Route path="/splash" element={<Splash />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
 
@@ -56,7 +55,7 @@ function App() {
         <Route path="/doctors" element={<PrivateRoute><Doctors /></PrivateRoute>} />
         <Route path="/doctor/:id" element={<PrivateRoute><DoctorProfile /></PrivateRoute>} />
         <Route path="/chats" element={<PrivateRoute><Chats /></PrivateRoute>} />
-        <Route path="/chat/doctor/:id" element={<PrivateRoute><ChatRoom /></PrivateRoute>} />
+        <Route path="/chat/:id" element={<PrivateRoute><ChatRoom /></PrivateRoute>} />
         <Route path="/emergency" element={<PrivateRoute><Emergency /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
         <Route path="/profile/add-relative" element={<PrivateRoute><AddRelative /></PrivateRoute>} />

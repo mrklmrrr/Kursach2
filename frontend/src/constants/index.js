@@ -6,7 +6,7 @@ export const ROUTES = {
   DOCTORS: '/doctors',
   DOCTOR_PROFILE: (id) => `/doctor/${id}`,
   CHATS: '/chats',
-  CHAT_ROOM: (id) => `/chat/doctor/${id}`,
+  CHAT_ROOM: (id) => `/chat/${id}`,
   EMERGENCY: '/emergency',
   PROFILE: '/profile',
   ADD_RELATIVE: '/profile/add-relative',

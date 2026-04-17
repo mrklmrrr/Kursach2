@@ -65,6 +65,10 @@ class AppointmentService {
     return this.appointmentRepository.updateConsultationId(id, consultationId);
   }
 
+  async updateDoctorComment(id, doctorComment) {
+    return this.appointmentRepository.updateDoctorComment(id, doctorComment);
+  }
+
   async delete(id) {
     return this.appointmentRepository.delete(id);
   }

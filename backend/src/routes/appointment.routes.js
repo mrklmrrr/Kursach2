@@ -21,6 +21,9 @@ module.exports = function(appointmentController) {
   // Врач: назначить запись пациенту
   router.post('/api/doctor/appointments', authMiddleware, (req, res) => appointmentController.assignAppointment(req, res));
 
+  // Врач: обновить комментарий к записи
+  router.patch('/api/doctor/appointments/:id/comment', authMiddleware, (req, res) => appointmentController.updateDoctorComment(req, res));
+
   // Врач: удалить запись
   router.delete('/api/doctor/appointments/:id', authMiddleware, (req, res) => appointmentController.delete(req, res));
 

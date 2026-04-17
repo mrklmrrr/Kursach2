@@ -11,7 +11,8 @@ const appointmentSchema = new mongoose.Schema({
   type: { type: String, required: true, enum: ['online', 'offline'] }, // тип приема
   consultationType: { type: String, required: true, enum: ['online', 'offline'] }, // формат консультации
   status: { type: String, default: 'scheduled', enum: ['scheduled', 'confirmed', 'completed', 'cancelled'] },
-  consultationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Consultation', default: null }
+  consultationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Consultation', default: null },
+  doctorComment: { type: String, default: '' } // комментарий врача к записи
 }, { timestamps: true, autoIndex: false });
 
 appointmentSchema.index({ doctorId: 1, date: 1 }, { name: 'doctor_date_idx' });

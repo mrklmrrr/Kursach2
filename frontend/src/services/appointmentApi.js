@@ -14,6 +14,7 @@ export const appointmentApi = {
   getDoctorAppointments: () => api.get('/doctor/appointments'),
   assignAppointment: (data) => api.post('/doctor/appointments', data),
   deleteAppointment: (id) => api.delete(`/doctor/appointments/${id}`),
+  updateDoctorComment: (id, comment) => api.patch(`/doctor/appointments/${id}/comment`, { comment }),
   getWorkingHours: () => api.get('/doctor/working-hours'),
   updateWorkingHours: (data) => api.put('/doctor/working-hours', data),
 };

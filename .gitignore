@@ -17,6 +17,7 @@ build/
 # Переменные окружения (секреты)
 .env
 .env.local
+uploads/
 
 # IDE
 .vscode/

@@ -1,54 +1,56 @@
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { AppHeader, BottomNav } from '../../../components/layout';
 import { ChatItem } from '../../../components/features';
 import { EmptyState } from '../../../components/ui';
+import { chatApi } from '../../../services/chatApi';
 import './Chats.css';
 
-const MOCK_CHATS = [
-  {
-    id: 1,
-    doctorId: 1,
-    doctorName: 'Анна Иванова',
-    specialty: 'Педиатр',
-    lastMessage: 'Температура спала, всё в порядке. Следите за самочувствием.',
-    time: '14:32',
-    unread: 2,
-    avatar: '👩‍⚕️',
-    isOnline: true,
-  },
-  {
-    id: 2,
-    doctorId: 2,
-    doctorName: 'Сергей Петров',
-    specialty: 'Терапевт',
-    lastMessage: 'Анализы в норме. Рекомендую продолжить курс.',
-    time: 'Вчера',
-    unread: 0,
-    avatar: '👨‍⚕️',
-    isOnline: false,
-  },
-  {
-    id: 3,
-    doctorId: 4,
-    doctorName: 'Елена Смирнова',
-    specialty: 'Психолог',
-    lastMessage: 'Давайте обсудим это на следующем сеансе...',
-    time: 'Вт',
-    unread: 1,
-    avatar: '👩‍⚕️',
-    isOnline: true,
-  },
-];
+function formatChatTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+}
 
 export default function Chats() {
-  const chats = MOCK_CHATS;
+  const [chats, setChats] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadChats = async () => {
+      try {
+        const { data } = await chatApi.getChats();
+        const normalized = data.map((chat) => ({
+          id: chat._id,
+          doctorId: chat.doctorId,
+          doctorName: chat.doctorName || 'Врач',
+          specialty: chat.specialty || 'Специалист',
+          lastMessage: chat.lastMessage?.message || (chat.lastMessage?.fileUrl ? 'Вложение' : 'Нет сообщений'),
+          time: formatChatTime(chat.lastMessage?.timestamp || chat.updatedAt),
+          unread: 0,
+          avatar: '👨‍⚕️',
+          isOnline: false
+        }));
+        setChats(normalized);
+      } catch (err) {
+        console.error('Не удалось загрузить чаты', err);
+        setChats([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadChats();
+  }, []);
 
   return (
     <div className="chats-page">
       <AppHeader />
       <div className="chats-content">
         <div className="section-title">Мои чаты с врачами</div>
-        {chats.length > 0 ? (
+        {loading ? (
+          <div className="empty-state">Загрузка чатов...</div>
+        ) : chats.length > 0 ? (
           <div className="chat-list">
             {chats.map((chat) => (
               <ChatItem key={chat.id} chat={chat} />

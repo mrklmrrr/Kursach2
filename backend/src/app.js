@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
+const path = require('path');
 const config = require('./config');
 const connectDB = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
@@ -64,6 +65,7 @@ async function startApp() {
     credentials: true
   }));
   app.use(express.json());
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Health check
   app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

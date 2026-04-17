@@ -92,13 +92,27 @@ class ConsultationRepository {
     return consultations.map(c => c.toObject());
   }
 
+  async findChatsForUser(userId, userRole) {
+    if (userRole === 'doctor') {
+      return this.findByDoctorId(userId);
+    }
+    return this.findByPatientId(userId);
+  }
+
+  async getMessages(consultationId) {
+    const consultation = await Consultation.findById(consultationId).select('messages');
+    return consultation ? (consultation.messages || []).map((m) => m.toObject()) : null;
+  }
+
   async addMessage(consultationId, messageData) {
     const consultation = await Consultation.findByIdAndUpdate(
       consultationId,
       { $push: { messages: messageData } },
       { new: true }
     );
-    return consultation ? consultation.toObject() : null;
+    if (!consultation) return null;
+    const lastMessage = consultation.messages?.[consultation.messages.length - 1];
+    return lastMessage ? lastMessage.toObject() : null;
   }
 
   async updateStatus(consultationId, status) {

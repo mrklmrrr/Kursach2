@@ -1,10 +1,20 @@
 const mongoose = require('mongoose');
 
 const messageSchema = new mongoose.Schema({
-  message: { type: String, required: true },
+  messageType: {
+    type: String,
+    enum: ['text', 'image', 'video', 'file'],
+    default: 'text'
+  },
+  message: { type: String, default: '' },
   sender: { type: String, required: true },
-  timestamp: { type: String, required: true }
-}, { _id: false });
+  senderId: { type: String, default: null },
+  timestamp: { type: String, required: true },
+  fileUrl: { type: String, default: null },
+  fileName: { type: String, default: null },
+  fileMimeType: { type: String, default: null },
+  fileSize: { type: Number, default: null }
+}, { _id: true });
 
 const consultationSchema = new mongoose.Schema({
   doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },

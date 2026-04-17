@@ -25,6 +25,7 @@ export default function Profile() {
   const [consultationsLoading, setConsultationsLoading] = useState(false);
   const [consultationsError, setConsultationsError] = useState('');
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
 
   const parseHistoryDate = (value) => {
     if (!value) return null;
@@ -152,7 +153,8 @@ export default function Profile() {
           date: item.date && item.time ? `${item.date}T${item.time}:00` : item.createdAt,
           specialty: item.consultationType === 'offline' || item.consultationType === 'chat' ? 'Офлайн' : 'Онлайн',
           duration: item.duration || 0,
-          price: item.price || 0
+          price: item.price || 0,
+          rawAppointment: item
         }));
 
         const merged = [...normalizedConsultations, ...normalizedAppointments]
@@ -204,7 +206,11 @@ export default function Profile() {
               )}
               {!consultationsLoading && !consultationsError && historyItems.length > 0 && (
                 (historyOpen ? historyItems : historyItems.slice(0, 3)).map((item) => (
-                  <div key={item.id} className="history-item">
+                  <div
+                    key={item.id}
+                    className="history-item"
+                    onDoubleClick={() => setSelectedHistoryItem(item)}
+                  >
                     <div className="history-item-main">
                       {formatHistoryDate(item.date)} • {item.specialty || 'Консультация'} • {item.duration || 0} мин
                       {item.price > 0 ? ` • ${item.price} BYN` : ''}
@@ -270,6 +276,38 @@ export default function Profile() {
         </section>
       </div>
       <BottomNav />
+
+      {selectedHistoryItem && (
+        <div className="patient-modal-overlay" role="presentation" onClick={() => setSelectedHistoryItem(null)}>
+          <div className="patient-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <h3>Информация о записи</h3>
+            <p><strong>Дата:</strong> {formatHistoryDate(selectedHistoryItem.date)}</p>
+            {selectedHistoryItem.source === 'appointment' && selectedHistoryItem.rawAppointment && (
+              <>
+                <p><strong>Время:</strong> {selectedHistoryItem.rawAppointment.time}</p>
+                <p><strong>Тип консультации:</strong> {selectedHistoryItem.specialty}</p>
+                <p><strong>Длительность:</strong> {selectedHistoryItem.duration || 0} мин</p>
+                {selectedHistoryItem.rawAppointment.doctorComment && (
+                  <p><strong>Комментарий врача:</strong> {selectedHistoryItem.rawAppointment.doctorComment}</p>
+                )}
+              </>
+            )}
+            {selectedHistoryItem.source === 'consultation' && (
+              <>
+                <p><strong>Тип:</strong> {selectedHistoryItem.specialty || 'Консультация'}</p>
+                <p><strong>Длительность:</strong> {selectedHistoryItem.duration || 0} мин</p>
+              </>
+            )}
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setSelectedHistoryItem(null)}
+            >
+              Закрыть
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

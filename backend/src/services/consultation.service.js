@@ -19,6 +19,18 @@ class ConsultationService {
     return this.consultationRepository.findByDoctorId(doctorId);
   }
 
+  async getChatsForUser(userId, userRole) {
+    return this.consultationRepository.findChatsForUser(userId, userRole);
+  }
+
+  async getMessages(consultationId) {
+    return this.consultationRepository.getMessages(consultationId);
+  }
+
+  async addMessage(consultationId, messageData) {
+    return this.consultationRepository.addMessage(consultationId, messageData);
+  }
+
   async countAll() {
     return this.consultationRepository.countAll();
   }
