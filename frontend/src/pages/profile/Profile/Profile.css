@@ -223,6 +223,12 @@
   background: #f9fafb;
 }
 
+.medical-record-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .medical-record-patient-info p {
   margin: 4px 0;
 }

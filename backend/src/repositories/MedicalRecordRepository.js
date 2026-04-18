@@ -13,7 +13,8 @@ class MedicalRecordRepository {
         $setOnInsert: {
           patientId,
           systems: MEDICAL_SYSTEMS.map((section) => ({ ...section })),
-          changeLogs: []
+          changeLogs: [],
+          sickLeaves: []
         }
       },
       { new: true, upsert: true }

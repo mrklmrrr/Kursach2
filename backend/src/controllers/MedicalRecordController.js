@@ -40,6 +40,25 @@ class MedicalRecordController {
     res.json(this._toResponseRecord(record));
   }
 
+  async createPatientSickLeave(req, res) {
+    const record = await this.medicalRecordService.createSickLeave(
+      req.params.patientId,
+      req.body,
+      req.userId
+    );
+    res.json(this._toResponseRecord(record));
+  }
+
+  async updatePatientSickLeave(req, res) {
+    const record = await this.medicalRecordService.updateSickLeave(
+      req.params.patientId,
+      req.params.sickLeaveId,
+      req.body,
+      req.userId
+    );
+    res.json(this._toResponseRecord(record));
+  }
+
   _toPatientProfile(patient) {
     const fullName = `${patient.firstName || ''} ${patient.lastName || ''}`.trim();
     return {
@@ -58,7 +77,8 @@ class MedicalRecordController {
       id: record._id,
       patientId: record.patientId,
       systems: record.systems || [],
-      changeLogs: (record.changeLogs || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      changeLogs: (record.changeLogs || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+      sickLeaves: (record.sickLeaves || []).slice().sort((a, b) => new Date(b.issueDate || b.createdAt || 0) - new Date(a.issueDate || a.createdAt || 0))
     };
   }
 }

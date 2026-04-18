@@ -34,6 +34,7 @@ export default function Profile() {
   const [medicalRecordOpen, setMedicalRecordOpen] = useState(false);
   const [expandedMedicalSection, setExpandedMedicalSection] = useState('');
   const [medicalHistoryOpen, setMedicalHistoryOpen] = useState(false);
+  const [medicalRecordTab, setMedicalRecordTab] = useState('systems');
 
   const parseHistoryDate = (value) => {
     if (!value) return null;
@@ -254,6 +255,7 @@ export default function Profile() {
         setMedicalRecord(data);
         setExpandedMedicalSection(data?.systems?.[0]?.key || '');
         setMedicalHistoryOpen(false);
+        setMedicalRecordTab('systems');
       } catch (error) {
         setMedicalRecord(null);
         setMedicalRecordError(error.response?.data?.message || 'Не удалось загрузить медицинскую карту');
@@ -299,13 +301,30 @@ export default function Profile() {
 
               {!medicalRecordLoading && !medicalRecordError && medicalRecordOpen && (
                 <>
+                  <div className="medical-record-tabs">
+                    <button
+                      type="button"
+                      className={`profile-tab-btn ${medicalRecordTab === 'systems' ? 'active' : ''}`}
+                      onClick={() => setMedicalRecordTab('systems')}
+                    >
+                      Медицинская карта
+                    </button>
+                    <button
+                      type="button"
+                      className={`profile-tab-btn ${medicalRecordTab === 'sickLeave' ? 'active' : ''}`}
+                      onClick={() => setMedicalRecordTab('sickLeave')}
+                    >
+                      Лист нетрудоспособности
+                    </button>
+                  </div>
+
                   <div className="medical-record-patient-info">
                     <p><strong>Пациент:</strong> {medicalRecord?.patient?.name || fullName}</p>
                     <p><strong>Дата рождения:</strong> {medicalRecord?.patient?.birthDate ? String(medicalRecord.patient.birthDate).slice(0, 4) : '—'}</p>
                     <p><strong>Телефон:</strong> {medicalRecord?.patient?.phone || user?.phone || '—'}</p>
                   </div>
 
-                  {(medicalRecord?.systems || []).map((section) => (
+                  {medicalRecordTab === 'systems' && (medicalRecord?.systems || []).map((section) => (
                     <div key={section.key} className="medical-record-system">
                       <button
                         type="button"
@@ -329,6 +348,28 @@ export default function Profile() {
                     </div>
                   ))}
 
+                  {medicalRecordTab === 'sickLeave' && (
+                    <div className="medical-sick-leaves">
+                      {(medicalRecord?.sickLeaves || []).length === 0 ? (
+                        <p className="empty-info">Листы нетрудоспособности пока не оформлялись.</p>
+                      ) : (
+                        (medicalRecord.sickLeaves || []).map((leaf) => (
+                          <div key={leaf._id} className="medical-record-system">
+                            <p><strong>Дата выдачи:</strong> {formatHistoryDate(leaf.issueDate)}</p>
+                            <p><strong>Период:</strong> {formatHistoryDate(leaf.startDate)} — {formatHistoryDate(leaf.endDate)}</p>
+                            <p><strong>Заболевание:</strong> {leaf.disease || '—'}</p>
+                            <p><strong>Диагноз:</strong> {leaf.diagnosis || '—'}</p>
+                            <p><strong>Рекомендации:</strong> {leaf.recommendations || '—'}</p>
+                            <p className="medical-system-meta">
+                              Врач: {leaf.doctorName || '—'} • Обновлено: {formatDateTime(leaf.updatedAt)}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+
+                  {medicalRecordTab === 'systems' && (
                   <div className="medical-record-logs">
                     <button
                       type="button"
@@ -353,6 +394,7 @@ export default function Profile() {
                       </>
                     )}
                   </div>
+                  )}
                 </>
               )}
             </section>

@@ -66,6 +66,7 @@ export default function DoctorPanel() {
   });
   const [expandedMedicalSection, setExpandedMedicalSection] = useState('');
   const [medicalHistoryOpen, setMedicalHistoryOpen] = useState(false);
+  const [medicalRecordTab, setMedicalRecordTab] = useState('systems');
 
   const toDateTime = (item) => {
     const dateTime = new Date(`${item?.date || ''}T${item?.time || ''}:00`);
@@ -78,6 +79,13 @@ export default function DoctorPanel() {
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return '—';
     return parsed.toLocaleString('ru-RU');
+  };
+
+  const toDateInputValue = (value) => {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return parsed.toISOString().slice(0, 10);
   };
 
   // Форма назначения записи
@@ -289,6 +297,7 @@ export default function DoctorPanel() {
     });
     setExpandedMedicalSection('');
     setMedicalHistoryOpen(false);
+    setMedicalRecordTab('systems');
     try {
       const { data } = await medicalRecordApi.getPatientRecord(patient.id);
       setMedicalRecordModal((prev) => ({
@@ -300,6 +309,7 @@ export default function DoctorPanel() {
       const firstSectionKey = data?.systems?.[0]?.key || '';
       setExpandedMedicalSection(firstSectionKey);
       setMedicalHistoryOpen(false);
+      setMedicalRecordTab('systems');
     } catch (err) {
       setMedicalRecordModal((prev) => ({
         ...prev,
@@ -320,6 +330,7 @@ export default function DoctorPanel() {
     });
     setExpandedMedicalSection('');
     setMedicalHistoryOpen(false);
+    setMedicalRecordTab('systems');
   };
 
   const handleMedicalFieldChange = (sectionKey, field, value) => {
@@ -365,6 +376,85 @@ export default function DoctorPanel() {
         ...prev,
         savingSectionKey: '',
         error: err.response?.data?.message || 'Не удалось сохранить раздел'
+      }));
+    }
+  };
+
+  const handleAddSickLeaveDraft = () => {
+    setMedicalRecordModal((prev) => {
+      if (!prev.record) return prev;
+      return {
+        ...prev,
+        record: {
+          ...prev.record,
+          sickLeaves: [
+            {
+              tempId: `temp-${Date.now()}`,
+              issueDate: new Date().toISOString(),
+              startDate: '',
+              endDate: '',
+              disease: '',
+              diagnosis: '',
+              recommendations: '',
+              doctorName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Врач',
+              updatedAt: ''
+            },
+            ...(prev.record.sickLeaves || [])
+          ]
+        }
+      };
+    });
+  };
+
+  const handleSickLeaveFieldChange = (leafKey, field, value) => {
+    setMedicalRecordModal((prev) => {
+      if (!prev.record) return prev;
+      return {
+        ...prev,
+        record: {
+          ...prev.record,
+          sickLeaves: (prev.record.sickLeaves || []).map((leaf) => {
+            const key = leaf._id || leaf.tempId;
+            return key === leafKey ? { ...leaf, [field]: value } : leaf;
+          })
+        }
+      };
+    });
+  };
+
+  const handleSaveSickLeave = async (leaf) => {
+    if (!medicalRecordModal.patient?.id) return;
+    const leafKey = leaf._id || leaf.tempId || '';
+    if (!leafKey) return;
+
+    setMedicalRecordModal((prev) => ({ ...prev, savingSectionKey: leafKey, error: '' }));
+    const payload = {
+      issueDate: leaf.issueDate || '',
+      startDate: leaf.startDate || '',
+      endDate: leaf.endDate || '',
+      disease: leaf.disease || '',
+      diagnosis: leaf.diagnosis || '',
+      recommendations: leaf.recommendations || ''
+    };
+
+    try {
+      const { data } = leaf._id
+        ? await medicalRecordApi.updatePatientSickLeave(medicalRecordModal.patient.id, leaf._id, payload)
+        : await medicalRecordApi.createPatientSickLeave(medicalRecordModal.patient.id, payload);
+      setMedicalRecordModal((prev) => ({
+        ...prev,
+        savingSectionKey: '',
+        record: {
+          ...(prev.record || {}),
+          ...data,
+          patient: prev.patient
+        }
+      }));
+    } catch (err) {
+      setMedicalRecordModal((prev) => ({
+        ...prev,
+        savingSectionKey: '',
+        error: err.response?.data?.message || 'Не удалось сохранить лист нетрудоспособности'
       }));
     }
   };
@@ -656,7 +746,26 @@ export default function DoctorPanel() {
                 <p className="medical-record-error">{medicalRecordModal.error}</p>
               )}
 
-              {!medicalRecordModal.loading && medicalRecordModal.record?.systems?.map((section) => (
+              {!medicalRecordModal.loading && (
+                <div className="medical-record-tabs">
+                  <button
+                    type="button"
+                    className={`profile-tab-btn ${medicalRecordTab === 'systems' ? 'active' : ''}`}
+                    onClick={() => setMedicalRecordTab('systems')}
+                  >
+                    Медицинская карта
+                  </button>
+                  <button
+                    type="button"
+                    className={`profile-tab-btn ${medicalRecordTab === 'sickLeave' ? 'active' : ''}`}
+                    onClick={() => setMedicalRecordTab('sickLeave')}
+                  >
+                    Лист нетрудоспособности
+                  </button>
+                </div>
+              )}
+
+              {!medicalRecordModal.loading && medicalRecordTab === 'systems' && medicalRecordModal.record?.systems?.map((section) => (
                 <div key={section.key} className="medical-section-card">
                   <button
                     type="button"
@@ -694,7 +803,85 @@ export default function DoctorPanel() {
                 </div>
               ))}
 
-              {!medicalRecordModal.loading && (
+              {!medicalRecordModal.loading && medicalRecordTab === 'sickLeave' && (
+                <div className="sick-leave-section">
+                  <button type="button" className="btn btn-primary" onClick={handleAddSickLeaveDraft}>
+                    Добавить лист нетрудоспособности
+                  </button>
+                  {(medicalRecordModal.record?.sickLeaves || []).length === 0 ? (
+                    <p>Листы нетрудоспособности пока не оформлены.</p>
+                  ) : (
+                    (medicalRecordModal.record?.sickLeaves || []).map((leaf) => {
+                      const leafKey = leaf._id || leaf.tempId;
+                      return (
+                        <div key={leafKey} className="medical-section-card sick-leave-card">
+                          <label className="medical-section-field">
+                            Дата выдачи
+                            <input
+                              type="date"
+                              value={toDateInputValue(leaf.issueDate)}
+                              onChange={(e) => handleSickLeaveFieldChange(leafKey, 'issueDate', e.target.value)}
+                            />
+                          </label>
+                          <label className="medical-section-field">
+                            Начало больничного
+                            <input
+                              type="date"
+                              value={toDateInputValue(leaf.startDate)}
+                              onChange={(e) => handleSickLeaveFieldChange(leafKey, 'startDate', e.target.value)}
+                            />
+                          </label>
+                          <label className="medical-section-field">
+                            Окончание больничного
+                            <input
+                              type="date"
+                              value={toDateInputValue(leaf.endDate)}
+                              onChange={(e) => handleSickLeaveFieldChange(leafKey, 'endDate', e.target.value)}
+                            />
+                          </label>
+                          <label className="medical-section-field">
+                            Заболевание
+                            <textarea
+                              rows={2}
+                              value={leaf.disease || ''}
+                              onChange={(e) => handleSickLeaveFieldChange(leafKey, 'disease', e.target.value)}
+                            />
+                          </label>
+                          <label className="medical-section-field">
+                            Диагноз
+                            <textarea
+                              rows={2}
+                              value={leaf.diagnosis || ''}
+                              onChange={(e) => handleSickLeaveFieldChange(leafKey, 'diagnosis', e.target.value)}
+                            />
+                          </label>
+                          <label className="medical-section-field">
+                            Рекомендации
+                            <textarea
+                              rows={2}
+                              value={leaf.recommendations || ''}
+                              onChange={(e) => handleSickLeaveFieldChange(leafKey, 'recommendations', e.target.value)}
+                            />
+                          </label>
+                          <p className="medical-section-meta">
+                            Врач: {leaf.doctorName || '—'} • Обновлено: {formatDateTime(leaf.updatedAt)}
+                          </p>
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            disabled={medicalRecordModal.savingSectionKey === leafKey}
+                            onClick={() => handleSaveSickLeave(leaf)}
+                          >
+                            {medicalRecordModal.savingSectionKey === leafKey ? 'Сохранение...' : 'Сохранить лист'}
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+
+              {!medicalRecordModal.loading && medicalRecordTab === 'systems' && (
                 <div className="medical-log-list">
                   <button
                     type="button"

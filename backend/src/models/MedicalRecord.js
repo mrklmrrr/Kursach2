@@ -36,10 +36,23 @@ const changeLogSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 }, { _id: false });
 
+const sickLeaveSchema = new mongoose.Schema({
+  issueDate: { type: Date, default: Date.now },
+  startDate: { type: Date, default: null },
+  endDate: { type: Date, default: null },
+  disease: { type: String, default: '' },
+  diagnosis: { type: String, default: '' },
+  recommendations: { type: String, default: '' },
+  doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  doctorName: { type: String, required: true },
+  updatedAt: { type: Date, default: Date.now }
+}, { _id: true });
+
 const medicalRecordSchema = new mongoose.Schema({
   patientId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
   systems: { type: [systemSectionSchema], default: () => MEDICAL_SYSTEMS.map((section) => ({ ...section })) },
-  changeLogs: { type: [changeLogSchema], default: [] }
+  changeLogs: { type: [changeLogSchema], default: [] },
+  sickLeaves: { type: [sickLeaveSchema], default: [] }
 }, { timestamps: true });
 
 medicalRecordSchema.index({ patientId: 1 }, { unique: true, name: 'medical_record_patient_idx' });

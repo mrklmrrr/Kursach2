@@ -27,5 +27,19 @@ module.exports = function medicalRecordRoutes(medicalRecordController) {
     asyncHandler((req, res) => medicalRecordController.updatePatientSection(req, res))
   );
 
+  router.post(
+    '/api/medical-record/patient/:patientId/sick-leaves',
+    authMiddleware,
+    isDoctor,
+    asyncHandler((req, res) => medicalRecordController.createPatientSickLeave(req, res))
+  );
+
+  router.patch(
+    '/api/medical-record/patient/:patientId/sick-leaves/:sickLeaveId',
+    authMiddleware,
+    isDoctor,
+    asyncHandler((req, res) => medicalRecordController.updatePatientSickLeave(req, res))
+  );
+
   return router;
 };
