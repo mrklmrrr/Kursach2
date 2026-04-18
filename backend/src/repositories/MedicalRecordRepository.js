@@ -17,7 +17,7 @@ class MedicalRecordRepository {
           sickLeaves: []
         }
       },
-      { new: true, upsert: true }
+      { returnDocument: 'after', upsert: true }
     );
     return doc;
   }

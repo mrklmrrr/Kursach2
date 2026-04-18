@@ -43,6 +43,7 @@ const sickLeaveSchema = new mongoose.Schema({
   disease: { type: String, default: '' },
   diagnosis: { type: String, default: '' },
   recommendations: { type: String, default: '' },
+  status: { type: String, enum: ['open', 'closed'], default: 'open' },
   doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   doctorName: { type: String, required: true },
   updatedAt: { type: Date, default: Date.now }

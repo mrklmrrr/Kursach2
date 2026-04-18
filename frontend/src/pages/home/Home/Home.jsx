@@ -42,7 +42,7 @@ export default function Home() {
 
   // Загрузка записей пациента
   useEffect(() => {
-    if (!user) {
+    if (!user || user.role === 'doctor') {
       setLoadingAppointments(false);
       return;
     }

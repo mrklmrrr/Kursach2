@@ -41,5 +41,7 @@ module.exports = function medicalRecordRoutes(medicalRecordController) {
     asyncHandler((req, res) => medicalRecordController.updatePatientSickLeave(req, res))
   );
 
+
+
   return router;
 };

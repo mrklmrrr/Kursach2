@@ -71,6 +71,7 @@ class MedicalRecordService {
       disease: String(payload.disease || '').trim(),
       diagnosis: String(payload.diagnosis || '').trim(),
       recommendations: String(payload.recommendations || '').trim(),
+      status: payload.status === 'closed' ? 'closed' : 'open',
       doctorId,
       doctorName,
       updatedAt: new Date()
@@ -89,6 +90,11 @@ class MedicalRecordService {
       throw ApiError.notFound('Лист нетрудоспособности не найден');
     }
 
+    if (sickLeave.status === 'closed') {
+      throw ApiError.badRequest('Закрытый больничный лист нельзя изменять');
+    }
+
+    // Allow updating open sick leaves
     if (payload.issueDate !== undefined) sickLeave.issueDate = this._toDateOrNow(payload.issueDate);
     if (payload.startDate !== undefined) sickLeave.startDate = this._toDateOrNull(payload.startDate);
     if (payload.endDate !== undefined) sickLeave.endDate = this._toDateOrNull(payload.endDate);
@@ -98,12 +104,20 @@ class MedicalRecordService {
       sickLeave[field] = String(payload[field] || '').trim();
     });
 
+    if (payload.status !== undefined) {
+      if (payload.status === 'closed' || payload.status === 'open') {
+        sickLeave.status = payload.status;
+      }
+    }
+
     sickLeave.doctorId = doctorId;
     sickLeave.doctorName = doctorName;
     sickLeave.updatedAt = new Date();
 
     return this.medicalRecordRepository.save(record);
   }
+
+
 
   async _resolvePatientAndDoctor(patientId, doctorId) {
     const [patient, doctor] = await Promise.all([

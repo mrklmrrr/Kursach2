@@ -60,7 +60,7 @@ async function updateById(Model, id, updates, extraFilter = {}) {
     const doc = await Model.findOneAndUpdate(
       { _id: resolved.byObjectId, ...extraFilter },
       updates,
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
     if (doc) return doc;
   }
@@ -69,7 +69,7 @@ async function updateById(Model, id, updates, extraFilter = {}) {
     const doc = await Model.findOneAndUpdate(
       { legacyId: resolved.byLegacyId, ...extraFilter },
       updates,
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
     if (doc) return doc;
   }

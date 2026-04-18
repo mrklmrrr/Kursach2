@@ -35,6 +35,7 @@ export default function Profile() {
   const [expandedMedicalSection, setExpandedMedicalSection] = useState('');
   const [medicalHistoryOpen, setMedicalHistoryOpen] = useState(false);
   const [medicalRecordTab, setMedicalRecordTab] = useState('systems');
+  const [sickLeavesOpen, setSickLeavesOpen] = useState(false);
 
   const parseHistoryDate = (value) => {
     if (!value) return null;
@@ -350,21 +351,32 @@ export default function Profile() {
 
                   {medicalRecordTab === 'sickLeave' && (
                     <div className="medical-sick-leaves">
-                      {(medicalRecord?.sickLeaves || []).length === 0 ? (
-                        <p className="empty-info">Листы нетрудоспособности пока не оформлялись.</p>
-                      ) : (
-                        (medicalRecord.sickLeaves || []).map((leaf) => (
-                          <div key={leaf._id} className="medical-record-system">
-                            <p><strong>Дата выдачи:</strong> {formatHistoryDate(leaf.issueDate)}</p>
-                            <p><strong>Период:</strong> {formatHistoryDate(leaf.startDate)} — {formatHistoryDate(leaf.endDate)}</p>
-                            <p><strong>Заболевание:</strong> {leaf.disease || '—'}</p>
-                            <p><strong>Диагноз:</strong> {leaf.diagnosis || '—'}</p>
-                            <p><strong>Рекомендации:</strong> {leaf.recommendations || '—'}</p>
-                            <p className="medical-system-meta">
-                              Врач: {leaf.doctorName || '—'} • Обновлено: {formatDateTime(leaf.updatedAt)}
-                            </p>
-                          </div>
-                        ))
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => setSickLeavesOpen((prev) => !prev)}
+                      >
+                        {sickLeavesOpen ? 'Скрыть больничные' : 'Показать больничные'}
+                      </button>
+                      {sickLeavesOpen && (
+                        <>
+                          {(medicalRecord?.sickLeaves || []).length === 0 ? (
+                            <p className="empty-info">Листы нетрудоспособности пока не оформлялись.</p>
+                          ) : (
+                            (medicalRecord.sickLeaves || []).map((leaf) => (
+                              <div key={leaf._id} className="medical-record-system">
+                                <p><strong>Дата выдачи:</strong> {formatHistoryDate(leaf.issueDate)}</p>
+                                <p><strong>Период:</strong> {formatHistoryDate(leaf.startDate)} — {formatHistoryDate(leaf.endDate)}</p>
+                                <p><strong>Заболевание:</strong> {leaf.disease || '—'}</p>
+                                <p><strong>Диагноз:</strong> {leaf.diagnosis || '—'}</p>
+                                <p><strong>Рекомендации:</strong> {leaf.recommendations || '—'}</p>
+                                <p className="medical-system-meta">
+                                  Врач: {leaf.doctorName || '—'} • Обновлено: {formatDateTime(leaf.updatedAt)} • Статус: {leaf.status === 'open' ? 'Открыт' : 'Закрыт'}
+                                </p>
+                              </div>
+                            ))
+                          )}
+                        </>
                       )}
                     </div>
                   )}

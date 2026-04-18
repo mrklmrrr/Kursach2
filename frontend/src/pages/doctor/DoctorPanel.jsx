@@ -300,10 +300,15 @@ export default function DoctorPanel() {
     setMedicalRecordTab('systems');
     try {
       const { data } = await medicalRecordApi.getPatientRecord(patient.id);
+      // Add originalStatus to sickLeaves
+      const recordWithOriginal = {
+        ...data,
+        sickLeaves: (data.sickLeaves || []).map(leaf => ({ ...leaf, originalStatus: leaf.status }))
+      };
       setMedicalRecordModal((prev) => ({
         ...prev,
         patient: { ...patient, ...(data.patient || {}) },
-        record: data,
+        record: recordWithOriginal,
         loading: false
       }));
       const firstSectionKey = data?.systems?.[0]?.key || '';
@@ -396,6 +401,8 @@ export default function DoctorPanel() {
               disease: '',
               diagnosis: '',
               recommendations: '',
+              status: 'open',
+              originalStatus: 'open',
               doctorName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Врач',
               updatedAt: ''
             },
@@ -426,6 +433,7 @@ export default function DoctorPanel() {
     if (!medicalRecordModal.patient?.id) return;
     const leafKey = leaf._id || leaf.tempId || '';
     if (!leafKey) return;
+    if (leaf.originalStatus === 'closed') return;
 
     setMedicalRecordModal((prev) => ({ ...prev, savingSectionKey: leafKey, error: '' }));
     const payload = {
@@ -434,21 +442,24 @@ export default function DoctorPanel() {
       endDate: leaf.endDate || '',
       disease: leaf.disease || '',
       diagnosis: leaf.diagnosis || '',
-      recommendations: leaf.recommendations || ''
+      recommendations: leaf.recommendations || '',
+      status: leaf.status || 'open'
     };
 
     try {
       const { data } = leaf._id
         ? await medicalRecordApi.updatePatientSickLeave(medicalRecordModal.patient.id, leaf._id, payload)
         : await medicalRecordApi.createPatientSickLeave(medicalRecordModal.patient.id, payload);
+      const updatedRecord = {
+        ...(prev.record || {}),
+        ...data,
+        patient: prev.patient,
+        sickLeaves: (data.sickLeaves || []).map(leaf => ({ ...leaf, originalStatus: leaf.status }))
+      };
       setMedicalRecordModal((prev) => ({
         ...prev,
         savingSectionKey: '',
-        record: {
-          ...(prev.record || {}),
-          ...data,
-          patient: prev.patient
-        }
+        record: updatedRecord
       }));
     } catch (err) {
       setMedicalRecordModal((prev) => ({
@@ -815,65 +826,82 @@ export default function DoctorPanel() {
                       const leafKey = leaf._id || leaf.tempId;
                       return (
                         <div key={leafKey} className="medical-section-card sick-leave-card">
-                          <label className="medical-section-field">
-                            Дата выдачи
-                            <input
-                              type="date"
-                              value={toDateInputValue(leaf.issueDate)}
-                              onChange={(e) => handleSickLeaveFieldChange(leafKey, 'issueDate', e.target.value)}
-                            />
-                          </label>
-                          <label className="medical-section-field">
-                            Начало больничного
-                            <input
-                              type="date"
-                              value={toDateInputValue(leaf.startDate)}
-                              onChange={(e) => handleSickLeaveFieldChange(leafKey, 'startDate', e.target.value)}
-                            />
-                          </label>
-                          <label className="medical-section-field">
-                            Окончание больничного
-                            <input
-                              type="date"
-                              value={toDateInputValue(leaf.endDate)}
-                              onChange={(e) => handleSickLeaveFieldChange(leafKey, 'endDate', e.target.value)}
-                            />
-                          </label>
-                          <label className="medical-section-field">
-                            Заболевание
-                            <textarea
-                              rows={2}
-                              value={leaf.disease || ''}
-                              onChange={(e) => handleSickLeaveFieldChange(leafKey, 'disease', e.target.value)}
-                            />
-                          </label>
-                          <label className="medical-section-field">
-                            Диагноз
-                            <textarea
-                              rows={2}
-                              value={leaf.diagnosis || ''}
-                              onChange={(e) => handleSickLeaveFieldChange(leafKey, 'diagnosis', e.target.value)}
-                            />
-                          </label>
-                          <label className="medical-section-field">
-                            Рекомендации
-                            <textarea
-                              rows={2}
-                              value={leaf.recommendations || ''}
-                              onChange={(e) => handleSickLeaveFieldChange(leafKey, 'recommendations', e.target.value)}
-                            />
-                          </label>
-                          <p className="medical-section-meta">
-                            Врач: {leaf.doctorName || '—'} • Обновлено: {formatDateTime(leaf.updatedAt)}
-                          </p>
-                          <button
-                            type="button"
-                            className="btn btn-primary"
-                            disabled={medicalRecordModal.savingSectionKey === leafKey}
-                            onClick={() => handleSaveSickLeave(leaf)}
-                          >
-                            {medicalRecordModal.savingSectionKey === leafKey ? 'Сохранение...' : 'Сохранить лист'}
-                          </button>
+                           <label className="medical-section-field">
+                             Дата выдачи
+                             <input
+                               type="date"
+                               value={toDateInputValue(leaf.issueDate)}
+                               onChange={(e) => handleSickLeaveFieldChange(leafKey, 'issueDate', e.target.value)}
+                               disabled={leaf.status === 'closed'}
+                             />
+                           </label>
+                           <label className="medical-section-field">
+                             Начало больничного
+                             <input
+                               type="date"
+                               value={toDateInputValue(leaf.startDate)}
+                               onChange={(e) => handleSickLeaveFieldChange(leafKey, 'startDate', e.target.value)}
+                               disabled={leaf.status === 'closed'}
+                             />
+                           </label>
+                           <label className="medical-section-field">
+                             Окончание больничного
+                             <input
+                               type="date"
+                               value={toDateInputValue(leaf.endDate)}
+                               onChange={(e) => handleSickLeaveFieldChange(leafKey, 'endDate', e.target.value)}
+                               disabled={leaf.status === 'closed'}
+                             />
+                           </label>
+                           <label className="medical-section-field">
+                             Заболевание
+                             <textarea
+                               rows={2}
+                               value={leaf.disease || ''}
+                               onChange={(e) => handleSickLeaveFieldChange(leafKey, 'disease', e.target.value)}
+                               disabled={leaf.status === 'closed'}
+                             />
+                           </label>
+                           <label className="medical-section-field">
+                             Диагноз
+                             <textarea
+                               rows={2}
+                               value={leaf.diagnosis || ''}
+                               onChange={(e) => handleSickLeaveFieldChange(leafKey, 'diagnosis', e.target.value)}
+                               disabled={leaf.status === 'closed'}
+                             />
+                           </label>
+                           <label className="medical-section-field">
+                             Рекомендации
+                             <textarea
+                               rows={2}
+                               value={leaf.recommendations || ''}
+                               onChange={(e) => handleSickLeaveFieldChange(leafKey, 'recommendations', e.target.value)}
+                               disabled={leaf.status === 'closed'}
+                             />
+                           </label>
+                           <label className="medical-section-field">
+                             Статус
+                             <select
+                               value={leaf.status || 'open'}
+                               onChange={(e) => handleSickLeaveFieldChange(leafKey, 'status', e.target.value)}
+                               disabled={leaf.status === 'closed'}
+                             >
+                               <option value="open">Открыт</option>
+                               <option value="closed">Закрыт</option>
+                             </select>
+                           </label>
+                           <p className="medical-section-meta">
+                             Врач: {leaf.doctorName || '—'} • Обновлено: {formatDateTime(leaf.updatedAt)} • Статус: {leaf.status === 'open' ? 'Открыт' : 'Закрыт'}
+                           </p>
+                           <button
+                             type="button"
+                             className="btn btn-primary"
+                             disabled={medicalRecordModal.savingSectionKey === leafKey || leaf.originalStatus === 'closed'}
+                             onClick={() => handleSaveSickLeave(leaf)}
+                           >
+                             {medicalRecordModal.savingSectionKey === leafKey ? 'Сохранение...' : 'Сохранить лист'}
+                           </button>
                         </div>
                       );
                     })

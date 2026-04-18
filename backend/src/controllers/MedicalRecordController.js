@@ -59,6 +59,8 @@ class MedicalRecordController {
     res.json(this._toResponseRecord(record));
   }
 
+
+
   _toPatientProfile(patient) {
     const fullName = `${patient.firstName || ''} ${patient.lastName || ''}`.trim();
     return {
