@@ -29,6 +29,14 @@ class AppointmentService {
       throw new Error('Время выходит за рамки рабочего дня врача');
     }
 
+    const appointmentDateTime = new Date(`${data.date}T${data.time}:00`);
+    if (Number.isNaN(appointmentDateTime.getTime())) {
+      throw new Error('Некорректная дата или время записи');
+    }
+    if (appointmentDateTime <= new Date()) {
+      throw new Error('Нельзя записаться на прошедшую дату или время');
+    }
+
     // Проверка, что слот не занят
     const bookedAppointments = await this.appointmentRepository.findByDoctorIdAndDate(doctorId, data.date);
     const isBooked = bookedAppointments.some(a => a.time === data.time && a.status !== 'cancelled');
@@ -41,6 +49,8 @@ class AppointmentService {
       patientId,
       doctorName: `${doctor.firstName} ${doctor.lastName}`,
       patientName: `${patient.firstName} ${patient.lastName}`,
+      paymentAmount: Number(doctor.price) || 0,
+      paymentStatus: 'unpaid',
       ...data
     });
   }
@@ -91,6 +101,30 @@ class AppointmentService {
     return this.updateDoctorComment(appointmentId, doctorComment);
   }
 
+  async payByPatient(appointmentId, patientId) {
+    const appointment = await this.getById(appointmentId);
+    if (!appointment) return null;
+
+    if (String(appointment.patientId) !== String(patientId)) {
+      const error = new Error('Нельзя оплачивать чужую запись');
+      error.status = 403;
+      throw error;
+    }
+
+    if (appointment.status === 'cancelled') {
+      const error = new Error('Нельзя оплатить отмененную запись');
+      error.status = 400;
+      throw error;
+    }
+
+    if (appointment.paymentStatus === 'paid') {
+      return appointment;
+    }
+
+    const amount = Number(appointment.paymentAmount) || 0;
+    return this.appointmentRepository.markAsPaid(appointmentId, amount);
+  }
+
   async delete(id) {
     return this.appointmentRepository.delete(id);
   }
@@ -116,7 +150,13 @@ class AppointmentService {
     }
 
     const bookedAppointments = await this.appointmentRepository.findByDoctorIdAndDate(doctorId, date);
-    return this.appointmentRepository.findAvailableSlots(doctorId, date, doctor.workingHours, bookedAppointments);
+    const allSlots = await this.appointmentRepository.findAvailableSlots(doctorId, date, doctor.workingHours, bookedAppointments);
+    const now = new Date();
+
+    return allSlots.filter((slot) => {
+      const slotDateTime = new Date(`${date}T${slot}:00`);
+      return !Number.isNaN(slotDateTime.getTime()) && slotDateTime > now;
+    });
   }
 
   _getDayOfWeekCode(dateStr) {

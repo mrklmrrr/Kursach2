@@ -5,6 +5,7 @@ export const appointmentApi = {
   getAll: () => api.get('/appointments'),
   create: (data) => api.post('/appointments', data),
   cancel: (id) => api.patch(`/appointments/${id}/cancel`),
+  pay: (id, data = {}) => api.patch(`/appointments/${id}/pay`, data),
 
   // Общие
   getById: (id) => api.get(`/appointments/${id}`),

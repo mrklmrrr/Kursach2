@@ -15,7 +15,8 @@ const {
   ConsultationRepository,
   DependentRepository,
   DoctorRepository,
-  AppointmentRepository
+  AppointmentRepository,
+  MedicalRecordRepository
 } = require('./repositories');
 
 // Services
@@ -25,7 +26,8 @@ const {
   ConsultationService,
   PaymentService,
   DependentService,
-  AppointmentService
+  AppointmentService,
+  MedicalRecordService
 } = require('./services');
 
 // Controllers
@@ -37,7 +39,8 @@ const {
   DependentController,
   AdminController,
   DoctorPanelController,
-  AppointmentController
+  AppointmentController,
+  MedicalRecordController
 } = require('./controllers');
 
 // Routes
@@ -49,7 +52,8 @@ const {
   dependentRoutes,
   adminRoutes,
   doctorPanelRoutes,
-  appointmentRoutes
+  appointmentRoutes,
+  medicalRecordRoutes
 } = require('./routes');
 
 // Socket
@@ -105,6 +109,7 @@ async function startApp() {
   const dependentRepository = new DependentRepository();
   const doctorRepository = new DoctorRepository();
   const appointmentRepository = new AppointmentRepository();
+  const medicalRecordRepository = new MedicalRecordRepository();
 
   const authService = new AuthService(userRepository);
   const doctorService = new DoctorService(doctorRepository);
@@ -112,6 +117,7 @@ async function startApp() {
   const paymentService = new PaymentService(consultationRepository);
   const dependentService = new DependentService(dependentRepository);
   const appointmentService = new AppointmentService(appointmentRepository, userRepository);
+  const medicalRecordService = new MedicalRecordService(medicalRecordRepository, userRepository);
 
   const authController = new AuthController(authService);
   const doctorController = new DoctorController(doctorService);
@@ -121,6 +127,7 @@ async function startApp() {
   const adminController = new AdminController(doctorService, consultationService, authService);
   const doctorPanelController = new DoctorPanelController(doctorService, consultationService);
   const appointmentController = new AppointmentController(appointmentService, userRepository);
+  const medicalRecordController = new MedicalRecordController(medicalRecordService, userRepository);
 
   // Routes
   app.use(authRoutes(authController));
@@ -129,6 +136,7 @@ async function startApp() {
   app.use(paymentRoutes(paymentController));
   app.use(dependentRoutes(dependentController));
   app.use(appointmentRoutes(appointmentController));
+  app.use(medicalRecordRoutes(medicalRecordController));
 
   // Админка и панель врача
   app.use(adminRoutes(adminController));

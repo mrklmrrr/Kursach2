@@ -54,6 +54,20 @@ class AppointmentRepository {
     return appointment ? appointment.toObject() : null;
   }
 
+  async markAsPaid(id, amount) {
+    const appointment = await Appointment.findByIdAndUpdate(
+      id,
+      {
+        paymentStatus: 'paid',
+        paymentAmount: amount,
+        paidAt: new Date(),
+        status: 'confirmed'
+      },
+      { new: true, runValidators: true }
+    );
+    return appointment ? appointment.toObject() : null;
+  }
+
   async delete(id) {
     const result = await Appointment.findByIdAndDelete(id);
     return result ? result.toObject() : null;

@@ -170,6 +170,16 @@
   color: #1e40af;
 }
 
+.status-badge.payment-paid {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.payment-unpaid {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .consultation-actions {
   display: flex;
   gap: 8px;
@@ -228,6 +238,12 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
+.patient-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .patient-info h3 {
   font-size: 1rem;
   color: #1f2937;
@@ -271,6 +287,91 @@
   background: #fff;
   border-radius: 14px;
   padding: 20px;
+}
+
+.medical-record-modal {
+  width: min(100%, 860px);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.medical-record-error {
+  color: #b91c1c;
+}
+
+.medical-section-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 8px 10px;
+  margin: 12px 0;
+}
+
+.medical-section-toggle {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 8px 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+.medical-section-content {
+  padding: 6px 4px 4px;
+}
+
+.medical-section-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+
+.medical-section-field textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  resize: vertical;
+}
+
+.medical-section-meta {
+  margin: 0 0 10px;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.medical-log-list {
+  margin: 16px 0;
+}
+
+.medical-history-toggle {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 8px 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+.medical-log-item {
+  border-left: 3px solid #4f46e5;
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
 }
 
 .patient-modal h3 {
@@ -334,9 +435,46 @@ body.dark .status-badge.confirmed {
   color: #93c5fd;
 }
 
+body.dark .status-badge.payment-paid {
+  background: #14532d;
+  color: #86efac;
+}
+
+body.dark .status-badge.payment-unpaid {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+
 body.dark .patient-modal {
   background: #1f2937;
   color: #f3f4f6;
+}
+
+body.dark .medical-section-card {
+  border-color: #374151;
+}
+
+body.dark .medical-section-toggle {
+  color: #f3f4f6;
+}
+
+body.dark .medical-history-toggle {
+  color: #f3f4f6;
+}
+
+body.dark .medical-section-field textarea {
+  background: #374151;
+  color: #f3f4f6;
+  border-color: #4b5563;
+}
+
+body.dark .medical-section-meta {
+  color: #9ca3af;
+}
+
+body.dark .medical-log-item {
+  background: #374151;
+  border-left-color: #818cf8;
 }
 
 /* Секция записей */

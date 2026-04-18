@@ -155,6 +155,8 @@ class DoctorPanelController {
           id: objectId || id,
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
           phone: user.phone || '',
+          birthDate: user.birthDate || '',
+          age: user.age || null,
           consultationCount
         });
       }

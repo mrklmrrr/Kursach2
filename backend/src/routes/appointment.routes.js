@@ -15,6 +15,7 @@ module.exports = function(appointmentController) {
 
   // Пациент: отменить запись
   router.patch('/api/appointments/:id/cancel', authMiddleware, isPatient, validate(appointmentSchemas.idParam), asyncHandler((req, res) => appointmentController.cancel(req, res)));
+  router.patch('/api/appointments/:id/pay', authMiddleware, isPatient, validate(appointmentSchemas.idParam), asyncHandler((req, res) => appointmentController.pay(req, res)));
 
   // Получить доступные слоты врача
   router.get('/api/appointments/doctor/:doctorId/slots', authMiddleware, validate(appointmentSchemas.slots), asyncHandler((req, res) => appointmentController.getAvailableSlots(req, res)));

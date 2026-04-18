@@ -36,6 +36,15 @@ class AppointmentController {
     res.json(appointments);
   }
 
+  /** Пациент: оплатить прием перед началом */
+  async pay(req, res) {
+    const appointment = await this.appointmentService.payByPatient(req.params.id, req.userId);
+    if (!appointment) {
+      throw ApiError.notFound('Запись не найдена');
+    }
+    res.json({ message: 'Прием успешно оплачен', appointment });
+  }
+
   /** Получить записи врача */
   async getByDoctor(req, res) {
     const appointments = await this.appointmentService.getByDoctorId(req.userId);

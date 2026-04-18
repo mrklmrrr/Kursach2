@@ -6,6 +6,7 @@ const dependentRoutes = require('./dependent.routes');
 const adminRoutes = require('./admin.routes');
 const doctorPanelRoutes = require('./doctor-panel.routes');
 const appointmentRoutes = require('./appointment.routes');
+const medicalRecordRoutes = require('./medical-record.routes');
 
 module.exports = {
   authRoutes,
@@ -15,5 +16,6 @@ module.exports = {
   dependentRoutes,
   adminRoutes,
   doctorPanelRoutes,
-  appointmentRoutes
+  appointmentRoutes,
+  medicalRecordRoutes
 };

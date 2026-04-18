@@ -2,25 +2,27 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { consultationApi } from '../../../services/consultationApi';
 import { paymentApi } from '../../../services/paymentApi';
+import { appointmentApi } from '../../../services/appointmentApi';
 import { AppHeader } from '../../../components/layout';
 import { Avatar, Button } from '../../../components/ui';
-import { formatCurrency, getInitials } from '../../../utils/helpers';
+import { formatCurrency } from '../../../utils/helpers';
 import { ROUTES } from '../../../constants';
 import './Payment.css';
 
 export default function Payment() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { doctor } = location.state || {};
+  const { doctor, appointment } = location.state || {};
   const [card, setCard] = useState({ number: '', expiry: '', cvc: '' });
   const [loading, setLoading] = useState(false);
+  const isAppointmentPayment = Boolean(appointment?.id);
 
-  if (!doctor) {
+  if (!doctor && !isAppointmentPayment) {
     return (
       <div className="payment-page">
-        <p>Нет данных о консультации</p>
-        <Button variant="primary" onClick={() => navigate(ROUTES.DOCTORS)}>
-          Вернуться к врачам
+        <p>Нет данных для оплаты</p>
+        <Button variant="primary" onClick={() => navigate(ROUTES.PROFILE)}>
+          Вернуться в профиль
         </Button>
       </div>
     );
@@ -50,22 +52,31 @@ export default function Payment() {
 
     setLoading(true);
     try {
-      const consRes = await consultationApi.create({
-        doctorId: doctor.id,
-        doctorName: doctor.name,
-        specialty: doctor.specialty,
-        price: doctor.price,
-        duration: 15,
-      });
+      if (isAppointmentPayment) {
+        await appointmentApi.pay(appointment.id, {
+          cardNumber: card.number.replace(/\s/g, ''),
+          expiry: card.expiry,
+          cvc: card.cvc
+        });
+        navigate(ROUTES.PROFILE);
+      } else {
+        const consRes = await consultationApi.create({
+          doctorId: doctor.id,
+          doctorName: doctor.name,
+          specialty: doctor.specialty,
+          price: doctor.price,
+          duration: 15
+        });
 
-      await paymentApi.process({
-        consultationId: consRes.data.consultationId,
-        cardNumber: card.number.replace(/\s/g, ''),
-        expiry: card.expiry,
-        cvc: card.cvc,
-      });
+        await paymentApi.process({
+          consultationId: consRes.data.consultationId,
+          cardNumber: card.number.replace(/\s/g, ''),
+          expiry: card.expiry,
+          cvc: card.cvc
+        });
 
-      navigate(ROUTES.LOADER, { state: { consultationId: consRes.data.consultationId, doctor } });
+        navigate(ROUTES.LOADER, { state: { consultationId: consRes.data.consultationId, doctor } });
+      }
     } catch (err) {
       console.error(err);
       alert('Ошибка при обработке платежа. Попробуйте ещё раз.');
@@ -78,17 +89,25 @@ export default function Payment() {
     <div>
       <AppHeader showBack />
       <div className="payment-page">
-        <h2>Оплата консультации</h2>
+        <h2>{isAppointmentPayment ? 'Оплата приема' : 'Оплата консультации'}</h2>
         <div className="payment-summary">
           <div className="doctor-info">
-            <Avatar name={doctor.name} size="medium" />
+            <Avatar name={doctor?.name || appointment?.doctorName || 'Врач'} size="medium" />
             <div>
-              <div className="doctor-name">{doctor.name}</div>
-              <div className="doctor-specialty">{doctor.specialty}</div>
+              <div className="doctor-name">{doctor?.name || appointment?.doctorName || 'Врач'}</div>
+              <div className="doctor-specialty">
+                {isAppointmentPayment
+                  ? `${appointment?.date || '—'} в ${appointment?.time || '—'}`
+                  : doctor?.specialty}
+              </div>
             </div>
           </div>
-          <div className="price-big">{formatCurrency(doctor.price)}</div>
-          <div className="details">15 минут • Видеоконсультация</div>
+          <div className="price-big">{formatCurrency(isAppointmentPayment ? appointment?.amount : doctor?.price)}</div>
+          <div className="details">
+            {isAppointmentPayment
+              ? `${appointment?.duration || 0} минут • ${appointment?.consultationType === 'offline' ? 'Офлайн прием' : 'Онлайн прием'}`
+              : '15 минут • Видеоконсультация'}
+          </div>
         </div>
 
         <div className="card-form">
@@ -125,7 +144,9 @@ export default function Payment() {
         </div>
 
         <Button variant="primary" size="large" className="huge-btn" onClick={handlePay} disabled={loading}>
-          {loading ? 'Обрабатываем платеж...' : `Оплатить ${doctor.price} BYN`}
+          {loading
+            ? 'Обрабатываем платеж...'
+            : `Оплатить ${isAppointmentPayment ? appointment?.amount || 0 : doctor?.price || 0} BYN`}
         </Button>
         <p className="secure">🔒 Безопасная оплата. Данные карты не сохраняются.</p>
       </div>

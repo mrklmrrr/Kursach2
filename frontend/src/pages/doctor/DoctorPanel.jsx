@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doctorPanelApi } from '../../services/doctorPanelApi';
 import { appointmentApi } from '../../services/appointmentApi';
+import { medicalRecordApi } from '../../services/medicalRecordApi';
 import { useAuth } from '../../hooks/useAuth';
 import PageLayout from '../../components/layout/PageLayout/PageLayout';
 import './DoctorPanel.css';
@@ -20,6 +21,11 @@ const CONSULTATION_TYPE_LABELS = {
   chat: '🏥 Офлайн'
 };
 
+const PAYMENT_STATUS_LABELS = {
+  paid: 'Прием оплачен',
+  unpaid: 'Не оплачен'
+};
+
 const DAY_MAP = [
   { value: 'mon', label: 'Пн' },
   { value: 'tue', label: 'Вт' },
@@ -29,6 +35,13 @@ const DAY_MAP = [
   { value: 'sat', label: 'Сб' },
   { value: 'sun', label: 'Вс' }
 ];
+
+const RECORD_FIELD_LABELS = {
+  notes: 'Осмотр и жалобы',
+  diagnosis: 'Диагноз',
+  treatment: 'Лечение',
+  recommendations: 'Рекомендации'
+};
 
 export default function DoctorPanel() {
   const navigate = useNavigate();
@@ -43,6 +56,29 @@ export default function DoctorPanel() {
   const [workingDays, setWorkingDays] = useState(['mon', 'tue', 'wed', 'thu', 'fri']);
   const [loading, setLoading] = useState(true);
   const [commentModal, setCommentModal] = useState({ open: false, appointment: null, text: '' });
+  const [medicalRecordModal, setMedicalRecordModal] = useState({
+    open: false,
+    patient: null,
+    record: null,
+    loading: false,
+    savingSectionKey: '',
+    error: ''
+  });
+  const [expandedMedicalSection, setExpandedMedicalSection] = useState('');
+  const [medicalHistoryOpen, setMedicalHistoryOpen] = useState(false);
+
+  const toDateTime = (item) => {
+    const dateTime = new Date(`${item?.date || ''}T${item?.time || ''}:00`);
+    if (Number.isNaN(dateTime.getTime())) return Number.MAX_SAFE_INTEGER;
+    return dateTime.getTime();
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return '—';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '—';
+    return parsed.toLocaleString('ru-RU');
+  };
 
   // Форма назначения записи
   const [appointmentForm, setAppointmentForm] = useState({
@@ -105,7 +141,8 @@ export default function DoctorPanel() {
       }
 
       if (appointmentsRes.status === 'fulfilled') {
-        setAppointments(appointmentsRes.value.data);
+        const sortedAppointments = [...appointmentsRes.value.data].sort((a, b) => toDateTime(a) - toDateTime(b));
+        setAppointments(sortedAppointments);
       } else {
         setAppointments([]);
         console.error('Ошибка загрузки записей врача:', appointmentsRes.reason);
@@ -168,6 +205,7 @@ export default function DoctorPanel() {
       id: patientId,
       name: fallbackName || 'Пациент',
       phone: '—',
+      birthDate: '',
       consultationCount: 0
     });
   };
@@ -236,6 +274,98 @@ export default function DoctorPanel() {
       setCommentModal({ open: false, appointment: null, text: '' });
     } catch (err) {
       alert(err.response?.data?.message || 'Не удалось сохранить комментарий');
+    }
+  };
+
+  const handleOpenMedicalRecord = async (patient) => {
+    if (!patient?.id) return;
+    setMedicalRecordModal({
+      open: true,
+      patient,
+      record: null,
+      loading: true,
+      savingSectionKey: '',
+      error: ''
+    });
+    setExpandedMedicalSection('');
+    setMedicalHistoryOpen(false);
+    try {
+      const { data } = await medicalRecordApi.getPatientRecord(patient.id);
+      setMedicalRecordModal((prev) => ({
+        ...prev,
+        patient: { ...patient, ...(data.patient || {}) },
+        record: data,
+        loading: false
+      }));
+      const firstSectionKey = data?.systems?.[0]?.key || '';
+      setExpandedMedicalSection(firstSectionKey);
+      setMedicalHistoryOpen(false);
+    } catch (err) {
+      setMedicalRecordModal((prev) => ({
+        ...prev,
+        loading: false,
+        error: err.response?.data?.message || 'Не удалось загрузить медицинскую карту'
+      }));
+    }
+  };
+
+  const handleCloseMedicalRecord = () => {
+    setMedicalRecordModal({
+      open: false,
+      patient: null,
+      record: null,
+      loading: false,
+      savingSectionKey: '',
+      error: ''
+    });
+    setExpandedMedicalSection('');
+    setMedicalHistoryOpen(false);
+  };
+
+  const handleMedicalFieldChange = (sectionKey, field, value) => {
+    setMedicalRecordModal((prev) => {
+      if (!prev.record) return prev;
+      return {
+        ...prev,
+        record: {
+          ...prev.record,
+          systems: (prev.record.systems || []).map((section) =>
+            section.key === sectionKey ? { ...section, [field]: value } : section
+          )
+        }
+      };
+    });
+  };
+
+  const handleSaveSection = async (section) => {
+    if (!medicalRecordModal.patient?.id || !section?.key) return;
+    setMedicalRecordModal((prev) => ({ ...prev, savingSectionKey: section.key, error: '' }));
+    try {
+      const { data } = await medicalRecordApi.updatePatientSection(
+        medicalRecordModal.patient.id,
+        section.key,
+        {
+          notes: section.notes || '',
+          diagnosis: section.diagnosis || '',
+          treatment: section.treatment || '',
+          recommendations: section.recommendations || ''
+        }
+      );
+      setMedicalRecordModal((prev) => ({
+        ...prev,
+        savingSectionKey: '',
+        record: {
+          ...(prev.record || {}),
+          ...data,
+          patient: prev.patient
+        }
+      }));
+    } catch (err) {
+      setMedicalRecordModal((prev) => ({
+        ...prev,
+        savingSectionKey: '',
+        error: err.response?.data?.message || 'Не удалось сохранить раздел'
+      }));
     }
   };
 
@@ -320,6 +450,9 @@ export default function DoctorPanel() {
                     <p className="consult-type">{CONSULTATION_TYPE_LABELS[item.consultationType] || '🌐 Онлайн'}</p>
                     <p className="consult-date">{item.date} в {item.time}</p>
                     {index === 0 && <span className="status-badge active">Ближайшая консультация</span>}
+                    <span className={`status-badge payment-${item.paymentStatus || 'unpaid'}`}>
+                      {PAYMENT_STATUS_LABELS[item.paymentStatus || 'unpaid']}
+                    </span>
                   </div>
                   <div className="consultation-actions">
                     <span className={`status-badge ${item.status}`}>{APPOINTMENT_STATUS_LABELS[item.status]}</span>
@@ -419,6 +552,9 @@ export default function DoctorPanel() {
                         <p className="appointment-date">{a.date} в {a.time}</p>
                         <p className="appointment-type">{CONSULTATION_TYPE_LABELS[a.consultationType] || '🌐 Онлайн'} • {a.duration} мин</p>
                         <span className={`status-badge ${a.status}`}>{APPOINTMENT_STATUS_LABELS[a.status]}</span>
+                        <span className={`status-badge payment-${a.paymentStatus || 'unpaid'}`}>
+                          {PAYMENT_STATUS_LABELS[a.paymentStatus || 'unpaid']}
+                        </span>
                       </div>
                       {(a.status === 'scheduled' || a.status === 'confirmed') && (
                         <button className="cancel-btn" onClick={() => handleCancelAppointment(a._id)}>Отменить</button>
@@ -473,7 +609,12 @@ export default function DoctorPanel() {
                     </h3>
                     <p>{p.phone || '—'}</p>
                   </div>
-                  <span className="consult-count">{p.consultationCount} консульт.</span>
+                  <div className="patient-card-actions">
+                    <span className="consult-count">{p.consultationCount} консульт.</span>
+                    <button type="button" className="btn btn-outline" onClick={() => handleOpenMedicalRecord(p)}>
+                      Карточка пациента
+                    </button>
+                  </div>
                 </div>
               ))
             )}
@@ -485,10 +626,103 @@ export default function DoctorPanel() {
             <div className="patient-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
               <h3>Профиль пациента</h3>
               <p><strong>Имя:</strong> {selectedPatient.name}</p>
+              <p><strong>Дата рождения:</strong> {selectedPatient.birthDate ? String(selectedPatient.birthDate).slice(0, 4) : '—'}</p>
               <p><strong>Телефон:</strong> {selectedPatient.phone || '—'}</p>
               <p><strong>Консультаций:</strong> {selectedPatient.consultationCount ?? 0}</p>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => handleOpenMedicalRecord(selectedPatient)}
+              >
+                Карточка пациента
+              </button>
               <button type="button" className="btn btn-primary" onClick={() => setSelectedPatient(null)}>
                 Закрыть
+              </button>
+            </div>
+          </div>
+        )}
+
+        {medicalRecordModal.open && (
+          <div className="patient-modal-overlay" role="presentation" onClick={handleCloseMedicalRecord}>
+            <div className="patient-modal medical-record-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+              <h3>Карточка пациента</h3>
+              <p><strong>Пациент:</strong> {medicalRecordModal.patient?.name || '—'}</p>
+              <p><strong>Дата рождения:</strong> {medicalRecordModal.patient?.birthDate ? String(medicalRecordModal.patient.birthDate).slice(0, 4) : '—'}</p>
+              <p><strong>Телефон:</strong> {medicalRecordModal.patient?.phone || '—'}</p>
+
+              {medicalRecordModal.loading && <p>Загрузка карты...</p>}
+              {!medicalRecordModal.loading && medicalRecordModal.error && (
+                <p className="medical-record-error">{medicalRecordModal.error}</p>
+              )}
+
+              {!medicalRecordModal.loading && medicalRecordModal.record?.systems?.map((section) => (
+                <div key={section.key} className="medical-section-card">
+                  <button
+                    type="button"
+                    className="medical-section-toggle"
+                    onClick={() => setExpandedMedicalSection((prev) => (prev === section.key ? '' : section.key))}
+                  >
+                    <span>{section.name}</span>
+                    <span>{expandedMedicalSection === section.key ? '−' : '+'}</span>
+                  </button>
+                  {expandedMedicalSection === section.key && (
+                    <div className="medical-section-content">
+                      {Object.entries(RECORD_FIELD_LABELS).map(([field, label]) => (
+                        <label key={field} className="medical-section-field">
+                          {label}
+                          <textarea
+                            rows={3}
+                            value={section[field] || ''}
+                            onChange={(e) => handleMedicalFieldChange(section.key, field, e.target.value)}
+                          />
+                        </label>
+                      ))}
+                      <p className="medical-section-meta">
+                        Последнее изменение: {formatDateTime(section.updatedAt)} • Врач: {section.updatedBy?.doctorName || '—'}
+                      </p>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        disabled={medicalRecordModal.savingSectionKey === section.key}
+                        onClick={() => handleSaveSection(section)}
+                      >
+                        {medicalRecordModal.savingSectionKey === section.key ? 'Сохранение...' : 'Сохранить раздел'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {!medicalRecordModal.loading && (
+                <div className="medical-log-list">
+                  <button
+                    type="button"
+                    className="medical-history-toggle"
+                    onClick={() => setMedicalHistoryOpen((prev) => !prev)}
+                  >
+                    <span>История обследования</span>
+                    <span>{medicalHistoryOpen ? '−' : '+'}</span>
+                  </button>
+                  {medicalHistoryOpen && (
+                    <>
+                      {(medicalRecordModal.record?.changeLogs || []).length === 0 ? (
+                        <p>Изменений пока нет.</p>
+                      ) : (
+                        medicalRecordModal.record.changeLogs.slice(0, 25).map((log, index) => (
+                          <div key={`${log.createdAt}-${log.field}-${index}`} className="medical-log-item">
+                            <div><strong>{log.doctorName}</strong> • {formatDateTime(log.createdAt)}</div>
+                            <div>{log.sectionName}: {RECORD_FIELD_LABELS[log.field] || log.field}</div>
+                          </div>
+                        ))
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              <button type="button" className="btn btn-outline" onClick={handleCloseMedicalRecord}>
+                Закрыть карту
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ const ConsultationService = require('./consultation.service');
 const PaymentService = require('./payment.service');
 const DependentService = require('./dependent.service');
 const AppointmentService = require('./AppointmentService');
+const MedicalRecordService = require('./medical-record.service');
 
 module.exports = {
   AuthService,
@@ -11,5 +12,6 @@ module.exports = {
   ConsultationService,
   PaymentService,
   DependentService,
-  AppointmentService
+  AppointmentService,
+  MedicalRecordService
 };
