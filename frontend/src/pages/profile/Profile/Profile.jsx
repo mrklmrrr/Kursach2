@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { AppHeader, BottomNav } from '../../../components/layout';
@@ -9,6 +9,7 @@ import { authApi } from '../../../services/authApi';
 import { consultationApi } from '../../../services/consultationApi';
 import { appointmentApi } from '../../../services/appointmentApi';
 import { medicalRecordApi } from '../../../services/medicalRecordApi';
+
 import './Profile.css';
 
 export default function Profile() {
@@ -35,7 +36,11 @@ export default function Profile() {
   const [expandedMedicalSection, setExpandedMedicalSection] = useState('');
   const [medicalHistoryOpen, setMedicalHistoryOpen] = useState(false);
   const [medicalRecordTab, setMedicalRecordTab] = useState('systems');
-  const [sickLeavesOpen, setSickLeavesOpen] = useState(false);
+  const [showSickLeaveHistory, setShowSickLeaveHistory] = useState(false);
+
+  const allLeaves = useMemo(() => medicalRecord?.sickLeaves || [], [medicalRecord]);
+  const openLeaves = useMemo(() => allLeaves.filter(leaf => leaf.status === 'open'), [allLeaves]);
+  const currentLeaf = useMemo(() => openLeaves.length > 0 ? openLeaves[0] : null, [openLeaves]);
 
   const parseHistoryDate = (value) => {
     if (!value) return null;
@@ -285,131 +290,150 @@ export default function Profile() {
               <p className="empty-info">Родственники пока не добавлены.</p>
             </section>
 
-            <section className="section-card">
-              <h3>Медицинская карта</h3>
-              {medicalRecordLoading && <p className="empty-info">Загрузка медицинской карты...</p>}
-              {!medicalRecordLoading && medicalRecordError && <p className="error-info">{medicalRecordError}</p>}
-              {!medicalRecordLoading && !medicalRecordError && !medicalRecordOpen && (
-                <p className="empty-info">Откройте карту, чтобы посмотреть записи врача по системам организма.</p>
-              )}
+<section className="section-card">
+  <h3>Медицинская карта</h3>
+  {medicalRecordLoading && <p className="empty-info">Загрузка медицинской карты...</p>}
+  {!medicalRecordLoading && medicalRecordError && <p className="error-info">{medicalRecordError}</p>}
+  {!medicalRecordLoading && !medicalRecordError && !medicalRecordOpen && (
+    <p className="empty-info">Откройте карту, чтобы посмотреть записи врача по системам организма.</p>
+  )}
+  <button
+    className="btn btn-primary"
+    onClick={() => setMedicalRecordOpen((prev) => !prev)}
+    disabled={medicalRecordLoading}
+  >
+    {medicalRecordOpen ? 'Скрыть карту' : 'Открыть карту'}
+  </button>
+
+  {!medicalRecordLoading && !medicalRecordError && medicalRecordOpen && (
+    <>
+      <div className="medical-record-tabs">
+        <button
+          type="button"
+          className={`profile-tab-btn ${medicalRecordTab === 'systems' ? 'active' : ''}`}
+          onClick={() => setMedicalRecordTab('systems')}
+        >
+          Медицинская карта
+        </button>
+        <button
+          type="button"
+          className={`profile-tab-btn ${medicalRecordTab === 'sickLeave' ? 'active' : ''}`}
+          onClick={() => setMedicalRecordTab('sickLeave')}
+        >
+          Лист нетрудоспособности
+        </button>
+      </div>
+
+      <div className="medical-record-patient-info">
+        <p><strong>Пациент:</strong> {medicalRecord?.patient?.name || fullName}</p>
+        <p><strong>Дата рождения:</strong> {medicalRecord?.patient?.birthDate ? String(medicalRecord.patient.birthDate).slice(0, 4) : '—'}</p>
+        <p><strong>Телефон:</strong> {medicalRecord?.patient?.phone || user?.phone || '—'}</p>
+      </div>
+
+      {/* Вкладка: Медицинская карта (системы организма) */}
+      {medicalRecordTab === 'systems' && (
+        <>
+          {(medicalRecord?.systems || []).map((section) => (
+            <div key={section.key} className="medical-record-system">
               <button
-                className="btn btn-primary"
-                onClick={() => setMedicalRecordOpen((prev) => !prev)}
-                disabled={medicalRecordLoading}
+                type="button"
+                className="medical-system-toggle"
+                onClick={() => setExpandedMedicalSection((prev) => (prev === section.key ? '' : section.key))}
               >
-                {medicalRecordOpen ? 'Скрыть карту' : 'Открыть карту'}
+                <span>{section.name}</span>
+                <span>{expandedMedicalSection === section.key ? '−' : '+'}</span>
               </button>
-
-              {!medicalRecordLoading && !medicalRecordError && medicalRecordOpen && (
-                <>
-                  <div className="medical-record-tabs">
-                    <button
-                      type="button"
-                      className={`profile-tab-btn ${medicalRecordTab === 'systems' ? 'active' : ''}`}
-                      onClick={() => setMedicalRecordTab('systems')}
-                    >
-                      Медицинская карта
-                    </button>
-                    <button
-                      type="button"
-                      className={`profile-tab-btn ${medicalRecordTab === 'sickLeave' ? 'active' : ''}`}
-                      onClick={() => setMedicalRecordTab('sickLeave')}
-                    >
-                      Лист нетрудоспособности
-                    </button>
-                  </div>
-
-                  <div className="medical-record-patient-info">
-                    <p><strong>Пациент:</strong> {medicalRecord?.patient?.name || fullName}</p>
-                    <p><strong>Дата рождения:</strong> {medicalRecord?.patient?.birthDate ? String(medicalRecord.patient.birthDate).slice(0, 4) : '—'}</p>
-                    <p><strong>Телефон:</strong> {medicalRecord?.patient?.phone || user?.phone || '—'}</p>
-                  </div>
-
-                  {medicalRecordTab === 'systems' && (medicalRecord?.systems || []).map((section) => (
-                    <div key={section.key} className="medical-record-system">
-                      <button
-                        type="button"
-                        className="medical-system-toggle"
-                        onClick={() => setExpandedMedicalSection((prev) => (prev === section.key ? '' : section.key))}
-                      >
-                        <span>{section.name}</span>
-                        <span>{expandedMedicalSection === section.key ? '−' : '+'}</span>
-                      </button>
-                      {expandedMedicalSection === section.key && (
-                        <div className="medical-system-content">
-                          <p><strong>Осмотр и жалобы:</strong> {section.notes || '—'}</p>
-                          <p><strong>Диагноз:</strong> {section.diagnosis || '—'}</p>
-                          <p><strong>Лечение:</strong> {section.treatment || '—'}</p>
-                          <p><strong>Рекомендации:</strong> {section.recommendations || '—'}</p>
-                          <p className="medical-system-meta">
-                            Обновлено: {formatDateTime(section.updatedAt)} • Врач: {section.updatedBy?.doctorName || '—'}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-
-                  {medicalRecordTab === 'sickLeave' && (
-                    <div className="medical-sick-leaves">
-                      <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={() => setSickLeavesOpen((prev) => !prev)}
-                      >
-                        {sickLeavesOpen ? 'Скрыть больничные' : 'Показать больничные'}
-                      </button>
-                      {sickLeavesOpen && (
-                        <>
-                          {(medicalRecord?.sickLeaves || []).length === 0 ? (
-                            <p className="empty-info">Листы нетрудоспособности пока не оформлялись.</p>
-                          ) : (
-                            (medicalRecord.sickLeaves || []).map((leaf) => (
-                              <div key={leaf._id} className="medical-record-system">
-                                <p><strong>Дата выдачи:</strong> {formatHistoryDate(leaf.issueDate)}</p>
-                                <p><strong>Период:</strong> {formatHistoryDate(leaf.startDate)} — {formatHistoryDate(leaf.endDate)}</p>
-                                <p><strong>Заболевание:</strong> {leaf.disease || '—'}</p>
-                                <p><strong>Диагноз:</strong> {leaf.diagnosis || '—'}</p>
-                                <p><strong>Рекомендации:</strong> {leaf.recommendations || '—'}</p>
-                                <p className="medical-system-meta">
-                                  Врач: {leaf.doctorName || '—'} • Обновлено: {formatDateTime(leaf.updatedAt)} • Статус: {leaf.status === 'open' ? 'Открыт' : 'Закрыт'}
-                                </p>
-                              </div>
-                            ))
-                          )}
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {medicalRecordTab === 'systems' && (
-                  <div className="medical-record-logs">
-                    <button
-                      type="button"
-                      className="medical-history-toggle"
-                      onClick={() => setMedicalHistoryOpen((prev) => !prev)}
-                    >
-                      <span>История обследования</span>
-                      <span>{medicalHistoryOpen ? '−' : '+'}</span>
-                    </button>
-                    {medicalHistoryOpen && (
-                      <>
-                        {(medicalRecord?.changeLogs || []).length === 0 ? (
-                          <p className="empty-info">Изменений пока нет.</p>
-                        ) : (
-                          medicalRecord.changeLogs.slice(0, 20).map((log, idx) => (
-                            <div key={`${log.createdAt}-${log.field}-${idx}`} className="medical-log-item">
-                              <div><strong>{log.doctorName}</strong> • {formatDateTime(log.createdAt)}</div>
-                              <div>{log.sectionName} • {log.field}</div>
-                            </div>
-                          ))
-                        )}
-                      </>
-                    )}
-                  </div>
-                  )}
-                </>
+              {expandedMedicalSection === section.key && (
+                <div className="medical-system-content">
+                  <p><strong>Осмотр и жалобы:</strong> {section.notes || '—'}</p>
+                  <p><strong>Диагноз:</strong> {section.diagnosis || '—'}</p>
+                  <p><strong>Лечение:</strong> {section.treatment || '—'}</p>
+                  <p><strong>Рекомендации:</strong> {section.recommendations || '—'}</p>
+                  <p className="medical-system-meta">
+                    Обновлено: {formatDateTime(section.updatedAt)} • Врач: {section.updatedBy?.doctorName || '—'}
+                  </p>
+                </div>
               )}
-            </section>
+            </div>
+          ))}
+
+          {/* Блок истории обследования (changeLogs) */}
+          <div className="medical-record-logs">
+            <button
+              type="button"
+              className="medical-history-toggle"
+              onClick={() => setMedicalHistoryOpen((prev) => !prev)}
+            >
+              <span>История обследования</span>
+              <span>{medicalHistoryOpen ? '−' : '+'}</span>
+            </button>
+            {medicalHistoryOpen && (
+              <>
+                {(medicalRecord?.changeLogs || []).length === 0 ? (
+                  <p className="empty-info">Изменений пока нет.</p>
+                ) : (
+                  medicalRecord.changeLogs.slice(0, 20).map((log, idx) => (
+                    <div key={`${log.createdAt}-${log.field}-${idx}`} className="medical-log-item">
+                      <div><strong>{log.doctorName}</strong> • {formatDateTime(log.createdAt)}</div>
+                      <div>{log.sectionName} • {log.field}</div>
+                    </div>
+                  ))
+                )}
+              </>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Вкладка: Лист нетрудоспособности */}
+      {medicalRecordTab === 'sickLeave' && (
+        <div className="medical-sick-leaves">
+          {currentLeaf ? (
+            <div className="medical-record-system">
+              <p><strong>Текущий больничный</strong></p>
+              <p><strong>Дата выдачи:</strong> {formatHistoryDate(currentLeaf.issueDate)}</p>
+              <p><strong>Период:</strong> {formatHistoryDate(currentLeaf.startDate)} — {formatHistoryDate(currentLeaf.endDate)}</p>
+              <p><strong>Заболевание:</strong> {currentLeaf.disease || '—'}</p>
+              <p><strong>Диагноз:</strong> {currentLeaf.diagnosis || '—'}</p>
+              <p><strong>Рекомендации:</strong> {currentLeaf.recommendations || '—'}</p>
+              <p className="medical-system-meta">
+                Врач: {currentLeaf.doctorName || '—'} Обновлено: {formatDateTime(currentLeaf.updatedAt)} Статус: {currentLeaf.status === 'open' ? 'Открыт' : 'Закрыт'}
+              </p>
+            </div>
+          ) : (
+            <p>Нет текущего больничного листа.</p>
+          )}
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => setShowSickLeaveHistory(!showSickLeaveHistory)}
+          >
+            {showSickLeaveHistory ? 'Скрыть историю больничных' : 'Показать историю больничных'}
+          </button>
+          {showSickLeaveHistory && (
+            <div>
+              {allLeaves.filter(leaf => leaf.status !== 'open').length === 0 && (
+                <p className="empty-info">История больничных пуста.</p>
+              )}
+              {allLeaves.filter(leaf => leaf.status !== 'open').length > 0 && allLeaves.filter(leaf => leaf.status !== 'open').map((leaf) => (
+                <div key={leaf._id} className="medical-record-system">
+                  <p><strong>Дата выдачи:</strong> {formatHistoryDate(leaf.issueDate)}</p>
+                  <p><strong>Период:</strong> {formatHistoryDate(leaf.startDate)} — {formatHistoryDate(leaf.endDate)}</p>
+                  <p><strong>Заболевание:</strong> {leaf.disease || '—'}</p>
+                  <p><strong>Диагноз:</strong> {leaf.diagnosis || '—'}</p>
+                  <p><strong>Рекомендации:</strong> {leaf.recommendations || '—'}</p>
+                  <p className="medical-system-meta">
+                    Врач: {leaf.doctorName || '—'} Обновлено: {formatDateTime(leaf.updatedAt)} Статус: {leaf.status === 'open' ? 'Открыт' : 'Закрыт'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  )}
+</section>
 
             <section className="section-card">
               <h3>История консультаций</h3>

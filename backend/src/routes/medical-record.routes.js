@@ -41,7 +41,26 @@ module.exports = function medicalRecordRoutes(medicalRecordController) {
     asyncHandler((req, res) => medicalRecordController.updatePatientSickLeave(req, res))
   );
 
+  router.get(
+    '/api/medical-record/patient/:patientId/laboratory-research',
+    authMiddleware,
+    isDoctor,
+    asyncHandler((req, res) => medicalRecordController.getLaboratoryResults(req, res))
+  );
 
+  router.get(
+    '/api/medical-record/patient/:patientId/instrumental-research',
+    authMiddleware,
+    isDoctor,
+    asyncHandler((req, res) => medicalRecordController.getInstrumentalResults(req, res))
+  );
+
+  router.post(
+    '/api/medical-record/patient/:patientId/research-results',
+    authMiddleware,
+    isDoctor,
+    asyncHandler((req, res) => medicalRecordController.createResearchResult(req, res))
+  );
 
   return router;
 };

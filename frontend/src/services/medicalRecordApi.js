@@ -8,5 +8,8 @@ export const medicalRecordApi = {
   createPatientSickLeave: (patientId, payload) =>
     api.post(`/medical-record/patient/${patientId}/sick-leaves`, payload),
   updatePatientSickLeave: (patientId, sickLeaveId, payload) =>
-    api.patch(`/medical-record/patient/${patientId}/sick-leaves/${sickLeaveId}`, payload)
+    api.patch(`/medical-record/patient/${patientId}/sick-leaves/${sickLeaveId}`, payload),
+  getLaboratoryResults: (patientId) => api.get(`/medical-record/patient/${patientId}/laboratory-research`),
+  getInstrumentalResults: (patientId) => api.get(`/medical-record/patient/${patientId}/instrumental-research`),
+  createResearchResult: (patientId, payload) => api.post(`/medical-record/patient/${patientId}/research-results`, payload)
 };

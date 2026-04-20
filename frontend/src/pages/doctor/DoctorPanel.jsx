@@ -56,7 +56,7 @@ export default function DoctorPanel() {
   const [workingDays, setWorkingDays] = useState(['mon', 'tue', 'wed', 'thu', 'fri']);
   const [loading, setLoading] = useState(true);
   const [commentModal, setCommentModal] = useState({ open: false, appointment: null, text: '' });
-  const [dummy, setDummy] = useState(0); // For forcing re-render
+
   const [medicalRecordModal, setMedicalRecordModal] = useState({
     open: false,
     patient: null,
@@ -65,9 +65,11 @@ export default function DoctorPanel() {
     savingSectionKey: '',
     error: ''
   });
+
   const [expandedMedicalSection, setExpandedMedicalSection] = useState('');
   const [medicalHistoryOpen, setMedicalHistoryOpen] = useState(false);
   const [medicalRecordTab, setMedicalRecordTab] = useState('systems');
+  const [showSickLeaveHistory, setShowSickLeaveHistory] = useState(false);
 
   const toDateTime = (item) => {
     const dateTime = new Date(`${item?.date || ''}T${item?.time || ''}:00`);
@@ -312,10 +314,6 @@ export default function DoctorPanel() {
         record: recordWithOriginal,
         loading: false
       }));
-      // const firstSectionKey = data?.systems?.[0]?.key || '';
-      // setExpandedMedicalSection(firstSectionKey);
-      setMedicalHistoryOpen(false);
-      setMedicalRecordTab('systems');
     } catch (err) {
       setMedicalRecordModal((prev) => ({
         ...prev,
@@ -323,6 +321,9 @@ export default function DoctorPanel() {
         error: err.response?.data?.message || 'Не удалось загрузить медицинскую карту'
       }));
     }
+
+      setMedicalHistoryOpen(false);
+      setMedicalRecordTab('systems');
   };
 
   const handleCloseMedicalRecord = () => {
@@ -337,6 +338,7 @@ export default function DoctorPanel() {
     setExpandedMedicalSection('');
     setMedicalHistoryOpen(false);
     setMedicalRecordTab('systems');
+    setShowSickLeaveHistory(false);
   };
 
   const handleMedicalFieldChange = (sectionKey, field, value) => {
@@ -385,6 +387,12 @@ export default function DoctorPanel() {
       }));
     }
   };
+
+
+
+
+
+
 
   const handleAddSickLeaveDraft = () => {
     setMedicalRecordModal((prev) => {
@@ -451,18 +459,20 @@ export default function DoctorPanel() {
       const { data } = leaf._id
         ? await medicalRecordApi.updatePatientSickLeave(medicalRecordModal.patient.id, leaf._id, payload)
         : await medicalRecordApi.createPatientSickLeave(medicalRecordModal.patient.id, payload);
-      const updatedRecord = {
-        ...(prev.record || {}),
-        ...data,
-        patient: prev.patient,
-        sickLeaves: (data.sickLeaves || []).map(leaf => ({ ...leaf, originalStatus: leaf.status }))
-      };
-      setMedicalRecordModal((prev) => ({
-        ...prev,
-        savingSectionKey: '',
-        record: updatedRecord
-      }));
-      setDummy(prev => prev + 1); // Force re-render
+
+      setMedicalRecordModal((prev) => {
+        const updatedRecord = {
+          ...(prev.record || {}),
+          ...data,
+          patient: prev.patient,
+          sickLeaves: (data.sickLeaves || []).map(leaf => ({ ...leaf, originalStatus: leaf.status }))
+        };
+        return {
+          ...prev,
+          savingSectionKey: '',
+          record: updatedRecord
+        };
+      });
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Не удалось сохранить лист нетрудоспособности';
       console.error('Ошибка сохранения больничного листа:', errorMessage, err);
@@ -777,6 +787,20 @@ export default function DoctorPanel() {
                   >
                     Лист нетрудоспособности
                   </button>
+                  <button
+                    type="button"
+                    className={`profile-tab-btn ${medicalRecordTab === 'laboratory' ? 'active' : ''}`}
+                    onClick={() => setMedicalRecordTab('laboratory')}
+                  >
+                    Лабораторные исследования
+                  </button>
+                  <button
+                    type="button"
+                    className={`profile-tab-btn ${medicalRecordTab === 'instrumental' ? 'active' : ''}`}
+                    onClick={() => setMedicalRecordTab('instrumental')}
+                  >
+                    Инструментальные исследования
+                  </button>
                 </div>
               )}
 
@@ -820,13 +844,26 @@ export default function DoctorPanel() {
 
               {!medicalRecordModal.loading && medicalRecordTab === 'sickLeave' && (
                 <div className="sick-leave-section">
-                  <button type="button" className="btn btn-primary" onClick={handleAddSickLeaveDraft}>
-                    Добавить лист нетрудоспособности
-                  </button>
-                  {(medicalRecordModal.record?.sickLeaves || []).length === 0 ? (
-                    <p>Листы нетрудоспособности пока не оформлены.</p>
-                  ) : (
-                    (medicalRecordModal.record?.sickLeaves || []).map((leaf) => {
+                  <div className="sick-leave-actions">
+                    <button type="button" className="btn btn-primary" onClick={handleAddSickLeaveDraft}>
+                      Добавить лист нетрудоспособности
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={() => setShowSickLeaveHistory(!showSickLeaveHistory)}
+                    >
+                      {showSickLeaveHistory ? 'Текущие больничные' : 'История больничных'}
+                    </button>
+                  </div>
+                  {(() => {
+                    const allLeaves = medicalRecordModal.record?.sickLeaves || [];
+                    const openLeaves = allLeaves.filter(leaf => leaf.status === 'open');
+                    const filteredLeaves = showSickLeaveHistory ? allLeaves : openLeaves.slice(0, 1);
+                    return filteredLeaves.length === 0 ? (
+                      <p>{showSickLeaveHistory ? 'История больничных пуста.' : 'Нет текущего больничного листа.'}</p>
+                    ) : (
+                      filteredLeaves.map((leaf) => {
                       const leafKey = leaf._id || leaf.tempId;
                       return (
                         <div key={leafKey} className="medical-section-card sick-leave-card">
@@ -909,7 +946,34 @@ export default function DoctorPanel() {
                         </div>
                       );
                     })
-                  )}
+                  );
+                })()}
+                </div>
+              )}
+
+              {!medicalRecordModal.loading && medicalRecordTab === 'laboratory' && (
+                <div className="research-navigation">
+                  <p>Управление лабораторными исследованиями производится на отдельной странице.</p>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => navigate(`/doctor/patient/${medicalRecordModal.patient.id}/laboratory`)}
+                  >
+                    Перейти к лабораторным исследованиям
+                  </button>
+                </div>
+              )}
+
+              {!medicalRecordModal.loading && medicalRecordTab === 'instrumental' && (
+                <div className="research-navigation">
+                  <p>Управление инструментальными исследованиями производится на отдельной странице.</p>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => navigate(`/doctor/patient/${medicalRecordModal.patient.id}/instrumental`)}
+                  >
+                    Перейти к инструментальным исследованиям
+                  </button>
                 </div>
               )}
 

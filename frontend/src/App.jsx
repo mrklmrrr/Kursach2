@@ -37,6 +37,8 @@ import Admin from './pages/admin/Admin';
 
 // Doctor Panel
 import DoctorPanel from './pages/doctor/DoctorPanel';
+import LaboratoryResearch from './pages/doctor/LaboratoryResearch';
+import InstrumentalResearch from './pages/doctor/InstrumentalResearch';
 
 function App() {
   return (
@@ -67,6 +69,12 @@ function App() {
         {/* Панель врача — только doctor */}
         <Route path="/doctor" element={
           <PrivateRoute roles={['doctor']}><DoctorPanel /></PrivateRoute>
+        } />
+        <Route path="/doctor/patient/:patientId/laboratory" element={
+          <PrivateRoute roles={['doctor']}><LaboratoryResearch /></PrivateRoute>
+        } />
+        <Route path="/doctor/patient/:patientId/instrumental" element={
+          <PrivateRoute roles={['doctor']}><InstrumentalResearch /></PrivateRoute>
         } />
       </Routes>
     </BrowserRouter>

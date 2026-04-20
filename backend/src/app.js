@@ -53,7 +53,8 @@ const {
   adminRoutes,
   doctorPanelRoutes,
   appointmentRoutes,
-  medicalRecordRoutes
+  medicalRecordRoutes,
+  researchRoutes
 } = require('./routes');
 
 // Socket
@@ -142,6 +143,7 @@ async function startApp() {
   app.use(dependentRoutes(dependentController));
   app.use(appointmentRoutes(appointmentController));
   app.use(medicalRecordRoutes(medicalRecordController));
+  app.use(researchRoutes());
 
   // Админка и панель врача
   app.use(adminRoutes(adminController));

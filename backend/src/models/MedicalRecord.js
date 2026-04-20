@@ -53,7 +53,9 @@ const medicalRecordSchema = new mongoose.Schema({
   patientId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
   systems: { type: [systemSectionSchema], default: () => MEDICAL_SYSTEMS.map((section) => ({ ...section })) },
   changeLogs: { type: [changeLogSchema], default: [] },
-  sickLeaves: { type: [sickLeaveSchema], default: [] }
+  sickLeaves: { type: [sickLeaveSchema], default: [] },
+  laboratoryResearch: [{ type: mongoose.Schema.Types.ObjectId, ref: 'ResearchResult' }],
+  instrumentalResearch: [{ type: mongoose.Schema.Types.ObjectId, ref: 'ResearchResult' }]
 }, { timestamps: true });
 
 medicalRecordSchema.index({ patientId: 1 }, { unique: true, name: 'medical_record_patient_idx' });

@@ -59,6 +59,25 @@ class MedicalRecordController {
     res.json(this._toResponseRecord(record));
   }
 
+  async getLaboratoryResults(req, res) {
+    const results = await this.medicalRecordService.getLaboratoryResults(req.params.patientId);
+    res.json(results);
+  }
+
+  async getInstrumentalResults(req, res) {
+    const results = await this.medicalRecordService.getInstrumentalResults(req.params.patientId);
+    res.json(results);
+  }
+
+  async createResearchResult(req, res) {
+    const result = await this.medicalRecordService.createResearchResult(
+      req.params.patientId,
+      req.body,
+      req.userId
+    );
+    res.status(201).json(result);
+  }
+
 
 
   _toPatientProfile(patient) {
@@ -80,7 +99,9 @@ class MedicalRecordController {
       patientId: record.patientId,
       systems: record.systems || [],
       changeLogs: (record.changeLogs || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
-      sickLeaves: (record.sickLeaves || []).slice().sort((a, b) => new Date(b.issueDate || b.createdAt || 0) - new Date(a.issueDate || a.createdAt || 0))
+      sickLeaves: (record.sickLeaves || []).slice().sort((a, b) => new Date(b.issueDate || b.createdAt || 0) - new Date(a.issueDate || a.createdAt || 0)),
+      laboratoryResearch: record.laboratoryResearch || [],
+      instrumentalResearch: record.instrumentalResearch || []
     };
   }
 }

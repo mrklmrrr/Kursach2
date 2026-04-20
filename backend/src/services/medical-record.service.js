@@ -1,5 +1,6 @@
 const ApiError = require('../utils/ApiError');
 const { roles } = require('../constants');
+const { ResearchResult, ResearchType } = require('../models/Research');
 
 const EDITABLE_FIELDS = ['notes', 'diagnosis', 'treatment', 'recommendations'];
 const SICK_LEAVE_FIELDS = ['disease', 'diagnosis', 'recommendations'];
@@ -142,7 +143,93 @@ class MedicalRecordService {
     return this.medicalRecordRepository.save(record);
   }
 
+  async getLaboratoryResults(patientId) {
+    await this._resolvePatient(patientId);
+    return this.medicalRecordRepository.getLaboratoryResults(patientId);
+  }
 
+  async getInstrumentalResults(patientId) {
+    await this._resolvePatient(patientId);
+    return this.medicalRecordRepository.getInstrumentalResults(patientId);
+  }
+
+  async createResearchResult(patientId, payload, doctorId) {
+    const { doctor } = await this._resolvePatientAndDoctor(patientId, doctorId);
+    const doctorName = this._toDoctorName(doctor);
+
+    const researchType = await ResearchType.findById(payload.researchTypeId);
+    if (!researchType) {
+      throw ApiError.badRequest('Тип исследования не найден');
+    }
+
+    // Валидируем обязательные поля по шаблону
+    const results = [];
+    const templateFields = researchType.template || [];
+
+    for (const field of templateFields) {
+      if (field.required && (!payload.results || !payload.results[field.name])) {
+        throw ApiError.badRequest(`Обязательное поле "${field.name}" не заполнено`);
+      }
+      if (payload.results && payload.results[field.name] !== undefined) {
+        let value = payload.results[field.name];
+        // Типизация значений
+        if (field.type === 'number') {
+          value = Number(value);
+          if (isNaN(value)) {
+            throw ApiError.badRequest(`Поле "${field.name}" должно быть числом`);
+          }
+        } else if (field.type === 'date') {
+          value = new Date(value);
+          if (isNaN(value.getTime())) {
+            throw ApiError.badRequest(`Поле "${field.name}" должно быть датой`);
+          }
+        } else {
+          value = String(value);
+        }
+
+        results.push({
+          fieldName: field.name,
+          value,
+          unit: field.unit || ''
+        });
+      }
+    }
+
+    const researchResult = new ResearchResult({
+      patientId,
+      researchTypeId: payload.researchTypeId,
+      date: payload.date ? new Date(payload.date) : new Date(),
+      doctorId,
+      doctorName,
+      results,
+      customResults: (payload.customResults || []).map(cr => ({
+        name: cr.name,
+        value: cr.value,
+        unit: cr.unit || ''
+      }))
+    });
+
+    await researchResult.save();
+
+    // Добавляем в медицинскую карту
+    const record = await this.medicalRecordRepository.findOrCreateByPatientId(patientId);
+    if (researchType.category === 'laboratory') {
+      record.laboratoryResearch.push(researchResult._id);
+    } else if (researchType.category === 'instrumental') {
+      record.instrumentalResearch.push(researchResult._id);
+    }
+    await this.medicalRecordRepository.save(record);
+
+    return researchResult.populate('researchTypeId');
+  }
+
+  async _resolvePatient(patientId) {
+    const patient = await this.userRepository.findById(patientId);
+    if (!patient || patient.role !== roles.PATIENT) {
+      throw ApiError.notFound('Пациент не найден');
+    }
+    return patient;
+  }
 
   async _resolvePatientAndDoctor(patientId, doctorId) {
     const [patient, doctor] = await Promise.all([

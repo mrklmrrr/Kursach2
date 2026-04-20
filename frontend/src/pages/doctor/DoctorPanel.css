@@ -371,6 +371,12 @@
   font: inherit;
 }
 
+.sick-leave-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
 .sick-leave-card {
   margin-top: 12px;
 }
@@ -691,4 +697,23 @@ body.dark .appointment-card {
   .cancel-btn {
     width: 100%;
   }
+}
+
+.research-navigation {
+  text-align: center;
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.research-navigation p {
+  margin-bottom: 20px;
+  color: #6c757d;
+  font-size: 16px;
+}
+
+.research-navigation .btn-primary {
+  padding: 12px 24px;
+  font-size: 16px;
 }
