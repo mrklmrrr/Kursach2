@@ -5,7 +5,7 @@ import { doctorApi } from '../../../services/doctorApi';
 import { appointmentApi } from '../../../services/appointmentApi';
 import { AppHeader, BottomNav } from '../../../components/layout';
 import { DoctorCard } from '../../../components/features';
-import { EmptyState } from '../../../components/ui';
+import { EmptyState, ConfirmModal } from '../../../components/ui';
 import './Home.css';
 
 const DAY_MAP = {
@@ -26,6 +26,14 @@ export default function Home() {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showAllUpcoming, setShowAllUpcoming] = useState(false);
   const [loadingAppointments, setLoadingAppointments] = useState(true);
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    confirmText: 'Да',
+    cancelText: 'Нет'
+  });
 
   // Редирект врача на его панель
   useEffect(() => {
@@ -97,7 +105,39 @@ export default function Home() {
     setShowAllUpcoming(false);
   }, [upcoming.length]);
 
-  const onlineCount = doctors.filter((d) => d.isOnline).length;
+  const showConfirm = (title, message, onConfirm, confirmText = 'Да', cancelText = 'Нет') => {
+    setConfirmModal({
+      open: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm?.();
+        setConfirmModal(prev => ({ ...prev, open: false }));
+      },
+      confirmText,
+      cancelText
+    });
+  };
+
+  const handleCancelAppointment = async (appointmentId) => {
+    showConfirm(
+      'Отмена записи',
+      'Вы уверены, что хотите отменить запись?',
+      async () => {
+        try {
+          await appointmentApi.cancel(appointmentId);
+          setUpcoming(prev => prev.filter(a => a.id !== appointmentId));
+          setSelectedAppointment(null);
+        } catch (err) {
+          alert(err.response?.data?.message || 'Ошибка отмены записи');
+        }
+      },
+      'Да, отменить',
+      'Нет'
+    );
+  };
+
+   const onlineCount = doctors.filter((d) => d.isOnline).length;
   const fullNameParts = user?.name?.trim().split(/\s+/).filter(Boolean) || [];
   const extractedFirstName = fullNameParts.length >= 2 ? fullNameParts[1] : fullNameParts[0];
   const firstName = user?.firstName || extractedFirstName || 'Пользователь';
@@ -241,13 +281,34 @@ export default function Home() {
               <div><span>Длительность:</span> {selectedAppointment.duration} мин.</div>
             </div>
             <div className="appointment-details-comment">
-              <span>Комментарий врача:</span>{' '}
-              {selectedAppointment.doctorComment?.trim() || 'Комментарий отсутствует'}
+                <span>Комментарий врача:</span>{' '}
+                {selectedAppointment.doctorComment?.trim() || 'Комментарий отсутствует'}
             </div>
-          </div>
-        </div>
-      )}
-      <BottomNav />
+            {(selectedAppointment.status === 'Запланирована' || selectedAppointment.status === 'Подтверждена') && (
+              <div className="appointment-details-actions">
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  onClick={() => handleCancelAppointment(selectedAppointment.id)}
+                >
+                  Отменить запись
+                </button>
+              </div>
+            )}
+           </div>
+         </div>
+       )}
+       <ConfirmModal
+         open={confirmModal.open}
+         title={confirmModal.title}
+         message={confirmModal.message}
+         confirmText={confirmModal.confirmText}
+         cancelText={confirmModal.cancelText}
+         onConfirm={confirmModal.onConfirm}
+         onCancel={() => setConfirmModal(prev => ({ ...prev, open: false }))}
+         type="danger"
+       />
+       <BottomNav />
     </div>
   );
 }

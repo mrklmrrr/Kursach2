@@ -27,7 +27,8 @@ const {
   PaymentService,
   DependentService,
   AppointmentService,
-  MedicalRecordService
+  MedicalRecordService,
+  VideoRoomService
 } = require('./services');
 
 // Controllers
@@ -40,7 +41,8 @@ const {
   AdminController,
   DoctorPanelController,
   AppointmentController,
-  MedicalRecordController
+  MedicalRecordController,
+  VideoRoomController
 } = require('./controllers');
 
 // Routes
@@ -54,7 +56,8 @@ const {
   doctorPanelRoutes,
   appointmentRoutes,
   medicalRecordRoutes,
-  researchRoutes
+  researchRoutes,
+  videoRoomRoutes
 } = require('./routes');
 
 // Socket
@@ -124,6 +127,7 @@ async function startApp() {
   const dependentService = new DependentService(dependentRepository);
   const appointmentService = new AppointmentService(appointmentRepository, userRepository);
   const medicalRecordService = new MedicalRecordService(medicalRecordRepository, userRepository);
+  const videoRoomService = new VideoRoomService(consultationRepository);
 
   const authController = new AuthController(authService);
   const doctorController = new DoctorController(doctorService);
@@ -134,6 +138,7 @@ async function startApp() {
   const doctorPanelController = new DoctorPanelController(doctorService, consultationService);
   const appointmentController = new AppointmentController(appointmentService, userRepository);
   const medicalRecordController = new MedicalRecordController(medicalRecordService, userRepository);
+  const videoRoomController = new VideoRoomController(videoRoomService);
 
   // Routes
   app.use(authRoutes(authController));
@@ -148,6 +153,8 @@ async function startApp() {
   // Админка и панель врача
   app.use(adminRoutes(adminController));
   app.use(doctorPanelRoutes(doctorPanelController));
+  app.use('/api/video-rooms', videoRoomRoutes(videoRoomController));
+
 
   // Error handler (должен быть последним)
   app.use(errorHandler);

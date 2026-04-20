@@ -296,6 +296,39 @@
   font-size: 0.95rem;
 }
 
+.appointment-details-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cancel-btn {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #fee2e2;
+  color: #991b1b;
+  white-space: nowrap;
+}
+
+body.dark .cancel-btn {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+
+@media (max-width: 480px) {
+  .cancel-btn {
+    width: 100%;
+  }
+}
+
+body.dark .appointment-details-comment {
+  border-top-color: #374151;
+}
+
 body.dark .greeting,
 body.dark .section-title {
   color: #f9fafb;

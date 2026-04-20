@@ -94,6 +94,12 @@ const consultationSchemas = {
       type: z.enum(['chat', 'video']).optional()
     }).passthrough()
   },
+  createVideoRoom: {
+    ...base,
+    body: z.object({
+      consultationId: idString
+    })
+  },
   idParam: {
     ...base,
     params: z.object({ id: idString })

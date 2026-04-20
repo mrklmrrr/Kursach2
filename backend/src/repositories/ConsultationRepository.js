@@ -150,6 +150,15 @@ class ConsultationRepository {
   async countByStatus(status) {
     return Consultation.countDocuments({ status });
   }
+
+  async updateVideoRoom(consultationId, videoRoomData) {
+    const consultation = await Consultation.findByIdAndUpdate(
+      consultationId,
+      { $set: videoRoomData },
+      { new: true }
+    );
+    return consultation ? consultation.toObject() : null;
+  }
 }
 
 module.exports = ConsultationRepository;

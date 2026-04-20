@@ -8,3 +8,4 @@ export { doctorPanelApi } from './doctorPanelApi';
 export { appointmentApi } from './appointmentApi';
 export { chatApi } from './chatApi';
 export { medicalRecordApi } from './medicalRecordApi';
+export { videoRoomApi } from './videoRoomApi';

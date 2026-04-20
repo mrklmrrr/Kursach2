@@ -10,9 +10,34 @@ export function useMediaStream(options = { video: true, audio: true }) {
   useEffect(() => {
     let mounted = true;
 
+    const getErrorMessage = (err) => {
+      if (err.name === 'NotAllowedError') {
+        return 'Доступ к камере/микрофону запрещен. Проверьте разрешения браузера.';
+      } else if (err.name === 'NotFoundError') {
+        return 'Камера или микрофон не найдены.';
+      } else if (err.name === 'NotReadableError') {
+        return 'Камера или микрофон заняты другим приложением.';
+      } else if (err.name === 'OverconstrainedError') {
+        return 'Камера не поддерживает запрошенные параметры.';
+      }
+      return err.message || 'Ошибка доступа к медиа устройствам';
+    };
+
     const startMedia = async () => {
       try {
-        const userStream = await navigator.mediaDevices.getUserMedia(options);
+        // Try with advanced constraints first
+        let userStream;
+        try {
+          userStream = await navigator.mediaDevices.getUserMedia(options);
+        } catch (constraintErr) {
+          // If constraints fail, try without them
+          console.warn('Advanced constraints not supported, trying basic', constraintErr);
+          userStream = await navigator.mediaDevices.getUserMedia({
+            video: options.video ? true : false,
+            audio: options.audio ? true : false
+          });
+        }
+        
         if (mounted) {
           streamRef.current = userStream;
           setStream(userStream);
@@ -20,7 +45,8 @@ export function useMediaStream(options = { video: true, audio: true }) {
         }
       } catch (err) {
         if (mounted) {
-          setError(err);
+          const errorMessage = getErrorMessage(err);
+          setError(errorMessage);
           console.error('Ошибка доступа к камере/микрофону:', err);
         }
       }

@@ -55,6 +55,18 @@ class ConsultationService {
     }
     return this.updateStatus(id, status);
   }
+
+  // Video Room methods
+  async startVideoRoom(consultationId, doctorId) {
+    const videoRoomService = new (require('./VideoRoomService'))(this.consultationRepository);
+    return videoRoomService.createRoom(consultationId, doctorId);
+  }
+
+  async endVideoRoom(consultationId, doctorId) {
+    const videoRoomService = new (require('./VideoRoomService'))(this.consultationRepository);
+    return videoRoomService.endRoom(consultationId, doctorId);
+  }
 }
 
 module.exports = ConsultationService;
+

@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import PageLayout from '../../components/layout/PageLayout/PageLayout';
 
 import { useDoctorPanelData, useMedicalRecordModal, useConsultations, useCommentModal, useAppointments, useWorkingHours } from './hooks';
+import { videoRoomApi } from '../../services';
 import { toDateTime } from './utils/dateUtils';
 import ProfileHeader from './components/ProfileHeader';
 import { RequestsTab, UpcomingTab, AppointmentsTab, PatientsTab } from './components/tabs';

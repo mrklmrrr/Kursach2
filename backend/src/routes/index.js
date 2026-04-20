@@ -8,6 +8,7 @@ const doctorPanelRoutes = require('./doctor-panel.routes');
 const appointmentRoutes = require('./appointment.routes');
 const medicalRecordRoutes = require('./medical-record.routes');
 const researchRoutes = require('./research.routes');
+const videoRoomRoutes = require('./video-room.routes');
 
 module.exports = {
   authRoutes,
@@ -19,5 +20,6 @@ module.exports = {
   doctorPanelRoutes,
   appointmentRoutes,
   medicalRecordRoutes,
-  researchRoutes
+  researchRoutes,
+  videoRoomRoutes
 };

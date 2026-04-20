@@ -7,6 +7,7 @@ import Chats from '../pages/chat/Chats/Chats';
 import ChatRoom from '../pages/chat/ChatRoom/ChatRoom';
 import Emergency from '../pages/emergency/Emergency/Emergency';
 import Consultation from '../pages/consultation/Consultation/Consultation';
+import VideoRoom from '../pages/video-room/VideoRoom/VideoRoom';
 import Profile from '../pages/profile/Profile/Profile';
 import AddRelative from '../pages/profile/AddRelative/AddRelative';
 import Payment from '../pages/payment/Payment/Payment';
@@ -35,7 +36,8 @@ export const routes = {
     { path: '/confirm', element: <Confirm /> },
     { path: '/payment', element: <Payment /> },
     { path: '/loader', element: <LoaderPage /> },
-    { path: '/consultation/:id', element: <Consultation /> }
+    { path: '/consultation/:id', element: <Consultation /> },
+    { path: '/video-room/:id', element: <VideoRoom /> }
   ],
   doctorOnly: [
     { path: '/doctor', element: <DoctorPanel /> },

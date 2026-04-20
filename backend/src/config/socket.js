@@ -99,6 +99,83 @@ function setupSocket(server, consultationRepository) {
       }
     });
 
+    // WebRTC Video Room Signaling
+    socket.on('join-video-room', async (roomId) => {
+      try {
+        const consultation = await consultationRepository.findById(roomId);
+        if (!consultation || !consultation.videoRoom) {
+          socket.emit('video-error', { message: 'Video room not found' });
+          return;
+        }
+
+        const videoRoom = consultation.videoRoom;
+        if (videoRoom.status !== 'waiting' && videoRoom.status !== 'active') {
+          socket.emit('video-error', { message: 'Room not available' });
+          return;
+        }
+
+        // Role-based access
+        if (socket.userRole !== 'doctor' && socket.userRole !== 'patient') {
+          socket.emit('video-error', { message: 'Invalid role' });
+          return;
+        }
+
+        // Doctor or patient check
+        if (socket.userRole === 'doctor' && String(consultation.doctorId) !== String(socket.userId)) {
+          socket.emit('video-error', { message: 'Access denied' });
+          return;
+        }
+        if (socket.userRole === 'patient' && String(consultation.patientId) !== String(socket.userId)) {
+          socket.emit('video-error', { message: 'Access denied' });
+          return;
+        }
+
+        socket.join(`video-${roomId}`);
+        socket.emit('room-joined', { 
+          roomId, 
+          status: videoRoom.status, 
+          participants: videoRoom.participants || [],
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+          ]
+        });
+        io.to(`video-${roomId}`).emit('participant-joined', { userId: socket.userId, role: socket.userRole });
+        logger.debug('Client joined video room', { roomId, userId: socket.userId, role: socket.userRole });
+      } catch (err) {
+        logger.error('Join video room error:', err);
+        socket.emit('video-error', { message: 'Join failed' });
+      }
+    });
+
+    // WebRTC Signaling Events
+    socket.on('webrtc-offer', ({ roomId, offer }) => {
+      socket.to(`video-${roomId}`).emit('webrtc-offer', {
+        offer,
+        from: socket.userId
+      });
+    });
+
+    socket.on('webrtc-answer', ({ roomId, answer }) => {
+      socket.to(`video-${roomId}`).emit('webrtc-answer', {
+        answer,
+        from: socket.userId
+      });
+    });
+
+    socket.on('webrtc-ice-candidate', ({ roomId, candidate }) => {
+      socket.to(`video-${roomId}`).emit('webrtc-ice-candidate', {
+        candidate,
+        from: socket.userId
+      });
+    });
+
+    socket.on('leave-video-room', (roomId) => {
+      socket.leave(`video-${roomId}`);
+      io.to(`video-${roomId}`).emit('participant-left', { userId: socket.userId });
+      logger.debug('Client left video room', { roomId, userId: socket.userId });
+    });
+
     socket.on('disconnect', () => logger.info('Socket client disconnected'));
   });
 

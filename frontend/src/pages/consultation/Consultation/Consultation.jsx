@@ -4,6 +4,7 @@ import { useTimer } from '../../../hooks/useTimer';
 import { VideoCall } from '../../../components/features';
 import { Button, BackButton } from '../../../components/ui';
 import { Avatar } from '../../../components/ui';
+import { videoRoomApi } from '../../../services';
 import './Consultation.css';
 
 export default function Consultation() {
@@ -13,6 +14,8 @@ export default function Consultation() {
   const doctorFromState = location.state?.doctor;
 
   const [consultation, setConsultation] = useState(null);
+  const [roomId, setRoomId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const { formatted, reset } = useTimer(900, () => {
     // Timer ended
@@ -36,11 +39,37 @@ export default function Consultation() {
     setConsultation(consultationData);
   }, [id, doctorFromState]);
 
+  // Auto-join video room for patient
+  useEffect(() => {
+    const joinVideoRoom = async () => {
+      try {
+        setLoading(true);
+        const room = await videoRoomApi.getRoomInfo(id);
+        setRoomId(room._id || id);
+      } catch (err) {
+        console.error('Error joining video room:', err);
+        // If room doesn't exist, create it (for doctor)
+        try {
+          const newRoom = await videoRoomApi.createRoom(id);
+          setRoomId(newRoom._id || id);
+        } catch (createErr) {
+          console.error('Error creating video room:', createErr);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      joinVideoRoom();
+    }
+  }, [id]);
+
   const endConsultation = () => {
     setTimeout(() => navigate('/chats'), 600);
   };
 
-  if (!consultation) {
+  if (!consultation || loading) {
     return (
       <div className="loading-screen">
         <div className="loader-spinner" />
@@ -64,7 +93,7 @@ export default function Consultation() {
       </div>
 
       <div className="video-call-wrapper">
-        <VideoCall />
+        {roomId && <VideoCall roomId={roomId} onEndCall={endConsultation} />}
       </div>
 
       <div className="controls-bar">

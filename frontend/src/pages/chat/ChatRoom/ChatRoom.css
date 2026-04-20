@@ -35,6 +35,36 @@ button.chat-room-header-info {
   cursor: pointer;
 }
 
+.chat-room-video-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+  flex-shrink: 0;
+}
+
+.chat-room-video-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+
+.chat-room-video-btn:active {
+  transform: scale(0.95);
+}
+
+.chat-room-video-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .chat-room-doctor-name {
   font-weight: 600;
   font-size: 1rem;
@@ -298,4 +328,12 @@ body.dark .message-wrapper.doctor .message-bubble {
 body.dark .chat-room-profile-modal {
   background: #1f2937;
   color: #f9fafb;
+}
+
+body.dark .chat-room-video-btn {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+}
+
+body.dark .chat-room-video-btn:hover {
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
 }

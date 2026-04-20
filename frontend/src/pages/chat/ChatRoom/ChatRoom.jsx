@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Avatar } from '../../../components/ui';
 import { chatApi } from '../../../services/chatApi';
+import { videoRoomApi } from '../../../services/videoRoomApi';
 import { useAuth } from '../../../hooks/useAuth';
 import './ChatRoom.css';
 
@@ -16,6 +17,7 @@ export default function ChatRoom() {
   const [uploading, setUploading] = useState(false);
   const [chatMeta, setChatMeta] = useState(null);
   const [showPatientProfile, setShowPatientProfile] = useState(false);
+  const [startingVideo, setStartingVideo] = useState(false);
   const messagesEndRef = useRef(null);
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -157,6 +159,22 @@ export default function ChatRoom() {
     }
   };
 
+  const handleStartVideoChat = async () => {
+    try {
+      setStartingVideo(true);
+      // Create video room using consultation ID (chatId)
+      const room = await videoRoomApi.createRoom(id);
+      navigate(`/video-room/${room._id || id}`, { 
+        state: { consultationId: id } 
+      });
+    } catch (err) {
+      console.error('Ошибка при создании видео комнаты:', err);
+      alert('Ошибка при создании видео комнаты: ' + (err.message || 'Неизвестная ошибка'));
+    } finally {
+      setStartingVideo(false);
+    }
+  };
+
   return (
     <div className="chat-room-page">
       <header className="chat-room-header">
@@ -177,6 +195,16 @@ export default function ChatRoom() {
             </div>
           </div>
         </button>
+        {isDoctor && (
+          <button
+            className="chat-room-video-btn"
+            onClick={handleStartVideoChat}
+            disabled={startingVideo}
+            title="Начать видеовызов с пациентом"
+          >
+            <span className="material-icons">{startingVideo ? 'hourglass_top' : 'videocam'}</span>
+          </button>
+        )}
       </header>
 
       <div className="chat-room-container">
