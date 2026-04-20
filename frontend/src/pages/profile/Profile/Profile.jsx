@@ -254,7 +254,7 @@ export default function Profile() {
       try {
         const { data } = await medicalRecordApi.getMyRecord();
         setMedicalRecord(data);
-        setExpandedMedicalSection(data?.systems?.[0]?.key || '');
+        // setExpandedMedicalSection(data?.systems?.[0]?.key || '');
         setMedicalHistoryOpen(false);
         setMedicalRecordTab('systems');
       } catch (error) {

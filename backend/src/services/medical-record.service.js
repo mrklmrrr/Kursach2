@@ -64,13 +64,34 @@ class MedicalRecordService {
     const doctorName = this._toDoctorName(doctor);
     const record = await this.medicalRecordRepository.findOrCreateByPatientId(patientId);
 
+    const disease = String(payload.disease || '').trim();
+    const diagnosis = String(payload.diagnosis || '').trim();
+    const recommendations = String(payload.recommendations || '').trim();
+
+    if (!disease || !diagnosis || !recommendations) {
+      throw ApiError.badRequest('Все поля обязательны: заболевание, диагноз, рекомендации');
+    }
+
+    // Check for duplicate sick leaves within the last 30 seconds (more lenient)
+    const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
+    const existingDuplicate = record.sickLeaves.find(sickLeave =>
+      sickLeave.disease === disease &&
+      sickLeave.diagnosis === diagnosis &&
+      sickLeave.recommendations === recommendations &&
+      new Date(sickLeave.updatedAt) > thirtySecondsAgo
+    );
+
+    if (existingDuplicate) {
+      throw ApiError.badRequest('Лист нетрудоспособности с такими данными уже создан недавно');
+    }
+
     record.sickLeaves.push({
       issueDate: this._toDateOrNow(payload.issueDate),
       startDate: this._toDateOrNull(payload.startDate),
       endDate: this._toDateOrNull(payload.endDate),
-      disease: String(payload.disease || '').trim(),
-      diagnosis: String(payload.diagnosis || '').trim(),
-      recommendations: String(payload.recommendations || '').trim(),
+      disease,
+      diagnosis,
+      recommendations,
       status: payload.status === 'closed' ? 'closed' : 'open',
       doctorId,
       doctorName,
@@ -101,7 +122,11 @@ class MedicalRecordService {
 
     SICK_LEAVE_FIELDS.forEach((field) => {
       if (payload[field] === undefined) return;
-      sickLeave[field] = String(payload[field] || '').trim();
+      const value = String(payload[field] || '').trim();
+      if (!value) {
+        throw ApiError.badRequest(`Поле ${field} не может быть пустым`);
+      }
+      sickLeave[field] = value;
     });
 
     if (payload.status !== undefined) {
@@ -139,7 +164,29 @@ class MedicalRecordService {
   }
 
   _toDateOrNull(value) {
-    if (!value) return null;
+    if (!value || typeof value !== 'string') return null;
+
+    // Try parsing DD.MM.YYYY format
+    const ddmmyyyyMatch = value.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+    if (ddmmyyyyMatch) {
+      const [, day, month, year] = ddmmyyyyMatch;
+      const parsed = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+
+    // Try parsing date range format like "20.04.2026 — 27.04.2026"
+    const rangeMatch = value.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})\s*—\s*(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+    if (rangeMatch) {
+      const [, startDay, startMonth, startYear] = rangeMatch;
+      const parsed = new Date(`${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+
+    // Fallback to standard Date parsing
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }

@@ -169,15 +169,18 @@ export default function Home() {
           Сейчас онлайн <span className="highlight">{onlineCount}</span> врачей
         </div>
 
-        <div className="section-title">Врачи онлайн сейчас</div>
+        {onlineCount > 0 && (
+          <>
+            <div className="section-title">Врачи онлайн сейчас</div>
+            <div className="doctors-scroll">
+              {doctors.filter((d) => d.isOnline).slice(0, 6).map((doc) => (
+                <DoctorCard key={doc.id} doctor={doc} variant="compact" />
+              ))}
+            </div>
+          </>
+        )}
 
-        {doctors.length > 0 ? (
-          <div className="doctors-scroll">
-            {doctors.slice(0, 6).map((doc) => (
-              <DoctorCard key={doc.id} doctor={doc} variant="compact" />
-            ))}
-          </div>
-        ) : (
+        {doctors.length === 0 && (
           <EmptyState icon="local_hospital" title="Врачи не загружены" />
         )}
 
