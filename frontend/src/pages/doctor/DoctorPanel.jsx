@@ -856,10 +856,10 @@ export default function DoctorPanel() {
                       {showSickLeaveHistory ? 'Текущие больничные' : 'История больничных'}
                     </button>
                   </div>
-                  {(() => {
-                    const allLeaves = medicalRecordModal.record?.sickLeaves || [];
-                    const openLeaves = allLeaves.filter(leaf => leaf.status === 'open');
-                    const filteredLeaves = showSickLeaveHistory ? allLeaves : openLeaves.slice(0, 1);
+                   {(() => {
+                     const allLeaves = medicalRecordModal.record?.sickLeaves || [];
+                     const openLeaves = allLeaves.filter(leaf => leaf.originalStatus === 'open');
+                     const filteredLeaves = showSickLeaveHistory ? allLeaves : openLeaves.slice(0, 1);
                     return filteredLeaves.length === 0 ? (
                       <p>{showSickLeaveHistory ? 'История больничных пуста.' : 'Нет текущего больничного листа.'}</p>
                     ) : (
