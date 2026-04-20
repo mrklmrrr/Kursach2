@@ -4,6 +4,7 @@ import App from './App';
 import { AuthProvider } from './contexts/AuthProvider/AuthProvider';
 import ErrorBoundary from './components/common/ErrorBoundary/ErrorBoundary';
 
+// Global styles
 import './styles/global.css';
 
 // UI component styles
@@ -22,6 +23,7 @@ import './components/features/DoctorCard/DoctorCard.css';
 import './components/features/ConsultationCard/ConsultationCard.css';
 import './components/features/VideoCall/VideoCall.css';
 import './components/features/ThemeToggle/ThemeToggle.css';
+import './components/common/ErrorBoundary/ErrorBoundary.css';
 
 // Page styles
 import './pages/auth/Login/AuthForms.css';
@@ -36,6 +38,10 @@ import './pages/profile/Profile/Profile.css';
 import './pages/profile/AddRelative/AddRelative.css';
 import './pages/payment/Payment/Payment.css';
 import './pages/payment/Confirm/Confirm.css';
+import './pages/doctor/DoctorPanel.css';
+import './pages/doctor/ResearchManagement.css';
+import './pages/admin/Admin.css';
+import './pages/admin/AdminDashboard.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
