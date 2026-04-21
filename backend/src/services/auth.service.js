@@ -50,7 +50,10 @@ class AuthService {
       throw new Error('Некорректные данные для входа');
     }
 
-    const user = await this.userRepository.findByPhone(phone);
+    let user = await this.userRepository.findByPhone(phone);
+    if (!user && /^\S+@\S+\.\S+$/.test(phone)) {
+      user = await this.userRepository.findByEmail(phone);
+    }
     if (!user) {
       throw new Error('Пользователь не найден');
     }
@@ -62,10 +65,6 @@ class AuthService {
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
       throw new Error('Неверный пароль');
-    }
-
-    if (user.role === roles.ADMIN) {
-      throw new Error('Для администратора используйте /admin');
     }
 
     const token = this._createAccessToken(user);
@@ -247,6 +246,7 @@ class AuthService {
       }
     );
   }
+
 }
 
 module.exports = AuthService;
