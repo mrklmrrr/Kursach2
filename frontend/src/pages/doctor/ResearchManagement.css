@@ -843,3 +843,139 @@
 .lab-history-cell[data-status='severe'] {
   border-left: 3px solid #ff6b6b;
 }
+
+/* Раскрытие/скрытие результатов исследования */
+.result-header--clickable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+  border-radius: 6px;
+  padding: 8px !important;
+  margin: -8px -8px 10px -8px;
+}
+
+.result-header--clickable:hover {
+  background-color: #f0f4f8;
+}
+
+.result-header--clickable:focus-visible {
+  outline: 2px solid #0d47a1;
+  outline-offset: 2px;
+}
+
+.result-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+
+.result-expand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-top: 2px;
+  color: #495057;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.result-expand-icon .material-icons {
+  font-size: 24px;
+}
+
+.result-expand-icon.expanded {
+  transform: rotate(180deg);
+  color: #007bff;
+}
+
+.result-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.result-header-info h4 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 16px;
+}
+
+.result-header-info .result-date {
+  color: #6c757d;
+  font-size: 13px;
+}
+
+/* Анимация для расширения содержимого */
+.research-result-card > div:not(.result-header--clickable):not(.result-doctor) {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+  }
+  to {
+    opacity: 1;
+    max-height: 2000px;
+    overflow: visible;
+  }
+}
+
+/* Раздел бланков и шаблонов с раскрытием */
+.lab-templates-section {
+  margin: 30px 0;
+}
+
+.lab-templates-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px !important;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6 !important;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  justify-content: flex-start;
+}
+
+.lab-templates-toggle:hover {
+  background: #eef2f7;
+  border-color: #c3cfe0 !important;
+}
+
+.lab-templates-toggle:focus-visible {
+  outline: 2px solid #0d47a1;
+  outline-offset: 2px;
+}
+
+.lab-expand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  transition: transform 0.3s ease;
+  color: #495057;
+  flex-shrink: 0;
+}
+
+.lab-expand-icon.expanded {
+  transform: rotate(180deg);
+  color: #007bff;
+}
+
+.lab-templates-panel {
+  margin-top: 16px;
+  animation: slideDown 0.3s ease-out;
+}

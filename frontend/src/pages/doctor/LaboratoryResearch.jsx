@@ -129,6 +129,17 @@ function LaboratoryResearch() {
   /** Общий текст и оценка ко всей записи анализа (сохраняются в карте) */
   const [studyNote, setStudyNote] = useState('');
   const [overallStatus, setOverallStatus] = useState('normal');
+  /** Отслеживание какие результаты раскрыты/скрыты */
+  const [expandedResults, setExpandedResults] = useState({});
+  /** Раскрыт ли раздел с бланками и шаблонами */
+  const [showTemplatesList, setShowTemplatesList] = useState(false);
+
+  const toggleResultExpanded = useCallback((resultId) => {
+    setExpandedResults((prev) => ({
+      ...prev,
+      [resultId]: !prev[resultId]
+    }));
+  }, []);
 
   const loadData = useCallback(async () => {
     if (!patientId) return;
@@ -475,289 +486,6 @@ function LaboratoryResearch() {
           </p>
         </div>
 
-        {gridTemplates.length > 0 && (
-          <div className="lab-templates-panel">
-            <h3>Бланки и шаблоны таблиц</h3>
-            <p className="lab-help">
-              Сохраните таблицу под понятным названием (как принято для анализа крови) — затем находите её через поиск и выбирайте при вводе. В ячейках можно задать типовые показатели; при вводе результата добавляются комментарий и оценка по каждой ячейке и общие поля ниже.
-            </p>
-            {visibleGridTemplates.length === 0 ? (
-              <p className="lab-empty-filter">Нет шаблонов по запросу «{analysisNameSearch.trim()}».</p>
-            ) : (
-              <div className="lab-templates-table-wrap">
-                <table className="lab-templates-table" role="grid">
-                  <thead>
-                    <tr>
-                      <th scope="col">Название анализа</th>
-                      <th scope="col" className="lab-templates-col-size">
-                        Размер
-                      </th>
-                      <th scope="col">Показатели (строки бланка)</th>
-                      <th scope="col" className="lab-templates-col-actions">
-                        Действия
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleGridTemplates.map((t) => {
-                      const gt = t.gridTemplate || {};
-                      const rowHeaders = Array.isArray(gt.rowHeaders) ? gt.rowHeaders : [];
-                      const previewList = rowHeaders.slice(0, 8);
-                      const preview = previewList.join(' · ');
-                      const rest = rowHeaders.length > 8 ? ` … ещё ${rowHeaders.length - 8}` : '';
-                      const fullTitle = rowHeaders.join('\n');
-                      return (
-                        <tr
-                          key={t._id}
-                          className="lab-templates-table-row"
-                          title="Нажмите на строку, чтобы открыть ввод результата по этому бланку"
-                          onClick={() => openLabTemplateForEntry(t)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              openLabTemplateForEntry(t);
-                            }
-                          }}
-                          tabIndex={0}
-                          role="button"
-                        >
-                          <td className="lab-templates-td-name">
-                            <strong className="lab-templates-link-name">{t.name}</strong>
-                          </td>
-                          <td>
-                            {gt.rows}×{gt.cols}
-                          </td>
-                          <td className="lab-templates-td-preview" title={fullTitle || '—'}>
-                            {rowHeaders.length > 0 ? (
-                              <>
-                                {preview}
-                                {rest}
-                              </>
-                            ) : (
-                              <span className="lab-templates-muted">—</span>
-                            )}
-                          </td>
-                          <td
-                            className="lab-templates-td-actions"
-                            onClick={(e) => e.stopPropagation()}
-                            onKeyDown={(e) => e.stopPropagation()}
-                          >
-                            {t.createdBy ? (
-                              <>
-                                <button
-                                  type="button"
-                                  className="btn btn-outline btn-small"
-                                  onClick={() => openEditTemplate(t)}
-                                >
-                                  Изменить бланк
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-outline btn-small btn-danger-text"
-                                  onClick={() => deleteTemplate(t._id)}
-                                >
-                                  Удалить
-                                </button>
-                              </>
-                            ) : (
-                              <span className="lab-templates-sys">Системный бланк</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                <p className="lab-help lab-templates-table-foot">
-                  Клик по <strong>строке</strong> открывает ввод результата: в большой таблице ниже сразу появятся все <strong>названия показателей</strong> из бланка (колонка «Показатели» — для просмотра состава до открытия).
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {showTemplateBuilder && (
-          <div className="research-form lab-template-builder">
-            <div className="lab-template-builder-top">
-              <div>
-                <h3 className="lab-template-builder-title">
-                  {editingTemplateId ? 'Редактирование бланка' : 'Новый бланк (шаблон таблицы)'}
-                </h3>
-                <p className="lab-help lab-template-builder-sub">
-                  Укажите <strong>название анализа</strong> — по нему вы и пациент будете находить записи. Нажмите «Сохранить бланк», чтобы использовать таблицу как общепринятый перечень показателей.
-                </p>
-              </div>
-              <button type="button" className="btn btn-primary lab-save-blank-btn" onClick={saveTemplate}>
-                Сохранить бланк (шаблон)
-              </button>
-            </div>
-            <div className="form-group">
-              <label>Название анализа (шаблона)</label>
-              <input type="text" value={tbName} onChange={(e) => setTbName(e.target.value)} placeholder="Например: Общий анализ крови, Биохимия расширенная" />
-            </div>
-            <div className="lab-dims-row">
-              <div className="form-group">
-                <label>Строк</label>
-                <input type="number" min={1} max={20} value={tbRows} onChange={(e) => handleTbRowsChange(e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label>Столбцов</label>
-                <input type="number" min={1} max={12} value={tbCols} onChange={(e) => handleTbColsChange(e.target.value)} />
-              </div>
-            </div>
-            <p className="lab-help">
-              Подпишите строки слева и столбцы сверху. В пустых ячейках справа можно сразу ввести типовые значения — они сохранятся в шаблоне и подставятся при «Добавить исследование» (их
-              можно изменить перед сохранением в карту). Полная таблица с комментарием и оценкой — на шаге ввода анализа.
-            </p>
-
-            <div className="lab-datagrid-shell">
-              <div className="lab-dg-toolbar" role="toolbar" aria-label="Размер таблицы">
-                <span className="lab-dg-toolbar-title">Структура</span>
-                <button
-                  type="button"
-                  className="lab-dg-tool lab-dg-tool--add"
-                  title="Добавить строку"
-                  disabled={tbRows >= 20}
-                  onClick={() => handleTbRowsChange(tbRows + 1)}
-                >
-                  <span className="material-icons" aria-hidden>add</span>
-                  <span className="lab-dg-tool-text">Строка</span>
-                </button>
-                <button
-                  type="button"
-                  className="lab-dg-tool lab-dg-tool--remove"
-                  title="Удалить последнюю строку"
-                  disabled={tbRows <= 1}
-                  onClick={() => handleTbRowsChange(tbRows - 1)}
-                >
-                  <span className="material-icons" aria-hidden>remove</span>
-                </button>
-                <span className="lab-dg-toolbar-divider" />
-                <button
-                  type="button"
-                  className="lab-dg-tool lab-dg-tool--add"
-                  title="Добавить столбец"
-                  disabled={tbCols >= 12}
-                  onClick={() => handleTbColsChange(tbCols + 1)}
-                >
-                  <span className="material-icons" aria-hidden>add</span>
-                  <span className="lab-dg-tool-text">Столбец</span>
-                </button>
-                <button
-                  type="button"
-                  className="lab-dg-tool lab-dg-tool--remove"
-                  title="Удалить последний столбец"
-                  disabled={tbCols <= 1}
-                  onClick={() => handleTbColsChange(tbCols - 1)}
-                >
-                  <span className="material-icons" aria-hidden>remove</span>
-                </button>
-              </div>
-              <div className="lab-grid-scroll lab-grid-scroll--datagrid">
-                <table className="lab-grid-table lab-grid-template-table lab-datagrid">
-                  <thead>
-                    <tr>
-                      <th className="lab-corner lab-corner-sticky">Показатель</th>
-                      {tbColHeaders.map((h, c) => (
-                        <th key={c} className="lab-header-th lab-dg-col-title">
-                          <div className="lab-header-input-wrap">
-                            <input
-                              type="text"
-                              className="lab-header-input"
-                              value={h}
-                              autoComplete="off"
-                              placeholder={`Столбец ${c + 1}`}
-                              onChange={(e) => {
-                                const next = [...tbColHeaders];
-                                next[c] = e.target.value;
-                                setTbColHeaders(next);
-                              }}
-                            />
-                          </div>
-                        </th>
-                      ))}
-                    </tr>
-                    <tr>
-                      <th scope="row" className="lab-header-th lab-row-label lab-sticky-col lab-template-units-label">
-                        Ед. изм.
-                      </th>
-                      {Array.from({ length: tbCols }).map((_, c) => (
-                        <th key={`cu-${c}`} className="lab-header-th lab-template-unit-th">
-                          <input
-                            type="text"
-                            className="lab-header-input lab-col-unit-input"
-                            value={tbColUnits[c] || ''}
-                            autoComplete="off"
-                            placeholder="г/л, ммоль/л…"
-                            onChange={(e) => {
-                              const next = adjustColUnits(tbCols, tbColUnits);
-                              next[c] = e.target.value;
-                              setTbColUnits(next);
-                            }}
-                          />
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tbRowHeaders.map((rh, r) => (
-                      <tr key={r} className={r % 2 === 1 ? 'lab-dg-row-alt' : ''}>
-                        <th className="lab-header-th lab-row-label lab-sticky-col" scope="row">
-                          <div className="lab-header-input-wrap">
-                            <input
-                              type="text"
-                              className="lab-header-input lab-row-header"
-                              value={rh}
-                              autoComplete="off"
-                              placeholder={`Строка ${r + 1}`}
-                              onChange={(e) => {
-                                const next = [...tbRowHeaders];
-                                next[r] = e.target.value;
-                                setTbRowHeaders(next);
-                              }}
-                            />
-                          </div>
-                        </th>
-                        {Array.from({ length: tbCols }).map((_, c) => {
-                          const cell =
-                            tbCells.find((x) => x.row === r && x.col === c) || {
-                              row: r,
-                              col: c,
-                              value: '',
-                              comment: '',
-                              status: 'normal'
-                            };
-                          return (
-                            <td key={c} className="lab-template-cell">
-                              <input
-                                type="text"
-                                className="lab-template-cell-input"
-                                placeholder="Значение"
-                                autoComplete="off"
-                                value={cell.value}
-                                onChange={(e) => updateTbCell(r, c, { value: e.target.value })}
-                              />
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="form-actions">
-              <button type="button" className="btn btn-primary" onClick={saveTemplate}>
-                Сохранить бланк (шаблон)
-              </button>
-              <button type="button" className="btn btn-outline" onClick={() => setShowTemplateBuilder(false)}>
-                Закрыть без сохранения
-              </button>
-            </div>
-          </div>
-        )}
-
         {showAddStudy && (
           <div className="research-form lab-add-study">
             <h3>Новое лабораторное исследование</h3>
@@ -995,6 +723,302 @@ function LaboratoryResearch() {
           </div>
         )}
 
+        {gridTemplates.length > 0 && (
+          <div className="lab-templates-section">
+            <button 
+              type="button" 
+              className="btn btn-outline lab-templates-toggle" 
+              onClick={() => setShowTemplatesList(!showTemplatesList)}
+            >
+              <span className={`material-icons lab-expand-icon${showTemplatesList ? ' expanded' : ''}`}>expand_more</span>
+              Бланки и шаблоны таблиц
+            </button>
+
+            {showTemplatesList && (
+              <div className="lab-templates-panel">
+                <h3>Бланки и шаблоны таблиц</h3>
+                <p className="lab-help">
+                  Сохраните таблицу под понятным названием (как принято для анализа крови) — затем находите её через поиск и выбирайте при вводе. В ячейках можно задать типовые показатели; при вводе результата добавляются комментарий и оценка по каждой ячейке и общие поля ниже.
+                </p>
+                {visibleGridTemplates.length === 0 ? (
+                  <p className="lab-empty-filter">Нет шаблонов по запросу «{analysisNameSearch.trim()}».</p>
+                ) : (
+                  <div className="lab-templates-table-wrap">
+                    <table className="lab-templates-table" role="grid">
+                      <thead>
+                        <tr>
+                          <th scope="col">Название анализа</th>
+                          <th scope="col" className="lab-templates-col-size">
+                            Размер
+                          </th>
+                          <th scope="col">Показатели (строки бланка)</th>
+                          <th scope="col" className="lab-templates-col-actions">
+                            Действия
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visibleGridTemplates.map((t) => {
+                          const gt = t.gridTemplate || {};
+                          const rowHeaders = Array.isArray(gt.rowHeaders) ? gt.rowHeaders : [];
+                          const previewList = rowHeaders.slice(0, 8);
+                          const preview = previewList.join(' · ');
+                          const rest = rowHeaders.length > 8 ? ` … ещё ${rowHeaders.length - 8}` : '';
+                          const fullTitle = rowHeaders.join('\n');
+                          return (
+                            <tr
+                              key={t._id}
+                              className="lab-templates-table-row"
+                          title="Нажмите на строку, чтобы открыть ввод результата по этому бланку"
+                          onClick={() => openLabTemplateForEntry(t)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              openLabTemplateForEntry(t);
+                            }
+                          }}
+                          tabIndex={0}
+                          role="button"
+                        >
+                          <td className="lab-templates-td-name">
+                            <strong className="lab-templates-link-name">{t.name}</strong>
+                          </td>
+                          <td>
+                            {gt.rows}×{gt.cols}
+                          </td>
+                          <td className="lab-templates-td-preview" title={fullTitle || '—'}>
+                            {rowHeaders.length > 0 ? (
+                              <>
+                                {preview}
+                                {rest}
+                              </>
+                            ) : (
+                              <span className="lab-templates-muted">—</span>
+                            )}
+                          </td>
+                          <td
+                            className="lab-templates-td-actions"
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                          >
+                            {t.createdBy ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="btn btn-outline btn-small"
+                                  onClick={() => openEditTemplate(t)}
+                                >
+                                  Изменить бланк
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-outline btn-small btn-danger-text"
+                                  onClick={() => deleteTemplate(t._id)}
+                                >
+                                  Удалить
+                                </button>
+                              </>
+                            ) : (
+                              <span className="lab-templates-sys">Системный бланк</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <p className="lab-help lab-templates-table-foot">
+                  Клик по <strong>строке</strong> открывает ввод результата: в большой таблице ниже сразу появятся все <strong>названия показателей</strong> из бланка (колонка «Показатели» — для просмотра состава до открытия).
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {showTemplateBuilder && (
+          <div className="research-form lab-template-builder">
+            <div className="lab-template-builder-top">
+              <div>
+                <h3 className="lab-template-builder-title">
+                  {editingTemplateId ? 'Редактирование бланка' : 'Новый бланк (шаблон таблицы)'}
+                </h3>
+                <p className="lab-help lab-template-builder-sub">
+                  Укажите <strong>название анализа</strong> — по нему вы и пациент будете находить записи. Нажмите «Сохранить бланк», чтобы использовать таблицу как общепринятый перечень показателей.
+                </p>
+              </div>
+              <button type="button" className="btn btn-primary lab-save-blank-btn" onClick={saveTemplate}>
+                Сохранить бланк (шаблон)
+              </button>
+            </div>
+            <div className="form-group">
+              <label>Название анализа (шаблона)</label>
+              <input type="text" value={tbName} onChange={(e) => setTbName(e.target.value)} placeholder="Например: Общий анализ крови, Биохимия расширенная" />
+            </div>
+            <div className="lab-dims-row">
+              <div className="form-group">
+                <label>Строк</label>
+                <input type="number" min={1} max={20} value={tbRows} onChange={(e) => handleTbRowsChange(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Столбцов</label>
+                <input type="number" min={1} max={12} value={tbCols} onChange={(e) => handleTbColsChange(e.target.value)} />
+              </div>
+            </div>
+            <p className="lab-help">
+              Подпишите строки слева и столбцы сверху. В пустых ячейках справа можно сразу ввести типовые значения — они сохранятся в шаблоне и подставятся при «Добавить исследование» (их
+              можно изменить перед сохранением в карту). Полная таблица с комментарием и оценкой — на шаге ввода анализа.
+            </p>
+
+            <div className="lab-datagrid-shell">
+              <div className="lab-dg-toolbar" role="toolbar" aria-label="Размер таблицы">
+                <span className="lab-dg-toolbar-title">Структура</span>
+                <button
+                  type="button"
+                  className="lab-dg-tool lab-dg-tool--add"
+                  title="Добавить строку"
+                  disabled={tbRows >= 20}
+                  onClick={() => handleTbRowsChange(tbRows + 1)}
+                >
+                  <span className="material-icons" aria-hidden>add</span>
+                  <span className="lab-dg-tool-text">Строка</span>
+                </button>
+                <button
+                  type="button"
+                  className="lab-dg-tool lab-dg-tool--remove"
+                  title="Удалить последнюю строку"
+                  disabled={tbRows <= 1}
+                  onClick={() => handleTbRowsChange(tbRows - 1)}
+                >
+                  <span className="material-icons" aria-hidden>remove</span>
+                </button>
+                <span className="lab-dg-toolbar-divider" />
+                <button
+                  type="button"
+                  className="lab-dg-tool lab-dg-tool--add"
+                  title="Добавить столбец"
+                  disabled={tbCols >= 12}
+                  onClick={() => handleTbColsChange(tbCols + 1)}
+                >
+                  <span className="material-icons" aria-hidden>add</span>
+                  <span className="lab-dg-tool-text">Столбец</span>
+                </button>
+                <button
+                  type="button"
+                  className="lab-dg-tool lab-dg-tool--remove"
+                  title="Удалить последний столбец"
+                  disabled={tbCols <= 1}
+                  onClick={() => handleTbColsChange(tbCols - 1)}
+                >
+                  <span className="material-icons" aria-hidden>remove</span>
+                </button>
+              </div>
+              <div className="lab-grid-scroll lab-grid-scroll--datagrid">
+                <table className="lab-grid-table lab-grid-template-table lab-datagrid">
+                  <thead>
+                    <tr>
+                      <th className="lab-corner lab-corner-sticky">Показатель</th>
+                      {tbColHeaders.map((h, c) => (
+                        <th key={c} className="lab-header-th lab-dg-col-title">
+                          <div className="lab-header-input-wrap">
+                            <input
+                              type="text"
+                              className="lab-header-input"
+                              value={h}
+                              autoComplete="off"
+                              placeholder={`Столбец ${c + 1}`}
+                              onChange={(e) => {
+                                const next = [...tbColHeaders];
+                                next[c] = e.target.value;
+                                setTbColHeaders(next);
+                              }}
+                            />
+                          </div>
+                        </th>
+                      ))}
+                    </tr>
+                    <tr>
+                      <th scope="row" className="lab-header-th lab-row-label lab-sticky-col lab-template-units-label">
+                        Ед. изм.
+                      </th>
+                      {Array.from({ length: tbCols }).map((_, c) => (
+                        <th key={`cu-${c}`} className="lab-header-th lab-template-unit-th">
+                          <input
+                            type="text"
+                            className="lab-header-input lab-col-unit-input"
+                            value={tbColUnits[c] || ''}
+                            autoComplete="off"
+                            placeholder="г/л, ммоль/л…"
+                            onChange={(e) => {
+                              const next = adjustColUnits(tbCols, tbColUnits);
+                              next[c] = e.target.value;
+                              setTbColUnits(next);
+                            }}
+                          />
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tbRowHeaders.map((rh, r) => (
+                      <tr key={r} className={r % 2 === 1 ? 'lab-dg-row-alt' : ''}>
+                        <th className="lab-header-th lab-row-label lab-sticky-col" scope="row">
+                          <div className="lab-header-input-wrap">
+                            <input
+                              type="text"
+                              className="lab-header-input lab-row-header"
+                              value={rh}
+                              autoComplete="off"
+                              placeholder={`Строка ${r + 1}`}
+                              onChange={(e) => {
+                                const next = [...tbRowHeaders];
+                                next[r] = e.target.value;
+                                setTbRowHeaders(next);
+                              }}
+                            />
+                          </div>
+                        </th>
+                        {Array.from({ length: tbCols }).map((_, c) => {
+                          const cell =
+                            tbCells.find((x) => x.row === r && x.col === c) || {
+                              row: r,
+                              col: c,
+                              value: '',
+                              comment: '',
+                              status: 'normal'
+                            };
+                          return (
+                            <td key={c} className="lab-template-cell">
+                              <input
+                                type="text"
+                                className="lab-template-cell-input"
+                                placeholder="Значение"
+                                autoComplete="off"
+                                value={cell.value}
+                                onChange={(e) => updateTbCell(r, c, { value: e.target.value })}
+                              />
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button type="button" className="btn btn-primary" onClick={saveTemplate}>
+                Сохранить бланк (шаблон)
+              </button>
+              <button type="button" className="btn btn-outline" onClick={() => setShowTemplateBuilder(false)}>
+                Закрыть без сохранения
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="research-results">
           <h3>История по пациенту</h3>
           {results.length === 0 ? (
@@ -1005,40 +1029,61 @@ function LaboratoryResearch() {
             visibleResults.map((result) => {
               const gt = getGridTemplateForResult(result);
               const hasGrid = result.gridResults && result.gridResults.length > 0 && gt;
+              const isExpanded = expandedResults[result._id];
               return (
                 <div key={result._id} className="research-result-card">
-                  <div className="result-header">
-                    <h4>{result.researchTypeId?.name || 'Тип'}</h4>
-                    <span className="result-date">{formatDateTime(result.date)}</span>
+                  <div 
+                    className="result-header result-header--clickable" 
+                    onClick={() => toggleResultExpanded(result._id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleResultExpanded(result._id);
+                      }
+                    }}
+                  >
+                    <div className="result-header-left">
+                      <span className={`result-expand-icon${isExpanded ? ' expanded' : ''}`}>
+                        <span className="material-icons">expand_more</span>
+                      </span>
+                      <div className="result-header-info">
+                        <h4>{result.researchTypeId?.name || 'Тип'}</h4>
+                        <span className="result-date">{formatDateTime(result.date)}</span>
+                      </div>
+                    </div>
                   </div>
                   <div className="result-doctor">Врач: {result.doctorName}</div>
 
-                  {(result.studyNote || (result.overallStatus && result.overallStatus !== 'normal')) && (
-                    <div className="lab-result-overall">
-                      {result.studyNote ? <p className="lab-result-note">{result.studyNote}</p> : null}
-                      {result.overallStatus && result.overallStatus !== 'normal' ? (
-                        <div className={`lab-status-badge st-${result.overallStatus}`}>
-                          Общая оценка:{' '}
-                          {STATUS_OPTIONS.find((o) => o.value === result.overallStatus)?.label || result.overallStatus}
+                  {isExpanded && (
+                    <>
+                      {(result.studyNote || (result.overallStatus && result.overallStatus !== 'normal')) && (
+                        <div className="lab-result-overall">
+                          {result.studyNote ? <p className="lab-result-note">{result.studyNote}</p> : null}
+                          {result.overallStatus && result.overallStatus !== 'normal' ? (
+                            <div className={`lab-status-badge st-${result.overallStatus}`}>
+                              Общая оценка:{' '}
+                              {STATUS_OPTIONS.find((o) => o.value === result.overallStatus)?.label || result.overallStatus}
+                            </div>
+                          ) : null}
                         </div>
-                      ) : null}
-                    </div>
-                  )}
+                      )}
 
-                  {hasGrid && (
-                    <div className="lab-datagrid-shell lab-datagrid-shell--history">
-                      <div className="lab-grid-scroll lab-grid-scroll--datagrid">
-                        <table className="lab-grid-table lab-datagrid lab-datagrid--history">
-                          <thead>
-                            <tr>
-                              <th rowSpan={2} className="lab-corner lab-corner-sticky">
-                                Показатель
-                              </th>
-                              {gt.colHeaders.map((h, c) => (
-                                <th key={`h-${c}`} colSpan={3} className="lab-dg-col-title">
-                                  {h}
-                                </th>
-                              ))}
+                      {hasGrid && (
+                        <div className="lab-datagrid-shell lab-datagrid-shell--history">
+                          <div className="lab-grid-scroll lab-grid-scroll--datagrid">
+                            <table className="lab-grid-table lab-datagrid lab-datagrid--history">
+                              <thead>
+                                <tr>
+                                  <th rowSpan={2} className="lab-corner lab-corner-sticky">
+                                    Показатель
+                                  </th>
+                                  {gt.colHeaders.map((h, c) => (
+                                    <th key={`h-${c}`} colSpan={3} className="lab-dg-col-title">
+                                      {h}
+                                    </th>
+                                  ))}
                             </tr>
                             <tr>
                               {gt.colHeaders.flatMap((_, c) => {
@@ -1116,6 +1161,8 @@ function LaboratoryResearch() {
                         </div>
                       ))}
                     </div>
+                  )}
+                    </>
                   )}
                 </div>
               );

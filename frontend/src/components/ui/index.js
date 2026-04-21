@@ -6,3 +6,4 @@ export { default as BackButton } from './BackButton/BackButton';
 export { default as EmptyState } from './EmptyState/EmptyState';
 export { default as AlertBanner } from './AlertBanner/AlertBanner';
 export { default as SkeletonCard } from './SkeletonCard/SkeletonCard';
+export { default as ConfirmModal } from './ConfirmModal';
