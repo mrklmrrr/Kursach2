@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { EmptyState } from '../../../components/ui';
 import { ROUTES } from '../../../constants';
 import { formatHistoryDate, formatPrice, getDoctorInfo, getConsultationTimeline } from '../utils/profileUtils';
+import { HistoryItemModal } from './HistoryItemModal';
 
 export const ConsultationHistorySection = ({ historyItems, loading, error }) => {
   const navigate = useNavigate();
   const [paymentTab, setPaymentTab] = useState('history');
   const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
+  const [paymentOpen, setPaymentOpen] = useState(false);
 
   const handlePayAppointment = (item) => {
     const appointmentId = item?.rawAppointment?._id;
@@ -26,6 +28,22 @@ export const ConsultationHistorySection = ({ historyItems, loading, error }) => 
         }
       }
     });
+  };
+
+  // Сортировка платежей: сначала ближайшие неоплаченные, потом все остальное
+  const getSortedPaymentItems = () => {
+    const appointmentItems = historyItems.filter((item) => item.source === 'appointment');
+    
+    const unpaidItems = appointmentItems.filter((item) => item.rawAppointment?.paymentStatus !== 'paid');
+    const paidItems = appointmentItems.filter((item) => item.rawAppointment?.paymentStatus === 'paid');
+    
+    // Сортировка неоплаченных по дате (ближайшие первыми)
+    unpaidItems.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    // Сортировка оплаченных по дате (новые первыми)
+    paidItems.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    return [...unpaidItems, ...paidItems];
   };
 
   return (
@@ -103,34 +121,48 @@ export const ConsultationHistorySection = ({ historyItems, loading, error }) => 
               }
             />
           ) : (
-            historyItems
-              .filter((item) => item.source === 'appointment')
-              .map((item) => {
-                const paid = item.rawAppointment?.paymentStatus === 'paid';
-                return (
-                  <div key={`pay-${item.id}`} className="history-item payment-item">
-                    <div className="history-item-main">
-                      {formatHistoryDate(item.date)} • {item.specialty || 'Консультация'} • {item.duration || 0} мин
-                      <br />
-                      <span className="payment-price">К оплате: {formatPrice(item.price)}</span>
-                    </div>
-                    <div className="payment-actions">
-                      <span className={`history-tag ${paid ? 'paid' : 'unpaid'}`}>
-                        {paid ? 'Оплачен' : 'Не оплачен'}
-                      </span>
-                      {!paid && (
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          onClick={() => handlePayAppointment(item)}
-                        >
-                          Оплатить прием
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
+            <>
+              <div className="payment-list-container">
+                {getSortedPaymentItems()
+                  .slice(0, paymentOpen ? undefined : 3)
+                  .map((item) => {
+                    const paid = item.rawAppointment?.paymentStatus === 'paid';
+                    return (
+                      <div key={`pay-${item.id}`} className="history-item payment-item">
+                        <div className="history-item-main">
+                          {formatHistoryDate(item.date)} • {item.specialty || 'Консультация'} • {item.duration || 0} мин
+                          <br />
+                          <span className="payment-price">К оплате: {formatPrice(item.price)}</span>
+                        </div>
+                        <div className="payment-actions">
+                          <span className={`history-tag ${paid ? 'paid' : 'unpaid'}`}>
+                            {paid ? 'Оплачен' : 'Не оплачен'}
+                          </span>
+                          {!paid && (
+                            <button
+                              type="button"
+                              className="btn btn-primary"
+                              onClick={() => handlePayAppointment(item)}
+                            >
+                              Оплатить прием
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+              {getSortedPaymentItems().length > 3 && (
+                <button 
+                  className="btn btn-outline" 
+                  onClick={() => setPaymentOpen((prev) => !prev)}
+                >
+                  {paymentOpen 
+                    ? `Скрыть (${getSortedPaymentItems().length - 3} ещё)` 
+                    : `Показать всё (${getSortedPaymentItems().length})`}
+                </button>
+              )}
+            </>
           )}
         </>
       )}
