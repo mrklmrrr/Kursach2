@@ -207,7 +207,7 @@ export default function ChatRoom() {
         )}
       </header>
 
-      <div className="chat-room-container">
+      <div className="chat-room-container page-shell page-shell--no-bottom-nav">
         <div className="chat-room-messages">
           {loading ? (
             <div className="no-messages">Загрузка сообщений...</div>

@@ -1,27 +1,6 @@
-.admin-page {
-  padding: 16px 20px 80px;
-  max-width: 960px;
-  margin: 0 auto;
-}
-
-@media (min-width: 768px) {
-  .admin-page {
-    padding-left: 24px;
-    padding-right: 24px;
-  }
-}
-
-@media (min-width: 1200px) {
-  .admin-page {
-    padding-left: 32px;
-    padding-right: 32px;
-  }
-}
-
-.admin-dashboard {
-  padding: 16px;
-  max-width: 960px;
-  margin: 0 auto;
+.admin-dashboard.page-shell {
+  flex: 1;
+  min-height: 100vh;
 }
 
 .admin-header {
@@ -61,13 +40,14 @@
 }
 
 /* Форма входа */
-.admin-login-content {
+.admin-login-content.page-shell {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 40px 20px;
+  padding-top: 40px;
+  padding-bottom: 40px;
   text-align: center;
   background: #f9fafb;
 }

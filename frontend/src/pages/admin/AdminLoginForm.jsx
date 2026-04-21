@@ -19,7 +19,7 @@ export default function AdminLoginForm() {
   };
 
   return (
-    <div className="admin-login-content">
+    <div className="admin-login-content page-shell">
       <h1>🔐 Админ-панель</h1>
       <p>Вход для администраторов</p>
       <form onSubmit={handleSubmit}>

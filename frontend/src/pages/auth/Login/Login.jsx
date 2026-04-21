@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { Button, Input } from '../../../components/ui';
 import { validate } from '../../../utils/validation';
@@ -35,7 +35,7 @@ export default function Login() {
   };
 
   return (
-    <div className="register-content">
+    <div className="register-content page-shell">
       <h1>Вход</h1>
       <form onSubmit={handleSubmit} noValidate>
         <div className="field-group">

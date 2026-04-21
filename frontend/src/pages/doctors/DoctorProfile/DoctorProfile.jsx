@@ -1,19 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doctorApi } from '../../../services/doctorApi';
 import { appointmentApi } from '../../../services/appointmentApi';
 import { consultationApi } from '../../../services/consultationApi';
 import { chatApi } from '../../../services/chatApi';
 import { AppHeader, BottomNav } from '../../../components/layout';
-import { Avatar } from '../../../components/ui';
+import { Avatar, AlertBanner } from '../../../components/ui';
 import { Button } from '../../../components/ui';
 import { Loader } from '../../../components/ui';
 import { ROUTES } from '../../../constants';
+import { useToast } from '../../../contexts/ToastProvider/useToast';
 import './DoctorProfile.css';
+
+function toYMD(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function buildDateStrip(days) {
+  const out = [];
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  for (let i = 0; i < days; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    out.push({
+      iso: toYMD(d),
+      short: d.toLocaleDateString('ru-RU', { weekday: 'short' }),
+      dayNum: d.getDate(),
+      month: d.toLocaleDateString('ru-RU', { month: 'short' }),
+    });
+  }
+  return out;
+}
 
 export default function DoctorProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [bookingOpen, setBookingOpen] = useState(false);
@@ -26,6 +52,10 @@ export default function DoctorProfile() {
   const [savingBooking, setSavingBooking] = useState(false);
   const [startingChat, setStartingChat] = useState(false);
   const [bookingNotice, setBookingNotice] = useState({ type: '', text: '' });
+  const [showCustomDate, setShowCustomDate] = useState(false);
+
+  const dateStrip = useMemo(() => buildDateStrip(14), []);
+  const todayIso = useMemo(() => toYMD(new Date()), []);
 
   useEffect(() => {
     doctorApi
@@ -44,19 +74,25 @@ export default function DoctorProfile() {
   }
 
   const handleBookAppointment = () => {
-    setBookingOpen((prev) => !prev);
     if (bookingOpen) {
+      setBookingOpen(false);
       setBookingDate('');
       setSlots([]);
       setSelectedTime('');
       setConsultationType('online');
       setDuration(30);
       setBookingNotice({ type: '', text: '' });
+      setShowCustomDate(false);
+      return;
+    }
+    setBookingOpen(true);
+    const first = dateStrip[0]?.iso;
+    if (first) {
+      loadSlotsForDate(first);
     }
   };
 
-  const handleDateChange = async (e) => {
-    const date = e.target.value;
+  const loadSlotsForDate = async (date) => {
     setBookingDate(date);
     setSelectedTime('');
 
@@ -86,6 +122,15 @@ export default function DoctorProfile() {
     }
   };
 
+  const handleDateChange = async (e) => {
+    await loadSlotsForDate(e.target.value);
+  };
+
+  const pickStripDate = (iso) => {
+    setShowCustomDate(false);
+    loadSlotsForDate(iso);
+  };
+
   const handleCreateAppointment = async () => {
     if (!bookingDate || !selectedTime) {
       setBookingNotice({ type: 'error', text: 'Выберите дату и время записи.' });
@@ -102,6 +147,7 @@ export default function DoctorProfile() {
         consultationType,
         duration: Number(duration),
       });
+      showToast('Запись успешно назначена', 'success');
       setBookingNotice({ type: 'success', text: 'Запись успешно назначена.' });
       setBookingOpen(false);
       setBookingDate('');
@@ -162,9 +208,11 @@ export default function DoctorProfile() {
   return (
     <div className="doctor-profile-page">
       <AppHeader showBack backTo={ROUTES.DOCTORS} />
-      <div className="doctor-profile-content">
+      <div className="doctor-profile-content page-shell page-shell--flex-grow">
         <div className="doctor-hero">
-          <Avatar name={doctor.name} size="xlarge" />
+          <div className="doctor-hero-avatar-wrap">
+            <Avatar name={doctor.name} size="xlarge" />
+          </div>
           <h1>{doctor.name}</h1>
           <p className="doctor-specialty">{doctor.specialty}</p>
           <div className="rating-online">
@@ -205,68 +253,104 @@ export default function DoctorProfile() {
         </div>
 
         {bookingNotice.text && (
-          <div className={`booking-notice ${bookingNotice.type || 'info'}`} role="status">
-            <span className="booking-notice-icon" aria-hidden="true">
-              {bookingNotice.type === 'success' ? '✓' : bookingNotice.type === 'error' ? '!' : 'i'}
-            </span>
-            <span>{bookingNotice.text}</span>
-          </div>
+          <AlertBanner
+            type={bookingNotice.type === 'success' ? 'success' : bookingNotice.type === 'error' ? 'error' : 'info'}
+            message={bookingNotice.text}
+          />
         )}
 
         {bookingOpen && (
-          <div className="doctor-info-card">
-            <h3>Выберите дату и время</h3>
-            <div className="info-list">
-              <p>
-                <strong>Дата:</strong>
-              </p>
-              <input type="date" value={bookingDate} onChange={handleDateChange} />
+          <div className="doctor-info-card booking-sheet">
+            <h3>Запись на приём</h3>
+            <p className="booking-hint">Выберите день и удобное время — свободные окна подгружаются автоматически.</p>
 
-              <p>
-                <strong>Свободные слоты:</strong>
-              </p>
-              {loadingSlots ? (
-                <p>Загрузка слотов...</p>
-              ) : slots.length === 0 ? (
-                <p>На выбранную дату свободных слотов нет</p>
-              ) : (
-                <select value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}>
-                  <option value="">Выберите время</option>
-                  {slots.map((slot) => (
-                    <option key={slot} value={slot}>
-                      {slot}
-                    </option>
-                  ))}
-                </select>
-              )}
-
-              <p>
-                <strong>Тип консультации:</strong>
-              </p>
-              <select value={consultationType} onChange={(e) => setConsultationType(e.target.value)}>
-                <option value="online">Онлайн</option>
-                <option value="offline">Офлайн</option>
-              </select>
-
-              <p>
-                <strong>Длительность:</strong>
-              </p>
-              <select value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
-                <option value={10}>10 минут</option>
-                <option value={15}>15 минут</option>
-                <option value={20}>20 минут</option>
-                <option value={30}>30 минут</option>
-              </select>
-
-              <Button
-                variant="primary"
-                size="medium"
-                onClick={handleCreateAppointment}
-                disabled={savingBooking}
+            <div className="booking-field">
+              <span className="booking-label">Дата</span>
+              <div className="date-strip" role="list">
+                {dateStrip.map((d) => (
+                  <button
+                    key={d.iso}
+                    type="button"
+                    role="listitem"
+                    className={`date-pill ${bookingDate === d.iso ? 'active' : ''}`}
+                    onClick={() => pickStripDate(d.iso)}
+                  >
+                    <span className="date-pill-dow">{d.short}</span>
+                    <span className="date-pill-num">{d.dayNum}</span>
+                    <span className="date-pill-mon">{d.month}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="booking-toggle-custom"
+                onClick={() => setShowCustomDate((v) => !v)}
               >
-                {savingBooking ? 'Назначаем...' : 'Подтвердить запись'}
-              </Button>
+                {showCustomDate ? 'Скрыть календарь' : 'Другая дата'}
+              </button>
+              {showCustomDate && (
+                <input
+                  className="booking-date-native"
+                  type="date"
+                  min={todayIso}
+                  value={bookingDate}
+                  onChange={handleDateChange}
+                />
+              )}
             </div>
+
+            <div className="booking-field">
+              <span className="booking-label">Время</span>
+              {loadingSlots ? (
+                <p className="booking-muted">Загрузка слотов…</p>
+              ) : !bookingDate ? (
+                <p className="booking-muted">Сначала выберите дату</p>
+              ) : slots.length === 0 ? (
+                <p className="booking-muted">На эту дату нет свободных окон</p>
+              ) : (
+                <div className="slot-chips">
+                  {slots.map((slot) => (
+                    <button
+                      key={slot}
+                      type="button"
+                      className={`slot-chip ${selectedTime === slot ? 'active' : ''}`}
+                      onClick={() => setSelectedTime(slot)}
+                    >
+                      {slot}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="booking-field booking-row">
+              <div>
+                <span className="booking-label">Формат</span>
+                <select className="booking-select" value={consultationType} onChange={(e) => setConsultationType(e.target.value)}>
+                  <option value="online">Онлайн</option>
+                  <option value="offline">Офлайн</option>
+                </select>
+              </div>
+              <div>
+                <span className="booking-label">Длительность</span>
+                <select className="booking-select" value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
+                  <option value={10}>10 мин</option>
+                  <option value={15}>15 мин</option>
+                  <option value={20}>20 мин</option>
+                  <option value={30}>30 мин</option>
+                </select>
+              </div>
+            </div>
+
+            <Button
+              variant="primary"
+              size="medium"
+              className="booking-confirm"
+              onClick={handleCreateAppointment}
+              disabled={savingBooking}
+            >
+              {savingBooking ? 'Назначаем...' : 'Подтвердить запись'}
+            </Button>
           </div>
         )}
       </div>

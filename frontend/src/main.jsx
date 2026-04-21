@@ -2,10 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { AuthProvider } from './contexts/AuthProvider/AuthProvider';
+import ToastProvider from './contexts/ToastProvider/ToastProvider';
 import ErrorBoundary from './components/common/ErrorBoundary/ErrorBoundary';
 
-// Global styles
+// Global styles (порядок: токены → база → премиум-слой)
+import './styles/tokens.css';
 import './styles/global.css';
+import './styles/theme.css';
+import './styles/pageShell.css';
 
 // UI component styles
 import './components/ui/Button/Button.css';
@@ -23,6 +27,7 @@ import './components/features/DoctorCard/DoctorCard.css';
 import './components/features/ConsultationCard/ConsultationCard.css';
 import './components/features/VideoCall/VideoCall.css';
 import './components/features/ThemeToggle/ThemeToggle.css';
+import './components/features/OnboardingGate/OnboardingGate.css';
 import './components/common/ErrorBoundary/ErrorBoundary.css';
 
 // Page styles
@@ -47,7 +52,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
       <AuthProvider>
-        <App />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>

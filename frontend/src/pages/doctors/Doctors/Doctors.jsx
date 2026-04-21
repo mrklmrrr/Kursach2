@@ -62,7 +62,7 @@ export default function Doctors() {
   return (
     <div className="doctors-page">
       <AppHeader showBack backTo="/home" />
-      <div className="doctors-page-content">
+      <div className="doctors-page-content page-shell page-shell--flex-grow">
         <div className="search-bar">
           <Input
             type="text"

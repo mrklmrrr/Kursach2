@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { medicalRecordApi } from '../../services/medicalRecordApi';
 import { researchApi } from '../../services/researchApi';
@@ -21,15 +21,8 @@ const InstrumentalResearch = () => {
     customResults: []
   });
 
-  useEffect(() => {
-    if (!patientId) {
-      navigate('/doctor');
-      return;
-    }
-    loadData();
-  }, [patientId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    if (!patientId) return;
     try {
       setLoading(true);
       const [recordRes, instRes, typesRes] = await Promise.allSettled([
@@ -54,7 +47,15 @@ const InstrumentalResearch = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [patientId]);
+
+  useEffect(() => {
+    if (!patientId) {
+      navigate('/doctor');
+      return;
+    }
+    loadData();
+  }, [patientId, navigate, loadData]);
 
   const handleSaveResult = async () => {
     if (!newResult.researchTypeName.trim() || !newResult.date) {

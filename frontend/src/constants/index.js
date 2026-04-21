@@ -1,4 +1,13 @@
+/** Публичное имя продукта (единая точка для UI и маркетинга в приложении) */
+export const APP_BRAND_NAME = 'Мед24';
+export const APP_BRAND_TAGLINE = 'Запись, консультации и карта в одном приложении';
+
 export const ROUTES = {
+  LANDING: '/',
+  TRIAGE: '/triage',
+  PLANS: '/plans',
+  DEMO: '/demo',
+  TRUST: '/trust',
   HOME: '/home',
   SPLASH: '/splash',
   REGISTER: '/register',
@@ -22,6 +31,8 @@ export const RELATION_TYPES = [
   { value: 'child', label: 'Ребёнок' },
   { value: 'parent', label: 'Родитель' },
   { value: 'spouse', label: 'Супруг/супруга' },
+  { value: 'sibling', label: 'Брат / сестра' },
+  { value: 'grandparent', label: 'Бабушка / дедушка' },
   { value: 'other', label: 'Другой родственник' },
 ];
 

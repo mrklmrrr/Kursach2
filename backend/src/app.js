@@ -27,8 +27,7 @@ const {
   PaymentService,
   DependentService,
   AppointmentService,
-  MedicalRecordService,
-  VideoRoomService
+  MedicalRecordService
 } = require('./services');
 
 // Controllers
@@ -42,7 +41,8 @@ const {
   DoctorPanelController,
   AppointmentController,
   MedicalRecordController,
-  VideoRoomController
+  PlatformController,
+  PrescriptionController
 } = require('./controllers');
 
 // Routes
@@ -57,7 +57,8 @@ const {
   appointmentRoutes,
   medicalRecordRoutes,
   researchRoutes,
-  videoRoomRoutes
+  platformRoutes,
+  prescriptionRoutes
 } = require('./routes');
 
 // Socket
@@ -101,6 +102,12 @@ async function startApp() {
     standardHeaders: true,
     legacyHeaders: false
   }));
+  app.use('/api/medical-record/me/lab-insights', rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 15,
+    standardHeaders: true,
+    legacyHeaders: false
+  }));
   // Middleware to set Cross-Origin Resource Policy for uploads
   app.use('/uploads', (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
@@ -109,6 +116,10 @@ async function startApp() {
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Health check
+  app.get('/', (req, res) => {
+    const frontendUrl = config.frontendOrigins[0] || 'http://localhost:5173';
+    return res.redirect(frontendUrl);
+  });
   app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
   app.get('/api/readiness', (req, res) => res.json({ status: 'ready' }));
 
@@ -124,10 +135,9 @@ async function startApp() {
   const doctorService = new DoctorService(doctorRepository);
   const consultationService = new ConsultationService(consultationRepository);
   const paymentService = new PaymentService(consultationRepository);
-  const dependentService = new DependentService(dependentRepository);
+  const dependentService = new DependentService(dependentRepository, userRepository);
   const appointmentService = new AppointmentService(appointmentRepository, userRepository);
   const medicalRecordService = new MedicalRecordService(medicalRecordRepository, userRepository);
-  const videoRoomService = new VideoRoomService(consultationRepository);
 
   const authController = new AuthController(authService);
   const doctorController = new DoctorController(doctorService);
@@ -138,9 +148,12 @@ async function startApp() {
   const doctorPanelController = new DoctorPanelController(doctorService, consultationService);
   const appointmentController = new AppointmentController(appointmentService, userRepository);
   const medicalRecordController = new MedicalRecordController(medicalRecordService, userRepository);
-  const videoRoomController = new VideoRoomController(videoRoomService);
+  const platformController = new PlatformController();
+  const prescriptionController = new PrescriptionController();
 
   // Routes
+  app.use(platformRoutes(platformController));
+  app.use(prescriptionRoutes(prescriptionController));
   app.use(authRoutes(authController));
   app.use(doctorRoutes(doctorController));
   app.use(consultationRoutes(consultationController));
@@ -153,8 +166,6 @@ async function startApp() {
   // Админка и панель врача
   app.use(adminRoutes(adminController));
   app.use(doctorPanelRoutes(doctorPanelController));
-  app.use('/api/video-rooms', videoRoomRoutes(videoRoomController));
-
 
   // Error handler (должен быть последним)
   app.use(errorHandler);

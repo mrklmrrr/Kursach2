@@ -1,0 +1,19 @@
+.skeleton-card {
+  border-radius: 14px;
+  border: 1px solid #e7edf7;
+  background: #fff;
+  padding: 14px;
+}
+.skeleton-line {
+  height: 10px;
+  border-radius: 999px;
+  margin-top: 10px;
+  background: linear-gradient(90deg, #e8edf5, #f5f8fd, #e8edf5);
+  background-size: 200% 100%;
+  animation: skeleton-wave 1.2s infinite linear;
+}
+.skeleton-line-title { width: 65%; margin-top: 0; height: 12px; }
+@keyframes skeleton-wave {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}

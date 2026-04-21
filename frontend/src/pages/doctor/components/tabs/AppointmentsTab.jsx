@@ -1,4 +1,5 @@
 import { DAY_MAP, CONSULTATION_TYPE_LABELS, APPOINTMENT_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "../../constants/labels";
+import { EmptyState } from '../../../../components/ui';
 
 export default function AppointmentsTab({
   appointmentForm,
@@ -97,7 +98,12 @@ export default function AppointmentsTab({
       <section className="section-card">
         <h3>Мои записи</h3>
         {appointments.length === 0 ? (
-          <p className="empty-state">Нет записей</p>
+          <EmptyState
+            variant="plain"
+            icon="calendar_month"
+            title="Записей пока нет"
+            description="Назначьте приём через форму выше — карточки появятся в этом списке."
+          />
         ) : (
           <div className="appointments-list">
             {appointments.map(a => (

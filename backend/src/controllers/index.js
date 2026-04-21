@@ -7,7 +7,8 @@ const AdminController = require('./AdminController');
 const DoctorPanelController = require('./DoctorPanelController');
 const AppointmentController = require('./AppointmentController');
 const MedicalRecordController = require('./MedicalRecordController');
-const VideoRoomController = require('./VideoRoomController');
+const PlatformController = require('./PlatformController');
+const PrescriptionController = require('./PrescriptionController');
 
 module.exports = {
   AuthController,
@@ -19,5 +20,6 @@ module.exports = {
   DoctorPanelController,
   AppointmentController,
   MedicalRecordController,
-  VideoRoomController
+  PlatformController,
+  PrescriptionController
 };

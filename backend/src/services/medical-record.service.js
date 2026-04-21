@@ -148,6 +148,16 @@ class MedicalRecordService {
     return this.medicalRecordRepository.getLaboratoryResults(patientId);
   }
 
+  async getPatientLabInsight(patientId, researchResultId) {
+    const { generatePatientLabInsight } = require('./lab-insight.service');
+    return generatePatientLabInsight(patientId, researchResultId);
+  }
+
+  getPatientLabInsightConfig() {
+    const { getLabInsightConfig } = require('./lab-insight.service');
+    return getLabInsightConfig();
+  }
+
   async getInstrumentalResults(patientId) {
     await this._resolvePatient(patientId);
     return this.medicalRecordRepository.getInstrumentalResults(patientId);
@@ -157,43 +167,89 @@ class MedicalRecordService {
     const { doctor } = await this._resolvePatientAndDoctor(patientId, doctorId);
     const doctorName = this._toDoctorName(doctor);
 
-    const researchType = await ResearchType.findById(payload.researchTypeId);
+    const researchType = await ResearchType.findById(payload.researchTypeId).lean();
     if (!researchType) {
       throw ApiError.badRequest('Тип исследования не найден');
     }
 
-    // Валидируем обязательные поля по шаблону
-    const results = [];
-    const templateFields = researchType.template || [];
+    const gtMeta = researchType.gridTemplate || {};
+    const gridRows = Number(gtMeta.rows) || 0;
+    const gridCols = Number(gtMeta.cols) || 0;
+    const hasValidGrid = gridRows >= 1 && gridCols >= 1;
 
-    for (const field of templateFields) {
-      if (field.required && (!payload.results || !payload.results[field.name])) {
-        throw ApiError.badRequest(`Обязательное поле "${field.name}" не заполнено`);
+    /** С фронта таблица определяется по размеру сетки; templateMode по умолчанию в БД — fields, иначе сохранение шло бы в режим полей без gridResults */
+    let mode = 'fields';
+    if (researchType.templateMode === 'grid' || hasValidGrid) {
+      mode = 'grid';
+    }
+
+    let results = [];
+    let gridResults = [];
+
+    if (mode === 'grid') {
+      const gt = researchType.gridTemplate || {};
+      const rows = Number(gt.rows) || 0;
+      const cols = Number(gt.cols) || 0;
+      if (rows < 1 || cols < 1) {
+        throw ApiError.badRequest('Некорректный шаблон сетки');
       }
-      if (payload.results && payload.results[field.name] !== undefined) {
-        let value = payload.results[field.name];
-        // Типизация значений
-        if (field.type === 'number') {
-          value = Number(value);
-          if (isNaN(value)) {
-            throw ApiError.badRequest(`Поле "${field.name}" должно быть числом`);
-          }
-        } else if (field.type === 'date') {
-          value = new Date(value);
-          if (isNaN(value.getTime())) {
-            throw ApiError.badRequest(`Поле "${field.name}" должно быть датой`);
-          }
-        } else {
-          value = String(value);
+      const incoming = Array.isArray(payload.gridResults) ? payload.gridResults : [];
+      const seen = new Set();
+      for (const cell of incoming) {
+        const r = Number(cell.row);
+        const c = Number(cell.col);
+        if (!Number.isInteger(r) || !Number.isInteger(c) || r < 0 || r >= rows || c < 0 || c >= cols) {
+          continue;
         }
-
-        results.push({
-          fieldName: field.name,
-          value,
-          unit: field.unit || ''
+        const key = `${r},${c}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const st = ['normal', 'deviation', 'severe'].includes(cell.status) ? cell.status : 'normal';
+        gridResults.push({
+          row: r,
+          col: c,
+          value: cell.value != null && cell.value !== '' ? cell.value : '',
+          comment: String(cell.comment || '').slice(0, 4000),
+          status: st
         });
       }
+      if (gridResults.length === 0) {
+        throw ApiError.badRequest('Укажите хотя бы одну ячейку таблицы (значение, комментарий или статус)');
+      }
+    } else {
+      const templateFields = researchType.template || [];
+      for (const field of templateFields) {
+        if (field.required && (!payload.results || payload.results[field.name] === undefined || payload.results[field.name] === '')) {
+          throw ApiError.badRequest(`Обязательное поле "${field.name}" не заполнено`);
+        }
+        if (payload.results && payload.results[field.name] !== undefined) {
+          let value = payload.results[field.name];
+          if (field.type === 'number') {
+            value = Number(value);
+            if (isNaN(value)) {
+              throw ApiError.badRequest(`Поле "${field.name}" должно быть числом`);
+            }
+          } else if (field.type === 'date') {
+            value = new Date(value);
+            if (isNaN(value.getTime())) {
+              throw ApiError.badRequest(`Поле "${field.name}" должно быть датой`);
+            }
+          } else {
+            value = String(value);
+          }
+          results.push({
+            fieldName: field.name,
+            value,
+            unit: field.unit || ''
+          });
+        }
+      }
     }
+
+    const overallStatus = ['normal', 'deviation', 'severe'].includes(payload.overallStatus)
+      ? payload.overallStatus
+      : 'normal';
+    const studyNote = payload.studyNote != null ? String(payload.studyNote).slice(0, 8000) : '';
 
     const researchResult = new ResearchResult({
       patientId,
@@ -202,16 +258,18 @@ class MedicalRecordService {
       doctorId,
       doctorName,
       results,
+      gridResults,
       customResults: (payload.customResults || []).map(cr => ({
         name: cr.name,
         value: cr.value,
         unit: cr.unit || ''
-      }))
+      })),
+      studyNote,
+      overallStatus
     });
 
     await researchResult.save();
 
-    // Добавляем в медицинскую карту
     const record = await this.medicalRecordRepository.findOrCreateByPatientId(patientId);
     if (researchType.category === 'laboratory') {
       record.laboratoryResearch.push(researchResult._id);

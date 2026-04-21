@@ -1,13 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import PrivateRoute from './components/common/PrivateRoute/PrivateRoute';
+import OnboardingGate from './components/features/OnboardingGate/OnboardingGate';
 import { routes } from './config/routes';
 
 function App() {
   return (
     <BrowserRouter>
+      <OnboardingGate />
       <Routes>
         {/* Public routes */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
         {routes.public.map((route) => (
           <Route key={route.path} {...route} />
         ))}
@@ -29,6 +30,7 @@ function App() {
             element={<PrivateRoute roles={['doctor']}>{route.element}</PrivateRoute>}
           />
         ))}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

@@ -2,7 +2,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import './AppHeader.css';
 
-export default function AppHeader({ showBack = false, backTo, title = 'Мед24/7' }) {
+import { APP_BRAND_NAME } from '../../../constants';
+
+export default function AppHeader({ showBack = false, backTo, title = APP_BRAND_NAME }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const avatarInitials =

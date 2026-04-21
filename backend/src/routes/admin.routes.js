@@ -26,5 +26,10 @@ module.exports = function(adminController) {
   router.patch('/api/admin/doctors/:id/online', authMiddleware, isAdmin,
     asyncHandler((req, res) => adminController.toggleDoctorOnline(req, res)));
 
+  router.get('/api/admin/b2b-metrics', authMiddleware, isAdmin,
+    asyncHandler((req, res) => adminController.getB2BMetrics(req, res)));
+  router.get('/api/admin/audit-log', authMiddleware, isAdmin,
+    asyncHandler((req, res) => adminController.getAuditLog(req, res)));
+
   return router;
 };

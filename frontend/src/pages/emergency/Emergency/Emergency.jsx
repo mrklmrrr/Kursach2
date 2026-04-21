@@ -12,6 +12,7 @@ export default function Emergency() {
   return (
     <div className="emergency-page">
       <AppHeader />
+      <div className="page-shell page-shell--flex-grow">
       <div className="emergency-hero">
         <h1>Нужна помощь<br />прямо сейчас?</h1>
         <p className="emergency-subtitle">Врач на связи за ~30 секунд</p>
@@ -39,6 +40,7 @@ export default function Emergency() {
       <div className="warning-block">
         <strong>Внимание!</strong><br />
         При угрозе жизни звоните <strong>103</strong> или <strong>112</strong>
+      </div>
       </div>
       <BottomNav />
     </div>

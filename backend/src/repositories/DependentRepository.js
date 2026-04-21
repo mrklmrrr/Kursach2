@@ -15,6 +15,13 @@ class DependentRepository {
     return dependents.map(d => d.toObject());
   }
 
+  async findByOwnerAndLinkedUserId(ownerUserId, linkedUserId) {
+    const legacyUserId = await this._resolveUserId(ownerUserId);
+    const searchId = legacyUserId || ownerUserId;
+    const doc = await Dependent.findOne({ userId: searchId, linkedUserId });
+    return doc ? doc.toObject() : null;
+  }
+
   /** Конвертирует ObjectId пользователя в legacyId */
   async _resolveUserId(userId) {
     try {

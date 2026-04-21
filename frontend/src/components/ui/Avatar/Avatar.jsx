@@ -2,6 +2,7 @@ import './Avatar.css';
 
 export default function Avatar({
   name,
+  src,
   emoji,
   size = 'medium',
   showOnline = false,
@@ -17,13 +18,17 @@ export default function Avatar({
       .slice(0, 2);
   };
 
-  const classes = `avatar avatar-${size} ${className}`.trim();
+  const classes = `avatar avatar-${size} ${src ? 'avatar-has-photo' : ''} ${className}`.trim();
 
   return (
     <div className={classes}>
-      <span className="avatar-content">
-        {emoji || getInitials(name)}
-      </span>
+      {src ? (
+        <img className="avatar-photo" src={src} alt="" />
+      ) : (
+        <span className="avatar-content">
+          {emoji || getInitials(name)}
+        </span>
+      )}
       {showOnline && <span className="online-dot" />}
     </div>
   );

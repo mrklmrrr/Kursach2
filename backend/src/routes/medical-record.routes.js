@@ -14,6 +14,27 @@ module.exports = function medicalRecordRoutes(medicalRecordController) {
   );
 
   router.get(
+    '/api/medical-record/me/laboratory-research',
+    authMiddleware,
+    isPatient,
+    asyncHandler((req, res) => medicalRecordController.getMyLaboratoryResults(req, res))
+  );
+
+  router.get(
+    '/api/medical-record/me/lab-insight-config',
+    authMiddleware,
+    isPatient,
+    asyncHandler((req, res) => medicalRecordController.getMyLabInsightConfig(req, res))
+  );
+
+  router.post(
+    '/api/medical-record/me/lab-insights',
+    authMiddleware,
+    isPatient,
+    asyncHandler((req, res) => medicalRecordController.postPatientLabInsight(req, res))
+  );
+
+  router.get(
     '/api/medical-record/patient/:patientId',
     authMiddleware,
     isDoctor,

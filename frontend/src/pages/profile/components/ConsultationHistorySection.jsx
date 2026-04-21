@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { EmptyState } from '../../../components/ui';
 import { ROUTES } from '../../../constants';
 import { formatHistoryDate, formatPrice, getDoctorInfo, getConsultationTimeline } from '../utils/profileUtils';
 
@@ -28,7 +29,7 @@ export const ConsultationHistorySection = ({ historyItems, loading, error }) => 
   };
 
   return (
-    <section className="section-card">
+    <section className="section-card section-card--lux">
       <h3>История консультаций</h3>
       <div className="profile-tabs">
         <button
@@ -49,7 +50,17 @@ export const ConsultationHistorySection = ({ historyItems, loading, error }) => 
       {loading && <p className="empty-info">Загрузка истории...</p>}
       {!loading && error && <p className="error-info">{error}</p>}
       {!loading && !error && paymentTab === 'history' && historyItems.length === 0 && (
-        <p className="empty-info">История консультаций пока пуста.</p>
+        <EmptyState
+          variant="card"
+          icon="history"
+          title="История консультаций пуста"
+          description="После приёмов записи появятся здесь с датой, врачом и статусом."
+          action={
+            <button type="button" className="btn btn-primary btn-medium" onClick={() => navigate('/doctors')}>
+              Записаться к врачу
+            </button>
+          }
+        />
       )}
       {!loading && !error && paymentTab === 'history' && historyItems.length > 0 && (
         (historyOpen ? historyItems : historyItems.slice(0, 3)).map((item) => {
@@ -80,7 +91,17 @@ export const ConsultationHistorySection = ({ historyItems, loading, error }) => 
       {!loading && !error && paymentTab === 'payments' && (
         <>
           {historyItems.filter((item) => item.source === 'appointment').length === 0 ? (
-            <p className="empty-info">Оплачивать пока нечего. Записи на прием не найдены.</p>
+            <EmptyState
+              variant="plain"
+              icon="payments"
+              title="Нет записей к оплате"
+              description="Сначала оформите запись на приём — затем здесь появится оплата."
+              action={
+                <button type="button" className="btn btn-outline btn-medium" onClick={() => navigate('/doctors')}>
+                  К врачам
+                </button>
+              }
+            />
           ) : (
             historyItems
               .filter((item) => item.source === 'appointment')

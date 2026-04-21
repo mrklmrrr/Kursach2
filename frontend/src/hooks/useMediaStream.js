@@ -60,7 +60,7 @@ export function useMediaStream(options = { video: true, audio: true }) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
-  }, [options.video, options.audio]);
+  }, [options]);
 
   const toggleCamera = useCallback(() => {
     if (streamRef.current) {

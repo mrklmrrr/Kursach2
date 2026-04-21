@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AppHeader } from '../../../components/layout';
 import { Avatar, Button } from '../../../components/ui';
-import { formatCurrency, getInitials } from '../../../utils/helpers';
+import { formatCurrency } from '../../../utils/helpers';
 import { ROUTES } from '../../../constants';
 import './Confirm.css';
 
@@ -12,19 +12,21 @@ export default function Confirm() {
 
   if (!doctor) {
     return (
-      <div className="confirm-page">
-        <p>Нет данных о консультации</p>
-        <Button variant="primary" onClick={() => navigate(ROUTES.DOCTORS)}>
-          Вернуться к врачам
-        </Button>
+      <div className="simple-stack-page">
+        <div className="confirm-page page-shell page-shell--flex-grow">
+          <p>Нет данных о консультации</p>
+          <Button variant="primary" onClick={() => navigate(ROUTES.DOCTORS)}>
+            Вернуться к врачам
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="simple-stack-page">
       <AppHeader showBack />
-      <div className="confirm-page">
+      <div className="confirm-page page-shell page-shell--flex-grow">
         <h2 className="confirm-title">Подтверждение консультации</h2>
         <div className="confirm-card">
           <Avatar name={doctor.name} size="xlarge" />

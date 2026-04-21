@@ -12,8 +12,12 @@ const frontendOrigins = String(process.env.FRONTEND_URL || 'http://localhost:517
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+const port = process.env.PORT || 5001;
+
 const config = {
-  port: process.env.PORT || 5001,
+  port,
+  /** Базовый URL API для ссылок на статику (аватары): без завершающего слэша */
+  publicApiBase: (process.env.PUBLIC_API_BASE || `http://localhost:${port}`).replace(/\/$/, ''),
   jwt: {
     secret: process.env.JWT_SECRET,
     expiresIn: process.env.JWT_EXPIRES_IN || '15m',

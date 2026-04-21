@@ -17,9 +17,21 @@ import Admin from '../pages/admin/Admin';
 import DoctorPanel from '../pages/doctor/DoctorPanel';
 import LaboratoryResearch from '../pages/doctor/LaboratoryResearch';
 import InstrumentalResearch from '../pages/doctor/InstrumentalResearch';
+import Splash from '../pages/auth/Splash/Splash';
+import Landing from '../pages/marketing/Landing/Landing';
+import Plans from '../pages/marketing/Plans/Plans';
+import Demo from '../pages/marketing/Demo/Demo';
+import Triage from '../pages/marketing/Triage/Triage';
+import Trust from '../pages/marketing/Trust/Trust';
 
 export const routes = {
   public: [
+    { path: '/', element: <Landing /> },
+    { path: '/splash', element: <Splash /> },
+    { path: '/plans', element: <Plans /> },
+    { path: '/demo', element: <Demo /> },
+    { path: '/triage', element: <Triage /> },
+    { path: '/trust', element: <Trust /> },
     { path: '/register', element: <Register /> },
     { path: '/login', element: <Login /> },
     { path: '/admin', element: <Admin /> }

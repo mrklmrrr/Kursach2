@@ -1,25 +1,15 @@
-import { useNavigate } from 'react-router-dom';
-import { CONSULTATION_TYPE_LABELS } from "../../constants/labels";
-import { videoRoomApi } from '../../../../services';
+import { EmptyState } from '../../../../components/ui';
 
 export default function RequestsTab({ consultations, onAccept, onReject }) {
-  const navigate = useNavigate();
-
-  const handleStartVideo = async (consultationId) => {
-    try {
-      const room = await videoRoomApi.createRoom(consultationId);
-      navigate(`/video-room/${room._id || consultationId}`, { 
-        state: { consultationId } 
-      });
-    } catch (err) {
-      alert('Ошибка при создании видео комнаты: ' + err.message);
-    }
-  };
-
   return (
     <div className="consultations-list">
       {consultations.length === 0 ? (
-        <p className="empty-state">Нет ожидающих заявок</p>
+        <EmptyState
+          variant="plain"
+          icon="inbox"
+          title="Нет ожидающих заявок"
+          description="Новые запросы на консультацию появятся здесь, когда пациенты запишутся к вам."
+        />
       ) : (
         consultations.map(c => (
           <div key={c._id} className="consultation-card pending">
@@ -33,11 +23,6 @@ export default function RequestsTab({ consultations, onAccept, onReject }) {
               </p>
             </div>
             <div className="consultation-actions">
-              {c.type === 'video' && (
-                <button className="accept-btn" onClick={() => handleStartVideo(c._id)}>
-                  📹 Начать видео
-                </button>
-              )}
               <button className="accept-btn" onClick={() => onAccept(c._id)}>
                 ✓ Принять
               </button>

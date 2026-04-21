@@ -36,6 +36,65 @@ export default function AdminDashboard() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    if (tab !== 'b2b' && tab !== 'compliance') return;
+    const load = async () => {
+      try {
+        if (tab === 'b2b') {
+          setB2bErr('');
+          const res = await adminApi.getB2BMetrics();
+          setB2b(res.data);
+        } else {
+          setAuditErr('');
+          const res = await adminApi.getAuditLog();
+          setAudit(Array.isArray(res.data) ? res.data : []);
+        }
+      } catch {
+        if (tab === 'b2b') setB2bErr('Не удалось загрузить B2B-метрики');
+        else setAuditErr('Не удалось загрузить журнал');
+      }
+    };
+    load();
+  }, [tab]);
+
+  const exportB2BCsv = () => {
+    if (!b2b) return;
+    const rows = Object.entries(b2b).map(([k, v]) => [k, typeof v === 'object' ? JSON.stringify(v) : v]);
+    const esc = (c) => `"${String(c).replace(/"/g, '""')}"`;
+    const csv = [['metric', 'value'], ...rows].map((r) => r.map(esc).join(';')).join('\n');
+    const blob = new Blob(['\ufeff', csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `b2b-metrics-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV сохранён', 'success');
+  };
+
+  const exportAuditCsv = () => {
+    if (!audit.length) return;
+    const esc = (c) => `"${String(c ?? '').replace(/"/g, '""')}"`;
+    const header = ['createdAt', 'action', 'actorRole', 'resource', 'details'];
+    const lines = [
+      header.join(';'),
+      ...audit.map((row) =>
+        [row.createdAt, row.action, row.actorRole, row.resource, row.details].map(esc).join(';')
+      )
+    ];
+    const csv = '\ufeff' + lines.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-log-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Журнал экспортирован', 'success');
+  };
+
+  const printB2B = () => window.print();
+
   const handleCreateDoctor = async (e) => {
     e.preventDefault();
     try {

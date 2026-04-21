@@ -11,7 +11,7 @@ export const SettingsSection = ({ onLogout }) => {
   };
 
   return (
-    <section className="section-card">
+    <section className="section-card section-card--lux">
       <h3>Настройки</h3>
       <div className="setting-row">
         <span>Тёмная тема</span>

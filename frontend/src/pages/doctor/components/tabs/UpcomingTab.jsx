@@ -1,10 +1,16 @@
 import { CONSULTATION_TYPE_LABELS, APPOINTMENT_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "../../constants/labels";
+import { EmptyState } from '../../../../components/ui';
 
 export default function UpcomingTab({ schedule, onSelectPatient }) {
   return (
     <div className="consultations-list">
       {schedule.length === 0 ? (
-        <p className="empty-state">Нет ближайших консультаций</p>
+        <EmptyState
+          variant="plain"
+          icon="event_available"
+          title="Нет ближайших консультаций"
+          description="Запланированные приёмы отобразятся здесь, когда появятся подтверждённые записи."
+        />
       ) : (
         schedule.map((item, index) => (
           <div key={item._id} className="consultation-card upcoming">

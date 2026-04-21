@@ -1,0 +1,39 @@
+.demo-table-card {
+  overflow-x: auto;
+}
+
+.demo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.demo-table th,
+.demo-table td {
+  text-align: left;
+  padding: 12px 10px;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+}
+
+body.dark .demo-table th,
+body.dark .demo-table td {
+  border-color: #334155;
+}
+
+.demo-table code {
+  font-size: 0.8rem;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+body.dark .demo-table code {
+  background: #334155;
+}
+
+.demo-hint {
+  margin-top: 16px;
+  color: #64748b;
+  font-size: 0.9rem;
+}

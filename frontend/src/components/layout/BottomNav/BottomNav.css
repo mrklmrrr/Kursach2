@@ -1,41 +1,93 @@
-.bottom-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding: 8px 0;
-  background: white;
-  border-top: 1px solid #e5e7eb;
+.bottom-nav-shell {
   position: sticky;
   bottom: 0;
   z-index: 100;
+  width: 100%;
+  padding: 0 var(--shell-pad-x, 20px) 10px;
+  pointer-events: none;
+  margin-top: auto;
+}
+
+.bottom-nav-track {
+  max-width: var(--shell-max, 640px);
+  margin: 0 auto;
+  pointer-events: auto;
+}
+
+@media (min-width: 768px) {
+  .bottom-nav-shell {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .bottom-nav-track {
+    max-width: var(--shell-max, 720px);
+  }
+}
+
+@media (min-width: 1200px) {
+  .bottom-nav-shell {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+}
+
+.bottom-nav {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 10px 8px 12px;
+  background: var(--lux-surface, rgba(255, 255, 255, 0.88));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--lux-border, rgba(148, 163, 184, 0.35));
+  border-radius: 22px;
+  box-shadow: var(--lux-shadow, 0 -8px 40px rgba(15, 23, 42, 0.08));
 }
 
 body.dark .bottom-nav {
-  background: #1f2937;
-  border-color: #374151;
+  background: rgba(30, 41, 59, 0.92);
+  border-color: rgba(71, 85, 105, 0.55);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
 }
 
 .nav-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
   text-decoration: none;
-  color: #9ca3af;
-  font-size: 0.75rem;
-  padding: 6px 12px;
-  border-radius: 8px;
-  transition: color 0.2s;
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 8px 4px;
+  border-radius: 14px;
+  transition: color 0.2s, background 0.2s;
+  min-width: 0;
 }
 
 .nav-item:hover {
-  color: #4f46e5;
+  color: var(--lux-accent, #4f46e5);
+  background: var(--lux-accent-soft, rgba(79, 70, 229, 0.08));
 }
 
 .nav-item.active {
-  color: #4f46e5;
+  color: var(--lux-accent, #4f46e5);
+  background: linear-gradient(180deg, rgba(79, 70, 229, 0.14), rgba(79, 70, 229, 0.06));
 }
 
 .nav-icon {
-  font-size: 1.5rem;
+  font-size: 1.45rem;
+}
+
+.nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }

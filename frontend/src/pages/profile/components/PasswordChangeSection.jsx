@@ -10,7 +10,7 @@ export const PasswordChangeSection = () => {
   } = usePasswordChange();
 
   return (
-    <section className="section-card">
+    <section className="section-card section-card--lux">
       <h3>Смена пароля</h3>
       <form className="password-form" onSubmit={handleChangePassword}>
         <input

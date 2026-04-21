@@ -107,6 +107,7 @@ export default function MedicalRecordModal({
               <ResearchNavigation
                 patientId={patient?.id}
                 label="лабораторные исследования"
+                pathSegment="laboratory"
                 navigate={navigate}
               />
             )}
@@ -115,6 +116,7 @@ export default function MedicalRecordModal({
               <ResearchNavigation
                 patientId={patient?.id}
                 label="инструментальные исследования"
+                pathSegment="instrumental"
                 navigate={navigate}
               />
             )}

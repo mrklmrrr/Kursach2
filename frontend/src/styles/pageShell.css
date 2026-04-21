@@ -1,0 +1,52 @@
+/* Единая центрированная колонка (как на главной) */
+
+.page-shell {
+  width: 100%;
+  max-width: var(--shell-max, 640px);
+  margin-left: auto;
+  margin-right: auto;
+  padding: 16px 20px 80px;
+  box-sizing: border-box;
+}
+
+.page-shell--flex-grow {
+  flex: 1;
+}
+
+/* Экраны без нижней навигации (чат и т.п.) */
+.page-shell--no-bottom-nav {
+  padding-bottom: 24px;
+}
+
+@media (min-width: 768px) {
+  .page-shell {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-shell {
+    max-width: var(--shell-max, 720px);
+    padding-top: 24px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .page-shell {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+}
+
+.emergency-page,
+.simple-stack-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.loader-redirect-inner {
+  text-align: center;
+  padding-top: 48px;
+}

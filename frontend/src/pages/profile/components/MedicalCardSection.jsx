@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { formatDateTime, formatHistoryDate } from '../utils/profileUtils';
+import PatientLaboratorySection from './PatientLaboratorySection';
 
-export const MedicalCardSection = ({ medicalRecord, loading, error, allLeaves, currentLeaf }) => {
+export const MedicalCardSection = ({ medicalRecord, laboratoryResults = [], loading, error, allLeaves, currentLeaf }) => {
   const [medicalRecordOpen, setMedicalRecordOpen] = useState(false);
   const [expandedMedicalSection, setExpandedMedicalSection] = useState('');
   const [medicalHistoryOpen, setMedicalHistoryOpen] = useState(false);
@@ -9,12 +10,14 @@ export const MedicalCardSection = ({ medicalRecord, loading, error, allLeaves, c
   const [showSickLeaveHistory, setShowSickLeaveHistory] = useState(false);
 
   return (
-    <section className="section-card">
+    <section className="section-card section-card--lux">
       <h3>Медицинская карта</h3>
       {loading && <p className="empty-info">Загрузка медицинской карты...</p>}
       {!loading && error && <p className="error-info">{error}</p>}
-      {!loading && !error && !medicalRecordOpen && (
-        <p className="empty-info">Откройте карту, чтобы посмотреть записи врача по системам организма.</p>
+      {!loading && !medicalRecordOpen && (
+        <p className="empty-info">
+          Откройте карту, чтобы посмотреть записи врача по системам организма и лабораторные анализы.
+        </p>
       )}
       <button
         className="btn btn-primary"
@@ -24,7 +27,7 @@ export const MedicalCardSection = ({ medicalRecord, loading, error, allLeaves, c
         {medicalRecordOpen ? 'Скрыть карту' : 'Открыть карту'}
       </button>
 
-      {!loading && !error && medicalRecordOpen && (
+      {!loading && medicalRecordOpen && (
         <>
           <div className="medical-record-tabs">
             <button
@@ -41,6 +44,13 @@ export const MedicalCardSection = ({ medicalRecord, loading, error, allLeaves, c
             >
               Лист нетрудоспособности
             </button>
+            <button
+              type="button"
+              className={`profile-tab-btn ${medicalRecordTab === 'laboratory' ? 'active' : ''}`}
+              onClick={() => setMedicalRecordTab('laboratory')}
+            >
+              Лабораторные анализы
+            </button>
           </div>
 
           <div className="medical-record-patient-info">
@@ -52,6 +62,11 @@ export const MedicalCardSection = ({ medicalRecord, loading, error, allLeaves, c
           {/* Вкладка: Медицинская карта (системы организма) */}
           {medicalRecordTab === 'systems' && (
             <>
+              {error && !medicalRecord ? (
+                <p className="empty-info">
+                  Раздел систем недоступен: карта не загрузилась. Перейдите на вкладку «Лабораторные анализы», если нужны только результаты исследований.
+                </p>
+              ) : null}
               {(medicalRecord?.systems || []).map((section) => (
                 <div key={section.key} className="medical-record-system">
                   <button
@@ -102,6 +117,10 @@ export const MedicalCardSection = ({ medicalRecord, loading, error, allLeaves, c
                 )}
               </div>
             </>
+          )}
+
+          {medicalRecordTab === 'laboratory' && (
+            <PatientLaboratorySection results={laboratoryResults} loading={loading} />
           )}
 
           {/* Вкладка: Лист нетрудоспособности */}

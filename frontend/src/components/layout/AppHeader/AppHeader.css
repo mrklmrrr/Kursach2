@@ -2,23 +2,41 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 14px var(--shell-pad-x, 20px);
+  max-width: var(--shell-max, 640px);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--lux-surface, rgba(255, 255, 255, 0.85));
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--lux-border, rgba(148, 163, 184, 0.3));
   position: sticky;
   top: 0;
   z-index: 100;
+  border-radius: 0 0 18px 18px;
+  box-shadow: var(--lux-shadow-sm, 0 8px 24px rgba(15, 23, 42, 0.05));
+}
+
+@media (min-width: 1024px) {
+  .app-header {
+    max-width: var(--shell-max, 720px);
+  }
 }
 
 body.dark .app-header {
-  background: #1f2937;
-  border-color: #374151;
+  background: rgba(30, 41, 59, 0.9);
+  border-color: rgba(71, 85, 105, 0.5);
 }
 
 .logo {
-  font-size: 1.25rem;
+  font-family: var(--font-display, 'Inter', sans-serif);
+  font-size: 1.2rem;
   font-weight: 700;
-  color: #4f46e5;
+  letter-spacing: -0.04em;
+  background: linear-gradient(120deg, #4f46e5, #7c3aed, #0d9488);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .app-header .avatar {

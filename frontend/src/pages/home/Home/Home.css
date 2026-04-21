@@ -1,19 +1,56 @@
-.home-container {
-  padding: 16px 20px 80px;
+.home-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-@media (min-width: 768px) {
-  .home-container {
-    padding-left: 24px;
-    padding-right: 24px;
+.home-page .home-container {
+  flex: 1;
+}
+
+.health-tips-section {
+  margin-top: 8px;
+}
+
+.health-tips-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 520px) {
+  .health-tips-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
-@media (min-width: 1200px) {
-  .home-container {
-    padding-left: 32px;
-    padding-right: 32px;
-  }
+.health-tip-card {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid #e8edf7;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  text-align: left;
+}
+
+.health-tip-card h4 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: #1f2937;
+}
+
+.health-tip-card p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.45;
+}
+
+.health-tip-icon {
+  font-size: 1.75rem;
+  color: #6366f1;
+  margin-bottom: 8px;
+  display: block;
 }
 
 .greeting {
@@ -87,6 +124,10 @@
 
 .upcoming-section {
   margin-bottom: 24px;
+}
+
+.upcoming-section--empty .section-title {
+  margin-bottom: 10px;
 }
 
 .upcoming-list {

@@ -1,19 +1,11 @@
+.doctors-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 .doctors-page-content {
-  padding: 16px 20px 80px;
-}
-
-@media (min-width: 768px) {
-  .doctors-page-content {
-    padding-left: 24px;
-    padding-right: 24px;
-  }
-}
-
-@media (min-width: 1200px) {
-  .doctors-page-content {
-    padding-left: 32px;
-    padding-right: 32px;
-  }
+  flex: 1;
 }
 
 .search-bar {

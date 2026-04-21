@@ -32,6 +32,13 @@ class UserRepository {
     return user ? user.toObject() : null;
   }
 
+  async findByUsername(username) {
+    const u = String(username || '').trim().replace(/^@+/, '').toLowerCase();
+    if (!u) return null;
+    const user = await User.findOne({ username: u });
+    return user ? user.toObject() : null;
+  }
+
   async updateById(id, updates) {
     const user = await updateById(User, id, updates);
     return user ? user.toObject() : null;

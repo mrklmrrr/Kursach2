@@ -7,23 +7,28 @@ import { AppHeader } from '../../../components/layout';
 import { Avatar, Button } from '../../../components/ui';
 import { formatCurrency } from '../../../utils/helpers';
 import { ROUTES } from '../../../constants';
+import { useToast } from '../../../contexts/ToastProvider/useToast';
 import './Payment.css';
 
 export default function Payment() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { showToast } = useToast();
   const { doctor, appointment } = location.state || {};
   const [card, setCard] = useState({ number: '', expiry: '', cvc: '' });
   const [loading, setLoading] = useState(false);
+  const [validationError, setValidationError] = useState('');
   const isAppointmentPayment = Boolean(appointment?.id);
 
   if (!doctor && !isAppointmentPayment) {
     return (
-      <div className="payment-page">
+      <div className="simple-stack-page">
+      <div className="payment-page page-shell page-shell--flex-grow">
         <p>Нет данных для оплаты</p>
         <Button variant="primary" onClick={() => navigate(ROUTES.PROFILE)}>
           Вернуться в профиль
         </Button>
+      </div>
       </div>
     );
   }
@@ -42,14 +47,15 @@ export default function Payment() {
 
   const handlePay = async () => {
     if (!card.number || !card.expiry || !card.cvc) {
-      alert('Пожалуйста, заполните все поля карты');
+      setValidationError('Пожалуйста, заполните все поля карты');
       return;
     }
     if (card.expiry.length !== 5) {
-      alert('Введите корректный срок действия карты (MM/YY)');
+      setValidationError('Введите корректный срок действия карты (MM/YY)');
       return;
     }
 
+    setValidationError('');
     setLoading(true);
     try {
       if (isAppointmentPayment) {
@@ -58,6 +64,7 @@ export default function Payment() {
           expiry: card.expiry,
           cvc: card.cvc
         });
+        showToast('Оплата приема прошла успешно', 'success');
         navigate(ROUTES.PROFILE);
       } else {
         const consRes = await consultationApi.create({
@@ -75,21 +82,23 @@ export default function Payment() {
           cvc: card.cvc
         });
 
+        showToast('Платеж принят. Подключаем консультацию...', 'success');
         navigate(ROUTES.LOADER, { state: { consultationId: consRes.data.consultationId, doctor } });
       }
     } catch (err) {
       console.error(err);
-      alert('Ошибка при обработке платежа. Попробуйте ещё раз.');
+      showToast('Ошибка при обработке платежа. Попробуйте ещё раз.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div>
+    <div className="simple-stack-page">
       <AppHeader showBack />
-      <div className="payment-page">
+      <div className="payment-page page-shell page-shell--flex-grow">
         <h2>{isAppointmentPayment ? 'Оплата приема' : 'Оплата консультации'}</h2>
+        <p className="payment-subtitle">Безопасный платеж в зашифрованном контуре клиники.</p>
         <div className="payment-summary">
           <div className="doctor-info">
             <Avatar name={doctor?.name || appointment?.doctorName || 'Врач'} size="medium" />
@@ -116,7 +125,10 @@ export default function Payment() {
             type="text"
             placeholder="1234 5678 9012 3456"
             value={card.number}
-            onChange={(e) => setCard({ ...card, number: formatCardNumber(e.target.value) })}
+            onChange={(e) => {
+              setValidationError('');
+              setCard({ ...card, number: formatCardNumber(e.target.value) });
+            }}
             maxLength="19"
           />
           <div className="expiry-cvc">
@@ -126,7 +138,10 @@ export default function Payment() {
                 type="text"
                 placeholder="MM/YY"
                 value={card.expiry}
-                onChange={(e) => setCard({ ...card, expiry: formatExpiry(e.target.value) })}
+                onChange={(e) => {
+                  setValidationError('');
+                  setCard({ ...card, expiry: formatExpiry(e.target.value) });
+                }}
                 maxLength="5"
               />
             </div>
@@ -136,12 +151,17 @@ export default function Payment() {
                 type="text"
                 placeholder="123"
                 value={card.cvc}
-                onChange={(e) => setCard({ ...card, cvc: e.target.value.replace(/[^0-9]/gi, '').substr(0, 4) })}
+                onChange={(e) => {
+                  setValidationError('');
+                  setCard({ ...card, cvc: e.target.value.replace(/[^0-9]/gi, '').substr(0, 4) });
+                }}
                 maxLength="4"
               />
             </div>
           </div>
         </div>
+
+        {validationError && <p className="payment-error">{validationError}</p>}
 
         <Button variant="primary" size="large" className="huge-btn" onClick={handlePay} disabled={loading}>
           {loading

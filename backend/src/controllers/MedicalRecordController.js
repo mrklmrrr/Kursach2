@@ -64,6 +64,25 @@ class MedicalRecordController {
     res.json(results);
   }
 
+  /** Список лабораторных результатов текущего пациента (только свой аккаунт) */
+  async getMyLaboratoryResults(req, res) {
+    const results = await this.medicalRecordService.getLaboratoryResults(req.userId);
+    res.json(results);
+  }
+
+  /** Настройки пояснений по анализам (без секретов): включён ли ИИ на сервере */
+  async getMyLabInsightConfig(req, res) {
+    const cfg = this.medicalRecordService.getPatientLabInsightConfig();
+    res.json(cfg);
+  }
+
+  /** Пояснение по результату (опционально ИИ); только свой результат */
+  async postPatientLabInsight(req, res) {
+    const { researchResultId } = req.body || {};
+    const out = await this.medicalRecordService.getPatientLabInsight(req.userId, researchResultId);
+    res.json(out);
+  }
+
   async getInstrumentalResults(req, res) {
     const results = await this.medicalRecordService.getInstrumentalResults(req.params.patientId);
     res.json(results);

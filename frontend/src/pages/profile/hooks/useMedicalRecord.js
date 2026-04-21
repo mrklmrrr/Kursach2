@@ -3,6 +3,7 @@ import { medicalRecordApi } from '../../../services/medicalRecordApi';
 
 export const useMedicalRecord = (user) => {
   const [medicalRecord, setMedicalRecord] = useState(null);
+  const [laboratoryResults, setLaboratoryResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -16,11 +17,26 @@ export const useMedicalRecord = (user) => {
       setLoading(true);
       setError('');
       try {
-        const { data } = await medicalRecordApi.getMyRecord();
-        setMedicalRecord(data);
-      } catch (error) {
+        const [recordRes, labRes] = await Promise.allSettled([
+          medicalRecordApi.getMyRecord(),
+          medicalRecordApi.getMyLaboratoryResults()
+        ]);
+        if (recordRes.status === 'fulfilled') {
+          setMedicalRecord(recordRes.value.data);
+        } else {
+          setMedicalRecord(null);
+          setError(recordRes.reason?.response?.data?.message || 'Не удалось загрузить медицинскую карту');
+        }
+        if (labRes.status === 'fulfilled') {
+          const raw = labRes.value.data;
+          setLaboratoryResults(Array.isArray(raw) ? raw : []);
+        } else {
+          setLaboratoryResults([]);
+        }
+      } catch (err) {
         setMedicalRecord(null);
-        setError(error.response?.data?.message || 'Не удалось загрузить медицинскую карту');
+        setLaboratoryResults([]);
+        setError(err.response?.data?.message || 'Не удалось загрузить медицинскую карту');
       } finally {
         setLoading(false);
       }
@@ -29,8 +45,20 @@ export const useMedicalRecord = (user) => {
     loadMedicalRecord();
   }, [user]);
 
+  const reloadLaboratoryResults = async () => {
+    if (!user || user.role === 'doctor') return;
+    try {
+      const { data } = await medicalRecordApi.getMyLaboratoryResults();
+      setLaboratoryResults(Array.isArray(data) ? data : []);
+    } catch {
+      setLaboratoryResults([]);
+    }
+  };
+
   return {
     medicalRecord,
+    laboratoryResults,
+    reloadLaboratoryResults,
     loading,
     error,
     allLeaves,

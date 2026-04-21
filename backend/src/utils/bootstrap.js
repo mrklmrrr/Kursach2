@@ -1,6 +1,7 @@
-const { User } = require('../models');
+const { User, ResearchType } = require('../models');
 const { roles } = require('../constants');
 const { doctorsList } = require('../data/doctors');
+const { defaultLabGridTemplates } = require('../data/labGridTemplates');
 const bcrypt = require('bcryptjs');
 
 /**
@@ -16,6 +17,9 @@ async function bootstrap() {
 
   // 3. Сид врачей (если нет ни одного)
   await seedDoctors();
+
+  // 4. Типовые бланки лаборатории (ОАК, биохимия и т.д.) — один раз по имени
+  await seedLabGridTemplates();
 }
 
 async function ensureIndexes() {
@@ -34,14 +38,28 @@ async function ensureIndexes() {
 }
 
 async function ensureAdmin() {
-  const email = process.env.ADMIN_EMAIL;
+  const emailRaw = process.env.ADMIN_EMAIL;
   const password = process.env.ADMIN_PASSWORD;
-  if (!email || !password) return; // Админ не настроен
+  if (!emailRaw || !password) return; // Админ не настроен
 
-  const exists = await User.findOne({ role: roles.ADMIN });
-  if (exists) return; // Уже есть
-
+  const email = String(emailRaw).trim().toLowerCase();
   const hashedPassword = await bcrypt.hash(password, 10);
+
+  const byEmail = await User.findOne({ email });
+  if (byEmail) {
+    if (byEmail.role !== roles.ADMIN) {
+      console.warn(`ADMIN_EMAIL совпадает с пользователем без роли admin (${email}), пропуск`);
+      return;
+    }
+    byEmail.password = hashedPassword;
+    await byEmail.save();
+    console.log(`✅ Пароль администратора синхронизирован из .env: ${email}`);
+    return;
+  }
+
+  const existsOtherAdmin = await User.findOne({ role: roles.ADMIN });
+  if (existsOtherAdmin) return; // Уже есть админ с другим email — не создаём дубликат
+
   const admin = new User({
     firstName: process.env.ADMIN_FIRST_NAME || 'Админ',
     lastName: process.env.ADMIN_LAST_NAME || 'Системы',
@@ -72,6 +90,18 @@ async function seedDoctors() {
     }))
   );
   console.log(`✅ Создано ${doctorsList.length} врачей`);
+}
+
+async function seedLabGridTemplates() {
+  for (const def of defaultLabGridTemplates) {
+    const exists = await ResearchType.findOne({ name: def.name });
+    if (exists) continue;
+    await ResearchType.create({
+      ...def,
+      createdBy: null
+    });
+    console.log(`✅ Добавлен типовой бланк: ${def.name}`);
+  }
 }
 
 module.exports = bootstrap;

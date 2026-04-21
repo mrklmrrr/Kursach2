@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { Button, Input } from '../../../components/ui';
 import { GENDER_TYPES } from '../../../constants';
@@ -56,7 +56,8 @@ export default function Register() {
     if (!validateForm()) return;
 
     try {
-      const { confirmPassword, ...userData } = form;
+      const userData = { ...form };
+      delete userData.confirmPassword;
       await register(userData);
       navigate('/home');
     } catch (err) {
@@ -65,7 +66,7 @@ export default function Register() {
   };
 
   return (
-    <div className="register-content">
+    <div className="register-content page-shell">
       <h1>Регистрация</h1>
       <form onSubmit={handleSubmit} noValidate>
         <div className="field-group">
@@ -105,7 +106,7 @@ export default function Register() {
         </div>
         <label className="checkbox-label">
           <input type="checkbox" checked={agree} onChange={() => setAgree(!agree)} required />
-          Соглашаюсь с <a href="#">обработкой персональных данных</a>
+          Соглашаюсь с <Link to="/trust">обработкой персональных данных и политикой платформы</Link>
         </label>
         {errors.form && <div className="form-error">{errors.form}</div>}
         <Button type="submit" variant="primary" size="large" className="huge-btn">

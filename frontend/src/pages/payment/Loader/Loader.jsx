@@ -22,13 +22,15 @@ export default function LoaderPage() {
   }, [consultationId, doctor, navigate]);
 
   return (
-    <div>
-      <Loader text="Подключаемся к врачу..." />
-      <p className="loader-subtext">Оплата прошла успешно. Перенаправляем в видеоконсультацию</p>
-      <div className="loading-dots">
-        <span>.</span>
-        <span>.</span>
-        <span>.</span>
+    <div className="simple-stack-page">
+      <div className="page-shell page-shell--flex-grow loader-redirect-inner">
+        <Loader text="Подключаемся к врачу..." />
+        <p className="loader-subtext">Оплата прошла успешно. Перенаправляем в видеоконсультацию</p>
+        <div className="loading-dots">
+          <span>.</span>
+          <span>.</span>
+          <span>.</span>
+        </div>
       </div>
     </div>
   );

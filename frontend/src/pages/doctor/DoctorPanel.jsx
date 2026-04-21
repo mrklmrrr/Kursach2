@@ -5,17 +5,18 @@ import { useAuth } from '../../hooks/useAuth';
 import PageLayout from '../../components/layout/PageLayout/PageLayout';
 
 import { useDoctorPanelData, useMedicalRecordModal, useConsultations, useCommentModal, useAppointments, useWorkingHours } from './hooks';
-import { videoRoomApi } from '../../services';
-import { toDateTime } from './utils/dateUtils';
+import { useToast } from '../../contexts/ToastProvider/useToast';
 import ProfileHeader from './components/ProfileHeader';
 import { RequestsTab, UpcomingTab, AppointmentsTab, PatientsTab } from './components/tabs';
 import { CommentModal, PatientProfileModal, MedicalRecordModal } from './components/modals';
+import PrescriptionModal from './components/modals/PrescriptionModal';
 
 import './DoctorPanel.css';
 
 export default function DoctorPanel() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   // Data management hooks
   const panelData = useDoctorPanelData();
@@ -28,7 +29,9 @@ export default function DoctorPanel() {
   // Local state
   const [tab, setTab] = React.useState('requests');
   const [selectedPatient, setSelectedPatient] = React.useState(null);
+  const [prescriptionPatient, setPrescriptionPatient] = React.useState(null);
 
+  /* eslint-disable react-hooks/exhaustive-deps -- кабинет врача: узкие deps, полный список даёт лишние циклы с panelData / хуками */
   // Initialize data on mount
   useEffect(() => {
     if (user?.role !== 'doctor') {
@@ -50,6 +53,7 @@ export default function DoctorPanel() {
   useEffect(() => {
     appointments.setAppointments(panelData.appointments);
   }, [panelData.appointments]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   // Memoized values
   const patientById = useMemo(() => {
@@ -59,6 +63,12 @@ export default function DoctorPanel() {
     });
     return map;
   }, [panelData.patients]);
+
+  const activeAppointmentsCount = useMemo(
+    () =>
+      appointments.appointments.filter((a) => a.status === 'scheduled' || a.status === 'confirmed').length,
+    [appointments.appointments]
+  );
 
   const upcomingSchedule = useMemo(() => {
     const now = new Date();
@@ -76,9 +86,11 @@ export default function DoctorPanel() {
   const handleToggleOnline = async () => {
     try {
       await doctorPanelApi.toggleOnline(!panelData.profile?.isOnline);
-      panelData.setProfile({ ...panelData.profile, isOnline: !panelData.profile.isOnline });
+      const next = !panelData.profile?.isOnline;
+      panelData.setProfile({ ...panelData.profile, isOnline: next });
+      showToast(next ? 'Вы в сети — пациенты видят вас онлайн' : 'Вы офлайн', 'success');
     } catch (err) {
-      alert(err.message);
+      showToast(err.message || 'Не удалось изменить статус', 'error');
     }
   };
 
@@ -111,9 +123,25 @@ export default function DoctorPanel() {
           onToggleOnline={handleToggleOnline}
         />
 
+        <div className="doctor-insights" aria-label="Краткая сводка">
+          <div className="insight-card">
+            <span className="insight-label">Новые заявки</span>
+            <span className="insight-value">{consultations.pendingConsultations.length}</span>
+          </div>
+          <div className="insight-card">
+            <span className="insight-label">Ближайшие приёмы</span>
+            <span className="insight-value">{upcomingSchedule.length}</span>
+          </div>
+          <div className="insight-card">
+            <span className="insight-label">Активные записи</span>
+            <span className="insight-value">{activeAppointmentsCount}</span>
+          </div>
+        </div>
+
         {/* Tabs Navigation */}
-        <div className="doctor-tabs">
+        <div className="doctor-tabs" role="tablist" aria-label="Разделы кабинета">
           <button
+            type="button"
             className={`d-tab ${tab === 'requests' ? 'active' : ''}`}
             onClick={() => setTab('requests')}
           >
@@ -121,15 +149,21 @@ export default function DoctorPanel() {
               <span className="badge">{consultations.pendingConsultations.length}</span>
             )}
           </button>
-          <button className={`d-tab ${tab === 'upcoming' ? 'active' : ''}`} onClick={() => setTab('upcoming')}>
+          <button
+            type="button"
+            className={`d-tab ${tab === 'upcoming' ? 'active' : ''}`}
+            onClick={() => setTab('upcoming')}
+          >
             Расписание {upcomingSchedule.length > 0 && <span className="badge">{upcomingSchedule.length}</span>}
           </button>
-          <button className={`d-tab ${tab === 'appointments' ? 'active' : ''}`} onClick={() => setTab('appointments')}>
-            Записи {appointments.appointments.filter(a => a.status === 'scheduled' || a.status === 'confirmed').length > 0 && (
-              <span className="badge">{appointments.appointments.filter(a => a.status === 'scheduled' || a.status === 'confirmed').length}</span>
-            )}
+          <button
+            type="button"
+            className={`d-tab ${tab === 'appointments' ? 'active' : ''}`}
+            onClick={() => setTab('appointments')}
+          >
+            Записи {activeAppointmentsCount > 0 && <span className="badge">{activeAppointmentsCount}</span>}
           </button>
-          <button className={`d-tab ${tab === 'patients' ? 'active' : ''}`} onClick={() => setTab('patients')}>
+          <button type="button" className={`d-tab ${tab === 'patients' ? 'active' : ''}`} onClick={() => setTab('patients')}>
             Пациенты
           </button>
         </div>
@@ -171,6 +205,7 @@ export default function DoctorPanel() {
           <PatientsTab
             patients={panelData.patients}
             onSelectPatient={handleOpenPatientMedicalRecord}
+            onPrescription={(p) => setPrescriptionPatient(p)}
           />
         )}
 
@@ -191,6 +226,14 @@ export default function DoctorPanel() {
           onOpenMedicalRecord={handleOpenPatientMedicalRecord}
           onClose={() => setSelectedPatient(null)}
         />
+
+        {prescriptionPatient && (
+          <PrescriptionModal
+            patient={prescriptionPatient}
+            onClose={() => setPrescriptionPatient(null)}
+            onSaved={() => panelData.loadData()}
+          />
+        )}
 
         <MedicalRecordModal
           open={medicalRecord.modal.open}

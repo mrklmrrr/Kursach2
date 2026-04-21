@@ -8,7 +8,8 @@ const doctorPanelRoutes = require('./doctor-panel.routes');
 const appointmentRoutes = require('./appointment.routes');
 const medicalRecordRoutes = require('./medical-record.routes');
 const researchRoutes = require('./research.routes');
-const videoRoomRoutes = require('./video-room.routes');
+const platformRoutes = require('./platform.routes');
+const prescriptionRoutes = require('./prescription.routes');
 
 module.exports = {
   authRoutes,
@@ -21,5 +22,6 @@ module.exports = {
   appointmentRoutes,
   medicalRecordRoutes,
   researchRoutes,
-  videoRoomRoutes
+  platformRoutes,
+  prescriptionRoutes
 };

@@ -9,8 +9,11 @@
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(229, 231, 235, 0.85);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
 .doctor-info-header {
@@ -31,10 +34,32 @@
   color: #6b7280;
 }
 
-.timer {
-  font-size: 1.25rem;
+.timer-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+  border: 1px solid rgba(199, 210, 254, 0.9);
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.12);
+}
+
+.timer-label {
+  font-size: 0.65rem;
   font-weight: 700;
-  color: #4f46e5;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6366f1;
+}
+
+.timer-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #312e81;
+  line-height: 1;
 }
 
 .video-call-wrapper {
@@ -46,8 +71,11 @@
   display: flex;
   justify-content: center;
   padding: 16px;
-  background: white;
-  border-top: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(229, 231, 235, 0.85);
+  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
 }
 
 .loading-screen {
@@ -68,8 +96,22 @@
 
 body.dark .consultation-header,
 body.dark .controls-bar {
-  background: #1f2937;
+  background: rgba(31, 41, 55, 0.92);
   border-color: #374151;
+}
+
+body.dark .timer-pill {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.35) 0%, rgba(30, 27, 75, 0.85) 100%);
+  border-color: rgba(129, 140, 248, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+body.dark .timer-label {
+  color: #c7d2fe;
+}
+
+body.dark .timer-value {
+  color: #e0e7ff;
 }
 
 body.dark .doctor-name-header {

@@ -4,6 +4,9 @@ const Dependent = require('./Dependent');
 const Appointment = require('./Appointment');
 const { MedicalRecord } = require('./MedicalRecord');
 const { ResearchType, ResearchResult } = require('./Research');
+const Prescription = require('./Prescription');
+const AuditLog = require('./AuditLog');
+const ReminderLog = require('./ReminderLog');
 
 module.exports = {
   User,
@@ -12,5 +15,8 @@ module.exports = {
   Appointment,
   MedicalRecord,
   ResearchType,
-  ResearchResult
+  ResearchResult,
+  Prescription,
+  AuditLog,
+  ReminderLog
 };

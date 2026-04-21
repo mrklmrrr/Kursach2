@@ -1,10 +1,9 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useTimer } from '../../../hooks/useTimer';
 import { VideoCall } from '../../../components/features';
 import { Button, BackButton } from '../../../components/ui';
 import { Avatar } from '../../../components/ui';
-import { videoRoomApi } from '../../../services';
 import './Consultation.css';
 
 export default function Consultation() {
@@ -13,70 +12,29 @@ export default function Consultation() {
   const location = useLocation();
   const doctorFromState = location.state?.doctor;
 
-  const [consultation, setConsultation] = useState(null);
-  const [roomId, setRoomId] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const { formatted, reset } = useTimer(900, () => {
-    // Timer ended
-  });
-
-  useEffect(() => {
-    const consultationData = doctorFromState
+  const consultation = useMemo(() => {
+    return doctorFromState
       ? {
-          id: parseInt(id),
+          id: parseInt(id, 10),
           doctorName: doctorFromState.name,
           specialty: doctorFromState.specialty,
           avatar: doctorFromState.avatar || '👩‍⚕️',
         }
       : {
-          id: parseInt(id),
+          id: parseInt(id, 10),
           doctorName: 'Врач',
           specialty: 'Специалист',
           avatar: '👩‍⚕️',
         };
-
-    setConsultation(consultationData);
   }, [id, doctorFromState]);
 
-  // Auto-join video room for patient
-  useEffect(() => {
-    const joinVideoRoom = async () => {
-      try {
-        setLoading(true);
-        const room = await videoRoomApi.getRoomInfo(id);
-        setRoomId(room._id || id);
-      } catch (err) {
-        console.error('Error joining video room:', err);
-        // If room doesn't exist, create it (for doctor)
-        try {
-          const newRoom = await videoRoomApi.createRoom(id);
-          setRoomId(newRoom._id || id);
-        } catch (createErr) {
-          console.error('Error creating video room:', createErr);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) {
-      joinVideoRoom();
-    }
-  }, [id]);
+  const { formatted } = useTimer(900, () => {
+    // Timer ended
+  });
 
   const endConsultation = () => {
     setTimeout(() => navigate('/chats'), 600);
   };
-
-  if (!consultation || loading) {
-    return (
-      <div className="loading-screen">
-        <div className="loader-spinner" />
-        <p>Загрузка консультации...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="consultation-screen">
@@ -89,11 +47,14 @@ export default function Consultation() {
             <div className="doctor-spec-header">{consultation.specialty}</div>
           </div>
         </div>
-        <div className="timer">{formatted}</div>
+        <div className="timer-pill" aria-label="Оставшееся время консультации">
+          <span className="timer-label">Осталось</span>
+          <span className="timer-value">{formatted}</span>
+        </div>
       </div>
 
       <div className="video-call-wrapper">
-        {roomId && <VideoCall roomId={roomId} onEndCall={endConsultation} />}
+        <VideoCall />
       </div>
 
       <div className="controls-bar">

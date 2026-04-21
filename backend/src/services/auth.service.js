@@ -2,6 +2,14 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { calculateAge } = require('../utils/helpers');
 const config = require('../config');
+
+function resolveAvatarUrl(stored) {
+  if (!stored) return '';
+  const s = String(stored);
+  if (/^https?:\/\//i.test(s)) return s;
+  const base = config.publicApiBase || '';
+  return `${base}${s.startsWith('/') ? s : `/${s}`}`;
+}
 const { roles } = require('../constants');
 
 class AuthService {
@@ -148,6 +156,7 @@ class AuthService {
     if (user.role === roles.DOCTOR) {
       return {
         ...base,
+        avatarUrl: resolveAvatarUrl(user.avatarUrl),
         specialty: user.specialty,
         price: user.price,
         experience: user.experience,
@@ -157,7 +166,74 @@ class AuthService {
       };
     }
 
-    return base;
+    if (user.role === roles.ADMIN) {
+      return { ...base, email: user.email, avatarUrl: resolveAvatarUrl(user.avatarUrl) };
+    }
+
+    return {
+      ...base,
+      avatarUrl: resolveAvatarUrl(user.avatarUrl),
+      username: user.username || '',
+      reminderEmail: user.reminderEmail !== false,
+      reminderTelegram: Boolean(user.reminderTelegram),
+      telegramUsername: user.telegramUsername || '',
+      telegramChatId: user.telegramChatId || '',
+      consentPersonalDataAt: user.consentPersonalDataAt || null,
+      consentMarketing: Boolean(user.consentMarketing)
+    };
+  }
+
+  normalizeUsername(raw) {
+    const s = String(raw || '').trim().replace(/^@+/g, '').toLowerCase();
+    if (!/^[a-z0-9_]{3,24}$/.test(s)) {
+      throw new Error('Username: 3–24 символа, только латиница, цифры и _');
+    }
+    return s;
+  }
+
+  async checkUsernameAvailability(raw) {
+    let username;
+    try {
+      username = this.normalizeUsername(raw);
+    } catch (e) {
+      return { ok: false, available: false, reason: 'format', message: e.message };
+    }
+    const existing = await this.userRepository.findByUsername(username);
+    return { ok: true, available: !existing, username };
+  }
+
+  async setUsername(userId, raw) {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new Error('Пользователь не найден');
+    }
+    if (user.role !== roles.PATIENT) {
+      throw new Error('Только для аккаунтов пациентов');
+    }
+    const username = this.normalizeUsername(raw);
+    const taken = await this.userRepository.findByUsername(username);
+    if (taken && String(taken._id) !== String(userId)) {
+      throw new Error('Этот username уже занят');
+    }
+    const updated = await this.userRepository.updateById(userId, { username });
+    if (!updated) throw new Error('Не удалось сохранить');
+    return this.formatUser(updated);
+  }
+
+  async updateReminderPreferences(userId, { reminderEmail, reminderTelegram, telegramUsername, telegramChatId }) {
+    const updates = {};
+    if (typeof reminderEmail === 'boolean') updates.reminderEmail = reminderEmail;
+    if (typeof reminderTelegram === 'boolean') updates.reminderTelegram = reminderTelegram;
+    if (typeof telegramUsername === 'string') updates.telegramUsername = telegramUsername.trim().replace(/^@/, '');
+    if (typeof telegramChatId === 'string') {
+      updates.telegramChatId = telegramChatId.replace(/\s/g, '');
+    }
+    if (Object.keys(updates).length === 0) {
+      throw new Error('Нет данных для обновления');
+    }
+    const user = await this.userRepository.updateById(userId, updates);
+    if (!user) throw new Error('Пользователь не найден');
+    return this.formatUser(user);
   }
 
   _createAccessToken(user) {

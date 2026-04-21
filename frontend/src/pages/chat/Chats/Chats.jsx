@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppHeader, BottomNav } from '../../../components/layout';
 import { ChatItem } from '../../../components/features';
 import { EmptyState } from '../../../components/ui';
@@ -14,6 +15,7 @@ function formatChatTime(value) {
 }
 
 export default function Chats() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +68,7 @@ export default function Chats() {
   return (
     <div className="chats-page">
       <AppHeader />
-      <div className="chats-content">
+      <div className="chats-content page-shell page-shell--flex-grow">
         <div className="section-title">
           {user?.role === 'doctor' ? 'Мои чаты с пациентами' : 'Мои чаты с врачами'}
         </div>
@@ -79,7 +81,23 @@ export default function Chats() {
             ))}
           </div>
         ) : (
-          <EmptyState icon="chat_bubble_outline" title="Нет чатов" description="У вас пока нет активных чатов" />
+          <EmptyState
+            variant="card"
+            icon="chat_bubble_outline"
+            title="Пока нет диалогов"
+            description={
+              user?.role === 'doctor'
+                ? 'Чаты появятся, когда пациенты напишут вам из записи или консультации.'
+                : 'Начните с записи к врачу — после приёма сможете продолжить общение в чате.'
+            }
+            action={
+              user?.role === 'patient' ? (
+                <button type="button" className="btn btn-primary btn-medium" onClick={() => navigate('/doctors')}>
+                  Записаться к врачу
+                </button>
+              ) : null
+            }
+          />
         )}
       </div>
       <BottomNav />

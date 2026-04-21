@@ -1,0 +1,45 @@
+.triage-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.triage-chip {
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 2px solid #e2e8f0;
+  background: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+body.dark .triage-chip {
+  background: #1e293b;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+.triage-chip.active {
+  border-color: #6366f1;
+  background: #eef2ff;
+  font-weight: 600;
+}
+
+body.dark .triage-chip.active {
+  background: rgba(99, 102, 241, 0.25);
+  border-color: #818cf8;
+}
+
+.triage-result-block {
+  padding-bottom: 24px;
+}
+
+.triage-result-card p {
+  color: #64748b;
+  margin-bottom: 16px;
+}
+
+body.dark .triage-result-card p {
+  color: #94a3b8;
+}

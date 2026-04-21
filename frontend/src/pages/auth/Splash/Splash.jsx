@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../../constants';
+import { ROUTES, APP_BRAND_NAME, APP_BRAND_TAGLINE } from '../../../constants';
 
 export default function Splash() {
   const navigate = useNavigate();
@@ -15,8 +15,8 @@ export default function Splash() {
       <div className="splash-content">
         <div className="splash-logo">
           <span className="material-icons big-icon">stethoscope</span>
-          <h1>Мед24/7</h1>
-          <p className="slogan">Медицинская помощь круглосуточно</p>
+          <h1>{APP_BRAND_NAME}</h1>
+          <p className="slogan">{APP_BRAND_TAGLINE}</p>
         </div>
         <div className="splash-features">
           <div className="feature">
@@ -24,8 +24,8 @@ export default function Splash() {
             <span>Видеоконсультации</span>
           </div>
           <div className="feature">
-            <span className="material-icons feature-icon">directions_car</span>
-            <span>Срочная помощь 24/7</span>
+            <span className="material-icons feature-icon">event_available</span>
+            <span>Запись и напоминания о приёме</span>
           </div>
           <div className="feature">
             <span className="material-icons feature-icon">child_care</span>

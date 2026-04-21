@@ -8,6 +8,13 @@ import { DoctorCard } from '../../../components/features';
 import { EmptyState, ConfirmModal } from '../../../components/ui';
 import './Home.css';
 
+const HEALTH_TIPS = [
+  { icon: 'water_drop', title: 'Вода', text: '1,5–2 л жидкости в день — мягкая поддержка давления и концентрации.' },
+  { icon: 'directions_walk', title: 'Движение', text: 'Короткая прогулка после еды улучшает обмен веществ и настроение.' },
+  { icon: 'bedtime', title: 'Сон', text: 'Стабильный режим сна помогает иммунитету и восстановлению организма.' },
+  { icon: 'wb_sunny', title: 'Свет', text: 'Дневной свет и перерывы от экрана снижают усталость глаз.' },
+];
+
 const DAY_MAP = {
   mon: 'Пн',
   tue: 'Вт',
@@ -48,12 +55,14 @@ export default function Home() {
       .catch((err) => console.error('Ошибка загрузки врачей:', err));
   }, []);
 
-  // Загрузка записей пациента
+  /* eslint-disable react-hooks/set-state-in-effect -- загрузка списка записей пациента (флаги loading + сброс при смене роли) */
   useEffect(() => {
     if (!user || user.role === 'doctor') {
       setLoadingAppointments(false);
+      setUpcoming([]);
       return;
     }
+    setLoadingAppointments(true);
     appointmentApi.getAll()
       .then((res) => {
         const now = new Date();
@@ -70,7 +79,7 @@ export default function Home() {
             const dateB = new Date(b.date + 'T' + b.time);
             return dateA - dateB;
           })
-          .map(a => {
+          .map((a) => {
             const dateObj = new Date(a.date);
             const dayOfWeek = DAY_MAP[['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][dateObj.getDay()]] || a.date;
             const statusLabel = {
@@ -100,6 +109,7 @@ export default function Home() {
       .catch((err) => console.error('Ошибка загрузки записей:', err))
       .finally(() => setLoadingAppointments(false));
   }, [user]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     setShowAllUpcoming(false);
@@ -141,6 +151,7 @@ export default function Home() {
   const fullNameParts = user?.name?.trim().split(/\s+/).filter(Boolean) || [];
   const extractedFirstName = fullNameParts.length >= 2 ? fullNameParts[1] : fullNameParts[0];
   const firstName = user?.firstName || extractedFirstName || 'Пользователь';
+  const tipOfDay = HEALTH_TIPS[new Date().getDate() % HEALTH_TIPS.length];
   const visibleUpcoming = showAllUpcoming ? upcoming : upcoming.slice(0, 3);
   const hasHiddenUpcoming = upcoming.length > 3 && !showAllUpcoming;
   const detailsType = selectedAppointment?.type === 'online' ? 'Онлайн консультация' : 'Офлайн прием';
@@ -148,7 +159,7 @@ export default function Home() {
   return (
     <div className="home-page">
       <AppHeader />
-      <div className="home-container">
+      <div className="home-container page-shell page-shell--flex-grow">
         <section className="greeting-section">
           <div className="greeting">Добрый день, {firstName}</div>
           <p className="welcome-text">Как вы себя чувствуете сегодня?</p>
@@ -164,6 +175,23 @@ export default function Home() {
           </div>
           <span className="material-icons arrow">arrow_forward</span>
         </div>
+
+        {!loadingAppointments && upcoming.length === 0 && user?.role === 'patient' && (
+          <section className="upcoming-section upcoming-section--empty" aria-label="Ближайшие записи">
+            <div className="section-title">Ближайшие записи</div>
+            <EmptyState
+              variant="card"
+              icon="event_note"
+              title="Запланированных приёмов нет"
+              description="Выберите врача и удобное время — запись появится здесь и в профиле."
+              action={
+                <button type="button" className="btn btn-primary btn-medium" onClick={() => navigate('/doctors')}>
+                  К списку врачей
+                </button>
+              }
+            />
+          </section>
+        )}
 
         {!loadingAppointments && upcoming.length > 0 && (
           <section className="upcoming-section">
@@ -221,19 +249,29 @@ export default function Home() {
         )}
 
         {doctors.length === 0 && (
-          <EmptyState icon="local_hospital" title="Врачи не загружены" />
+          <EmptyState
+            variant="card"
+            icon="local_hospital"
+            title="Список врачей не загрузился"
+            description="Проверьте подключение к интернету и обновите страницу."
+            action={
+              <button type="button" className="btn btn-outline btn-medium" onClick={() => window.location.reload()}>
+                Обновить
+              </button>
+            }
+          />
         )}
 
-        <div className="quick-actions">
-          <div className="quick-btn" onClick={() => navigate('/doctors')}>
-            <span className="material-icons">videocam</span>
-            <span>Видеоконсультация</span>
+        <section className="health-tips-section" aria-label="Совет дня">
+          <div className="section-title">Совет на сегодня</div>
+          <div className="health-tips-grid">
+            <article className="health-tip-card">
+              <span className="material-icons health-tip-icon">{tipOfDay.icon}</span>
+              <h4>{tipOfDay.title}</h4>
+              <p>{tipOfDay.text}</p>
+            </article>
           </div>
-          <div className="quick-btn" onClick={() => navigate('/chats')}>
-            <span className="material-icons">chat</span>
-            <span>Сообщения</span>
-          </div>
-        </div>
+        </section>
       </div>
       {selectedAppointment && (
         <div

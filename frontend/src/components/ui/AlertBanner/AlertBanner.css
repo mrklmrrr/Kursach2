@@ -1,0 +1,15 @@
+.alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 12px;
+  border: 1px solid #dbe5f3;
+  padding: 10px 12px;
+}
+
+.alert-banner .material-icons { font-size: 1rem; }
+.alert-banner p { margin: 0; font-size: 0.88rem; line-height: 1.4; }
+
+.alert-success { background: #ecfdf3; border-color: #a7f3d0; color: #065f46; }
+.alert-error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.alert-info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }

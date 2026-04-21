@@ -1,33 +1,27 @@
 .payment-page {
-  padding: 16px 20px 80px;
-}
-
-@media (min-width: 768px) {
-  .payment-page {
-    padding-left: 24px;
-    padding-right: 24px;
-  }
-}
-
-@media (min-width: 1200px) {
-  .payment-page {
-    padding-left: 32px;
-    padding-right: 32px;
-  }
+  flex: 1;
 }
 
 .payment-page h2 {
   font-size: 1.25rem;
   color: #1f2937;
-  margin-bottom: 20px;
+  margin-bottom: 8px;
+}
+
+.payment-subtitle {
+  margin: 0 0 20px;
+  font-size: 0.9rem;
+  color: #6b7280;
+  line-height: 1.45;
 }
 
 .payment-summary {
-  background: white;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.9);
 }
 
 .payment-summary .doctor-info {
@@ -60,11 +54,12 @@
 }
 
 .card-form {
-  background: white;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.9);
 }
 
 .card-form label {
@@ -81,6 +76,23 @@
   border-radius: 12px;
   font-size: 1rem;
   margin-bottom: 16px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-form input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.payment-error {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 0.9rem;
 }
 
 .expiry-cvc {
@@ -100,9 +112,20 @@ body.dark .payment-page h2 {
   color: #f9fafb;
 }
 
+body.dark .payment-subtitle {
+  color: #9ca3af;
+}
+
 body.dark .payment-summary,
 body.dark .card-form {
-  background: #1f2937;
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  border-color: #374151;
+}
+
+body.dark .payment-error {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #fee2e2;
 }
 
 body.dark .payment-summary .doctor-name,

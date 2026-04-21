@@ -1,8 +1,15 @@
-export default function PatientsTab({ patients, onSelectPatient }) {
+import { EmptyState } from '../../../../components/ui';
+
+export default function PatientsTab({ patients, onSelectPatient, onPrescription }) {
   return (
     <div className="patients-list">
       {patients.length === 0 ? (
-        <p className="empty-state">Нет пациентов</p>
+        <EmptyState
+          variant="plain"
+          icon="group"
+          title="Пока нет пациентов"
+          description="После первых записей и консультаций список заполнится автоматически."
+        />
       ) : (
         patients.map((p, i) => (
           <div key={i} className="patient-card">
@@ -20,6 +27,15 @@ export default function PatientsTab({ patients, onSelectPatient }) {
             </div>
             <div className="patient-card-actions">
               <span className="consult-count">{p.consultationCount} консульт.</span>
+              {onPrescription && (
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => onPrescription(p)}
+                >
+                  E-назначение
+                </button>
+              )}
               <button
                 type="button"
                 className="btn btn-outline"

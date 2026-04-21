@@ -1,20 +1,13 @@
 import { formatDateTime } from "../../utils/dateUtils";
 
-export function ResearchNavigation({ patientId, label, navigate }) {
-  const routeMap = {
-    'лабораторные': 'laboratory',
-    'инструментальные': 'instrumental'
-  };
-  const key = label.split(' ')[0].toLowerCase();
-  const route = routeMap[key] || key;
-
+export function ResearchNavigation({ patientId, label, pathSegment, navigate }) {
   return (
     <div className="research-navigation">
       <p>Управление {label} производится на отдельной странице.</p>
       <button
         type="button"
         className="btn btn-primary"
-        onClick={() => navigate(`/doctor/patient/${patientId}/${route}`)}
+        onClick={() => navigate(`/doctor/patient/${patientId}/${pathSegment}`)}
       >
         Перейти к {label.toLowerCase()}
       </button>

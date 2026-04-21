@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import Avatar from '../../ui/Avatar/Avatar';
-import { getInitials, formatCurrency } from '../../../utils/helpers';
+import { formatCurrency } from '../../../utils/helpers';
 import './DoctorCard.css';
 
 export default function DoctorCard({ doctor, variant = 'compact' }) {
