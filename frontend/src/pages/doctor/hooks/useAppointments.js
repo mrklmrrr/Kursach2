@@ -79,11 +79,12 @@ export const useWorkingHours = () => {
   const save = async () => {
     try {
       await appointmentApi.updateWorkingHours({ workingHours, workingDays });
-      alert('Рабочее время сохранено');
-      return true;
+      return { success: true, message: 'Рабочее время сохранено' };
     } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка сохранения');
-      return false;
+      return { 
+        success: false, 
+        message: err.response?.data?.message || 'Ошибка сохранения' 
+      };
     }
   };
 

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { AppHeader, BottomNav } from '../../../components/layout';
 import { ROUTES } from '../../../constants';
+import './Emergency.css';
 
 export default function Emergency() {
   const navigate = useNavigate();

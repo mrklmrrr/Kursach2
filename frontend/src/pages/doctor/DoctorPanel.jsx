@@ -53,6 +53,14 @@ export default function DoctorPanel() {
   useEffect(() => {
     appointments.setAppointments(panelData.appointments);
   }, [panelData.appointments]);
+
+  useEffect(() => {
+    workingHours.setWorkingHours(panelData.workingHours);
+  }, [panelData.workingHours]);
+
+  useEffect(() => {
+    workingHours.setWorkingDays(panelData.workingDays);
+  }, [panelData.workingDays]);
   /* eslint-enable react-hooks/exhaustive-deps */
 
   // Memoized values
@@ -106,7 +114,9 @@ export default function DoctorPanel() {
   };
 
   const handleOpenPatientMedicalRecord = (patient) => {
-    medicalRecord.openMedicalRecord(patient);
+    if (patient && (patient.id || patient._id)) {
+      medicalRecord.openMedicalRecord(patient);
+    }
   };
 
   if (panelData.loading) {

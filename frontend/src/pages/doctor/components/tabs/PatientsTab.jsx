@@ -18,7 +18,7 @@ export default function PatientsTab({ patients, onSelectPatient, onPrescription 
                 <button
                   type="button"
                   className="patient-link"
-                  onClick={() => onSelectPatient(p.id, p.name)}
+                  onClick={() => onSelectPatient(p)}
                 >
                   {p.name}
                 </button>
@@ -39,7 +39,7 @@ export default function PatientsTab({ patients, onSelectPatient, onPrescription 
               <button
                 type="button"
                 className="btn btn-outline"
-                onClick={() => onSelectPatient(p.id, p.name)}
+                onClick={() => onSelectPatient(p)}
               >
                 Карточка пациента
               </button>

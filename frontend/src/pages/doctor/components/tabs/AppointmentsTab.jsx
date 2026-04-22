@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { DAY_MAP, CONSULTATION_TYPE_LABELS, APPOINTMENT_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "../../constants/labels";
 import { EmptyState } from '../../../../components/ui';
 
@@ -15,6 +16,15 @@ export default function AppointmentsTab({
   onCancelAppointment,
   onOpenCommentModal
 }) {
+  const [notification, setNotification] = useState(null);
+
+  const handleSaveWorkingHours = async () => {
+    const result = await onSaveWorkingHours();
+    setNotification(result);
+    if (result.success) {
+      setTimeout(() => setNotification(null), 3000);
+    }
+  };
   return (
     <div className="appointments-section">
       {/* Форма назначения */}
@@ -88,9 +98,30 @@ export default function AppointmentsTab({
               ))}
             </div>
           </div>
-          <button className="btn btn-primary" onClick={onSaveWorkingHours}>
-            Сохранить рабочее время
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button className="btn btn-primary" onClick={handleSaveWorkingHours}>
+              Сохранить рабочее время
+            </button>
+            {notification && (
+              <div style={{
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '0.9rem',
+                fontWeight: '500',
+                backgroundColor: notification.success ? '#d1fae5' : '#fee2e2',
+                color: notification.success ? '#065f46' : '#991b1b',
+                border: `1px solid ${notification.success ? '#a7f3d0' : '#fecaca'}`,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <span style={{ fontSize: '18px' }}>
+                  {notification.success ? '✓' : '✕'}
+                </span>
+                {notification.message}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 

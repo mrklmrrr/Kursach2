@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef} from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { medicalRecordApi } from '../../services/medicalRecordApi';
 import { researchApi } from '../../services/researchApi';
@@ -101,6 +101,7 @@ function mergeCellDefaults(rows, cols, defaults) {
 function LaboratoryResearch() {
   const navigate = useNavigate();
   const { patientId } = useParams();
+  const autocompleteRef = useRef(null);
   const [patient, setPatient] = useState(null);
   const [results, setResults] = useState([]);
   const [researchTypes, setResearchTypes] = useState([]);
@@ -118,8 +119,10 @@ function LaboratoryResearch() {
   /** Черновик значений в ячейках шаблона (по желанию; сохраняется в gridTemplate.cellDefaults) */
   const [tbCells, setTbCells] = useState(() => initGridCells(3, 4));
 
-  const [showAddStudy, setShowAddStudy] = useState(false);
+  const [showAddStudy, setShowAddStudy] = useState(true);
   const [selectedTypeId, setSelectedTypeId] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [studyDate, setStudyDate] = useState(new Date().toISOString().slice(0, 10));
   const [fieldResults, setFieldResults] = useState({});
   const [gridCells, setGridCells] = useState([]);
@@ -171,23 +174,35 @@ function LaboratoryResearch() {
   }, [patientId]);
 
   useEffect(() => {
+    function handleClickOutside(event) {
+      if (autocompleteRef.current && !autocompleteRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!patientId) {
       navigate('/doctor');
       return;
     }
     loadData();
   }, [patientId, navigate, loadData]);
-
   const labTypes = useMemo(() => researchTypes, [researchTypes]);
   const gridTemplates = useMemo(() => labTypes.filter((t) => isTemplateGrid(t)), [labTypes]);
 
   const nameMatchesSearch = useCallback((name) => {
-    const q = analysisNameSearch.trim().toLowerCase();
+    const q = searchQuery.trim().toLowerCase();
     if (!q) return true;
     return String(name || '')
       .toLowerCase()
       .includes(q);
-  }, [analysisNameSearch]);
+  }, [searchQuery]);
 
   const visibleLabTypes = useMemo(
     () => labTypes.filter((t) => nameMatchesSearch(t.name)),
@@ -250,6 +265,7 @@ function LaboratoryResearch() {
     setTbColHeaders(['Столбец 1', 'Столбец 2', 'Столбец 3', 'Столбец 4']);
     setTbColUnits(adjustColUnits(4, []));
     setTbCells(initGridCells(3, 4));
+    setShowAddStudy(false);
     setShowTemplateBuilder(true);
   };
 
@@ -470,20 +486,6 @@ function LaboratoryResearch() {
           </div>
         </div>
 
-        <div className="lab-analysis-search">
-          <label htmlFor="lab-analysis-search-input">Поиск по названию анализа</label>
-          <input
-            id="lab-analysis-search-input"
-            type="search"
-            className="lab-analysis-search-input"
-            value={analysisNameSearch}
-            onChange={(e) => setAnalysisNameSearch(e.target.value)}
-            placeholder="Например: ОАК, биохимия, общий анализ крови…"
-            autoComplete="off"
-          />
-          <p className="lab-help lab-analysis-search-hint">
-            Фильтрует бланки-шаблоны ниже и записи в истории по этому пациенту. Сами анализы хранятся под <strong>названием шаблона</strong>, которое вы задаёте при сохранении бланка.
-          </p>
         </div>
 
         {showAddStudy && (
@@ -491,15 +493,44 @@ function LaboratoryResearch() {
             <h3>Новое лабораторное исследование</h3>
             <div className="form-group">
               <label>Анализ по названию шаблона</label>
-              <select value={selectedTypeId} onChange={(e) => { setSelectedTypeId(e.target.value); setFieldResults({}); }} required>
-                <option value="">Выберите название…</option>
-                {visibleLabTypes.map((t) => (
-                  <option key={t._id} value={t._id}>
-                    {t.name}
-                    {isTemplateGrid(t) ? ' (таблица)' : ''}
-                  </option>
-                ))}
-              </select>
+              <div className="lab-autocomplete-container">
+                <input
+                  type="text"
+                  className="lab-autocomplete-input"
+                  placeholder="Введите название анализа..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (!isDropdownOpen) setIsDropdownOpen(true);
+                  }}
+                  onFocus={() => setIsDropdownOpen(true)}
+                  onBlur={(e) => {
+                    setTimeout(() => {
+                      setIsDropdownOpen(false);
+                    }, 200);
+                  }}
+                  autoComplete="off"
+                />
+                {isDropdownOpen && visibleLabTypes.length > 0 && (
+                  <div className="lab-autocomplete-dropdown">
+                    {visibleLabTypes.map((t) => (
+                      <div
+                        key={t._id}
+                        className={`lab-autocomplete-item ${selectedTypeId === t._id ? 'selected' : ''}`}
+                        onClick={() => {
+                          setSelectedTypeId(t._id);
+                          setSearchQuery(t.name);
+                          setIsDropdownOpen(false);
+                          setFieldResults({});
+                        }}
+                      >
+                        {t.name}
+                        {isTemplateGrid(t) && <span className="lab-grid-badge">таблица</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             {labTypes.length > 0 && visibleLabTypes.length === 0 && (
               <p className="lab-empty-filter">По поиску нет совпадений — очистите поле «Поиск по названию анализа» выше или измените запрос.</p>
@@ -507,30 +538,6 @@ function LaboratoryResearch() {
             <div className="form-group">
               <label>Дата</label>
               <input type="date" value={studyDate} onChange={(e) => setStudyDate(e.target.value)} required />
-            </div>
-
-            <div className="lab-study-overall">
-              <h4>Общее заключение по этому анализу</h4>
-              <div className="form-group">
-                <label>Текст врача (свободное поле)</label>
-                <textarea
-                  className="lab-study-note"
-                  rows={3}
-                  value={studyNote}
-                  onChange={(e) => setStudyNote(e.target.value)}
-                  placeholder="Краткое заключение, рекомендации, примечание к бланку…"
-                />
-              </div>
-              <div className="form-group">
-                <label>Общая оценка результата</label>
-                <select value={overallStatus} onChange={(e) => setOverallStatus(e.target.value)}>
-                  {STATUS_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
 
             {selectedType && isGridType && selectedGridNorm && (
@@ -631,6 +638,30 @@ function LaboratoryResearch() {
                 </div>
               </div>
             )}
+
+            <div className="lab-study-overall">
+              <h4>Общее заключение по этому анализу</h4>
+              <div className="form-group">
+                <label>Текст врача (свободное поле)</label>
+                <textarea
+                  className="lab-study-note"
+                  rows={3}
+                  value={studyNote}
+                  onChange={(e) => setStudyNote(e.target.value)}
+                  placeholder="Краткое заключение, рекомендации, примечание к бланку…"
+                />
+              </div>
+              <div className="form-group">
+                <label>Общая оценка результата</label>
+                <select value={overallStatus} onChange={(e) => setOverallStatus(e.target.value)}>
+                  {STATUS_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
             {selectedType && !isGridType && (selectedType.template || []).length > 0 && (
               <div className="research-template-fields">
@@ -837,7 +868,7 @@ function LaboratoryResearch() {
           </div>
         )}
 
-        {showTemplateBuilder && (
+        {showTemplateBuilder && !showAddStudy && (
           <div className="research-form lab-template-builder">
             <div className="lab-template-builder-top">
               <div>
@@ -1012,7 +1043,10 @@ function LaboratoryResearch() {
               <button type="button" className="btn btn-primary" onClick={saveTemplate}>
                 Сохранить бланк (шаблон)
               </button>
-              <button type="button" className="btn btn-outline" onClick={() => setShowTemplateBuilder(false)}>
+              <button type="button" className="btn btn-outline" onClick={() => {
+                setShowTemplateBuilder(false);
+                setShowAddStudy(true);
+              }}>
                 Закрыть без сохранения
               </button>
             </div>
@@ -1169,7 +1203,6 @@ function LaboratoryResearch() {
             })
           )}
         </div>
-      </div>
     </PageLayout>
   );
 }
