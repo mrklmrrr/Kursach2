@@ -9,6 +9,19 @@
   text-align: center;
 }
 
+.auth-logo {
+  margin-bottom: 48px;
+  margin-top: -16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-logo img {
+  max-width: 200px;
+  height: auto;
+}
+
 .register-content h1 {
   font-size: 1.75rem;
   margin-bottom: 8px;

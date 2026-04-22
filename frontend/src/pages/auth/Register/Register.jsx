@@ -67,6 +67,9 @@ export default function Register() {
 
   return (
     <div className="register-content page-shell">
+      <div className="auth-logo">
+        <img src="/med24-logo.svg" alt="Мед24" />
+      </div>
       <h1>Регистрация</h1>
       <form onSubmit={handleSubmit} noValidate>
         <div className="field-group">
