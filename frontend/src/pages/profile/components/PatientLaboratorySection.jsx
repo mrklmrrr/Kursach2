@@ -58,22 +58,10 @@ export default function PatientLaboratorySection({ results, loading }) {
   const [loadingId, setLoadingId] = useState(null);
   const [errorById, setErrorById] = useState({});
   const [expandedById, setExpandedById] = useState({});
-  const [labInsightConfig, setLabInsightConfig] = useState(null);
+  const [showAll, setShowAll] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    medicalRecordApi
-      .getMyLabInsightConfig()
-      .then(({ data }) => {
-        if (!cancelled) setLabInsightConfig(data);
-      })
-      .catch(() => {
-        if (!cancelled) setLabInsightConfig({ aiConfigured: false, model: '', apiBaseHost: '' });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+
+
 
   const toggleExpanded = (resultId) => {
     const key = String(resultId);
@@ -84,6 +72,8 @@ export default function PatientLaboratorySection({ results, loading }) {
     const list = Array.isArray(results) ? [...results] : [];
     return list.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
   }, [results]);
+
+  const filtered = showAll ? sorted : sorted.slice(0, 4);
 
   const fetchInsight = async (resultId) => {
     setLoadingId(resultId);
@@ -124,26 +114,10 @@ export default function PatientLaboratorySection({ results, loading }) {
 
   return (
     <div className="patient-lab-section">
-      <p className="patient-lab-intro">
-        Ниже — данные, которые внёс врач. Расшифровка «норм» и лечение возможны только на очной консультации.
-      </p>
-      {labInsightConfig && (
-        <p className={`patient-lab-ai-status ${labInsightConfig.aiConfigured ? 'on' : 'off'}`}>
-          {labInsightConfig.aiConfigured ? (
-            <>
-              ИИ-пояснения включены на сервере (модель <strong>{labInsightConfig.model}</strong>, узел{' '}
-              <strong>{labInsightConfig.apiBaseHost}</strong>). Текст по кнопке ниже — справочный.
-            </>
-          ) : (
-            <>
-              ИИ на сервере не подключён — по кнопке будет краткая текстовая справка. Для включения ИИ администратор
-              задаёт <code className="patient-lab-code">OPENAI_API_KEY</code> в окружении бэкенда и перезапускает
-              сервер.
-            </>
-          )}
-        </p>
-      )}
-      {sorted.map((result) => {
+      <div className="patient-lab-section-header">
+        <span className="patient-lab-section-title">Лабораторные анализы</span>
+      </div>
+      {filtered.map((result) => {
         const gt = gridTemplateForResult(result);
         const hasGrid = result.gridResults && result.gridResults.length > 0 && gt;
         const id = result._id;
@@ -277,9 +251,7 @@ export default function PatientLaboratorySection({ results, loading }) {
                   >
                     {loadingId === id
                       ? 'Формируем пояснение…'
-                      : labInsightConfig?.aiConfigured
-                        ? 'Пояснение с ИИ (справочно)'
-                        : 'Краткая справка (ИИ не настроен на сервере)'}
+                      : 'Краткая справка'}
                   </button>
                   {errorById[id] ? <p className="patient-lab-ai-err">{errorById[id]}</p> : null}
                   {insightById[id] ? (
@@ -305,8 +277,17 @@ export default function PatientLaboratorySection({ results, loading }) {
               </div>
             ) : null}
           </article>
-        );
-      })}
+          );
+        })}
+        {sorted.length > 4 && (
+          <button
+            type="button"
+            className="patient-lab-show-more"
+            onClick={() => setShowAll(!showAll)}
+          >
+            {showAll ? 'Показать меньше' : `Показать еще (${sorted.length - 4})`}
+          </button>
+        )}
     </div>
   );
 }

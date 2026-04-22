@@ -95,7 +95,7 @@ header {
   border-top: 1px solid var(--border);
   display: flex;
   justify-content: space-around;
-  padding: 12px 0 24px;
+  padding: 12px 6px 24px;
 }
 
 .nav-item {

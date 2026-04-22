@@ -475,7 +475,15 @@ function LaboratoryResearch() {
     <PageLayout>
       <div className="research-management lab-research-premium">
         <div className="research-header">
-          <h2>Лабораторные исследования — {patient?.name || 'Пациент'}</h2>
+          <div className="research-header-top">
+            <button
+              className="btn btn-outline btn-back"
+              onClick={() => navigate(-1)}
+            >
+              ← Назад
+            </button>
+            <h2>Лабораторные исследования — {patient?.name || 'Пациент'}</h2>
+          </div>
           <div className="research-header-actions">
             <button type="button" className="btn btn-outline" onClick={openNewTemplateBuilder}>
               Новый шаблон (таблица)
@@ -504,7 +512,7 @@ function LaboratoryResearch() {
                     if (!isDropdownOpen) setIsDropdownOpen(true);
                   }}
                   onFocus={() => setIsDropdownOpen(true)}
-                  onBlur={(e) => {
+                  onBlur={() => {
                     setTimeout(() => {
                       setIsDropdownOpen(false);
                     }, 200);

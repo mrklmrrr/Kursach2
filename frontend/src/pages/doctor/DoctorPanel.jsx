@@ -249,6 +249,7 @@ export default function DoctorPanel() {
           open={medicalRecord.modal.open}
           patient={medicalRecord.modal.patient}
           record={medicalRecord.modal.record}
+          laboratoryResults={medicalRecord.modal.laboratoryResults}
           loading={medicalRecord.modal.loading}
           error={medicalRecord.modal.error}
           tab={medicalRecord.tab}

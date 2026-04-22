@@ -2,11 +2,13 @@ import { useNavigate } from 'react-router-dom';
 import MedicalSystemSection from './MedicalSystemSection';
 import SickLeaveSection from './SickLeaveSection';
 import { ResearchNavigation, MedicalHistory } from './MedicalRecordHelpers';
+import PatientLaboratorySection from '../../../profile/components/PatientLaboratorySection';
 
 export default function MedicalRecordModal({
   open,
   patient,
   record,
+  laboratoryResults,
   loading,
   error,
   tab,
@@ -104,12 +106,16 @@ export default function MedicalRecordModal({
             )}
 
             {tab === 'laboratory' && (
-              <ResearchNavigation
-                patientId={patient?.id}
-                label="лабораторные исследования"
-                pathSegment="laboratory"
-                navigate={navigate}
-              />
+              <>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => navigate(`/doctor/patient/${patient?.id}/laboratory`)}
+                >
+                  Добавить лаб анализы
+                </button>
+                <PatientLaboratorySection results={laboratoryResults} loading={loading} />
+              </>
             )}
 
             {tab === 'instrumental' && (

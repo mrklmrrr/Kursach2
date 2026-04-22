@@ -6,6 +6,7 @@ export const useMedicalRecordModal = () => {
     open: false,
     patient: null,
     record: null,
+    laboratoryResults: [],
     loading: false,
     savingSectionKey: '',
     error: ''
@@ -33,17 +34,26 @@ export const useMedicalRecordModal = () => {
     setTab('systems');
 
     try {
-      const { data } = await medicalRecordApi.getPatientRecord(patient.id);
-      const recordWithOriginal = {
-        ...data,
-        sickLeaves: (data.sickLeaves || []).map(leaf => ({ ...leaf, originalStatus: leaf.status }))
-      };
-      
+      const [recordRes, labRes] = await Promise.allSettled([
+        medicalRecordApi.getPatientRecord(patient.id),
+        medicalRecordApi.getLaboratoryResults(patient.id)
+      ]);
+
+      const recordData = recordRes.status === 'fulfilled' ? recordRes.value.data : null;
+      const labData = labRes.status === 'fulfilled' ? labRes.value.data : [];
+
+      const recordWithOriginal = recordData ? {
+        ...recordData,
+        sickLeaves: (recordData.sickLeaves || []).map(leaf => ({ ...leaf, originalStatus: leaf.status }))
+      } : null;
+
       setModal((prev) => ({
         ...prev,
-        patient: { ...patient, ...(data.patient || {}) },
+        patient: { ...patient, ...(recordData?.patient || {}) },
         record: recordWithOriginal,
-        loading: false
+        laboratoryResults: Array.isArray(labData) ? labData : [],
+        loading: false,
+        error: recordRes.status === 'rejected' ? (recordRes.reason?.response?.data?.message || 'Не удалось загрузить медицинскую карту') : ''
       }));
     } catch (err) {
       setModal((prev) => ({
@@ -59,6 +69,7 @@ export const useMedicalRecordModal = () => {
       open: false,
       patient: null,
       record: null,
+      laboratoryResults: [],
       loading: false,
       savingSectionKey: '',
       error: ''
