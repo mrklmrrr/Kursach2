@@ -3,12 +3,14 @@ import MedicalSystemSection from './MedicalSystemSection';
 import SickLeaveSection from './SickLeaveSection';
 import { ResearchNavigation, MedicalHistory } from './MedicalRecordHelpers';
 import PatientLaboratorySection from '../../../profile/components/PatientLaboratorySection';
+import InstrumentalInvestigationsSection from '../../../profile/components/InstrumentalInvestigationsSection';
 
 export default function MedicalRecordModal({
   open,
   patient,
   record,
   laboratoryResults,
+  instrumentalResults,
   loading,
   error,
   tab,
@@ -119,12 +121,16 @@ export default function MedicalRecordModal({
             )}
 
             {tab === 'instrumental' && (
-              <ResearchNavigation
-                patientId={patient?.id}
-                label="инструментальные исследования"
-                pathSegment="instrumental"
-                navigate={navigate}
-              />
+              <>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => navigate(`/doctor/patient/${patient?.id}/instrumental`)}
+                >
+                  Добавить инструментальные исследования
+                </button>
+                <InstrumentalInvestigationsSection results={instrumentalResults} loading={loading} />
+              </>
             )}
           </div>
         )}

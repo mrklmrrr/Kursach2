@@ -251,10 +251,37 @@ class MedicalRecordService {
       : 'normal';
     const studyNote = payload.studyNote != null ? String(payload.studyNote).slice(0, 8000) : '';
 
+    // Дата сохраняется как строка YYYY-MM-DD для избежания проблем с часовыми поясами
+    let researchDate = '';
+    if (payload.date) {
+      // Если передан формат YYYY-MM-DD, используем его напрямую
+      if (typeof payload.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(payload.date)) {
+        researchDate = payload.date;
+      } else {
+        // Если передан Date объект, конвертируем в локальную дату
+        const d = new Date(payload.date);
+        if (!isNaN(d.getTime())) {
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          researchDate = `${yyyy}-${mm}-${dd}`;
+        }
+      }
+    }
+
+    // Если дата не установлена, используем сегодняшнюю дату
+    if (!researchDate) {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      researchDate = `${yyyy}-${mm}-${dd}`;
+    }
+
     const researchResult = new ResearchResult({
       patientId,
       researchTypeId: payload.researchTypeId,
-      date: payload.date ? new Date(payload.date) : new Date(),
+      date: researchDate,
       doctorId,
       doctorName,
       results,

@@ -46,7 +46,7 @@ const researchTypeSchema = new mongoose.Schema({
 const researchResultSchema = new mongoose.Schema({
   patientId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   researchTypeId: { type: mongoose.Schema.Types.ObjectId, ref: 'ResearchType', required: true },
-  date: { type: Date, default: Date.now },
+  date: { type: String, required: true }, // YYYY-MM-DD, чтобы избежать проблем с часовыми поясами
   doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   doctorName: { type: String, required: true },
   results: [{

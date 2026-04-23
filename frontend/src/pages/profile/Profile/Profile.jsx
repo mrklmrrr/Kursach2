@@ -24,6 +24,7 @@ export default function Profile() {
   const {
     medicalRecord,
     laboratoryResults,
+    instrumentalResults,
     loading: medicalRecordLoading,
     error: medicalRecordError,
     allLeaves,
@@ -79,6 +80,7 @@ export default function Profile() {
             <MedicalCardSection
               medicalRecord={medicalRecord}
               laboratoryResults={laboratoryResults}
+              instrumentalResults={instrumentalResults}
               loading={medicalRecordLoading}
               error={medicalRecordError}
               allLeaves={allLeaves}

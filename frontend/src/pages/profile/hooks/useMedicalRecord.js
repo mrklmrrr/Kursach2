@@ -4,6 +4,7 @@ import { medicalRecordApi } from '../../../services/medicalRecordApi';
 export const useMedicalRecord = (user) => {
   const [medicalRecord, setMedicalRecord] = useState(null);
   const [laboratoryResults, setLaboratoryResults] = useState([]);
+  const [instrumentalResults, setInstrumentalResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -17,9 +18,10 @@ export const useMedicalRecord = (user) => {
       setLoading(true);
       setError('');
       try {
-        const [recordRes, labRes] = await Promise.allSettled([
+        const [recordRes, labRes, instrRes] = await Promise.allSettled([
           medicalRecordApi.getMyRecord(),
-          medicalRecordApi.getMyLaboratoryResults()
+          medicalRecordApi.getMyLaboratoryResults(),
+          medicalRecordApi.getMyInstrumentalResults()
         ]);
         if (recordRes.status === 'fulfilled') {
           setMedicalRecord(recordRes.value.data);
@@ -33,9 +35,16 @@ export const useMedicalRecord = (user) => {
         } else {
           setLaboratoryResults([]);
         }
+        if (instrRes.status === 'fulfilled') {
+          const raw = instrRes.value.data;
+          setInstrumentalResults(Array.isArray(raw) ? raw : []);
+        } else {
+          setInstrumentalResults([]);
+        }
       } catch (err) {
         setMedicalRecord(null);
         setLaboratoryResults([]);
+        setInstrumentalResults([]);
         setError(err.response?.data?.message || 'Не удалось загрузить медицинскую карту');
       } finally {
         setLoading(false);
@@ -55,10 +64,22 @@ export const useMedicalRecord = (user) => {
     }
   };
 
+  const reloadInstrumentalResults = async () => {
+    if (!user || user.role === 'doctor') return;
+    try {
+      const { data } = await medicalRecordApi.getMyInstrumentalResults();
+      setInstrumentalResults(Array.isArray(data) ? data : []);
+    } catch {
+      setInstrumentalResults([]);
+    }
+  };
+
   return {
     medicalRecord,
     laboratoryResults,
+    instrumentalResults,
     reloadLaboratoryResults,
+    reloadInstrumentalResults,
     loading,
     error,
     allLeaves,

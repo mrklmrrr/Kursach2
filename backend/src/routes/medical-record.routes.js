@@ -35,6 +35,13 @@ module.exports = function medicalRecordRoutes(medicalRecordController) {
   );
 
   router.get(
+    '/api/medical-record/me/instrumental-research',
+    authMiddleware,
+    isPatient,
+    asyncHandler((req, res) => medicalRecordController.getMyInstrumentalResults(req, res))
+  );
+
+  router.get(
     '/api/medical-record/patient/:patientId',
     authMiddleware,
     isDoctor,

@@ -7,6 +7,7 @@ export const useMedicalRecordModal = () => {
     patient: null,
     record: null,
     laboratoryResults: [],
+    instrumentalResults: [],
     loading: false,
     savingSectionKey: '',
     error: ''
@@ -34,13 +35,15 @@ export const useMedicalRecordModal = () => {
     setTab('systems');
 
     try {
-      const [recordRes, labRes] = await Promise.allSettled([
+      const [recordRes, labRes, instrRes] = await Promise.allSettled([
         medicalRecordApi.getPatientRecord(patient.id),
-        medicalRecordApi.getLaboratoryResults(patient.id)
+        medicalRecordApi.getLaboratoryResults(patient.id),
+        medicalRecordApi.getInstrumentalResults(patient.id)
       ]);
 
       const recordData = recordRes.status === 'fulfilled' ? recordRes.value.data : null;
       const labData = labRes.status === 'fulfilled' ? labRes.value.data : [];
+      const instrData = instrRes.status === 'fulfilled' ? instrRes.value.data : [];
 
       const recordWithOriginal = recordData ? {
         ...recordData,
@@ -52,6 +55,7 @@ export const useMedicalRecordModal = () => {
         patient: { ...patient, ...(recordData?.patient || {}) },
         record: recordWithOriginal,
         laboratoryResults: Array.isArray(labData) ? labData : [],
+        instrumentalResults: Array.isArray(instrData) ? instrData : [],
         loading: false,
         error: recordRes.status === 'rejected' ? (recordRes.reason?.response?.data?.message || 'Не удалось загрузить медицинскую карту') : ''
       }));
@@ -70,6 +74,7 @@ export const useMedicalRecordModal = () => {
       patient: null,
       record: null,
       laboratoryResults: [],
+      instrumentalResults: [],
       loading: false,
       savingSectionKey: '',
       error: ''

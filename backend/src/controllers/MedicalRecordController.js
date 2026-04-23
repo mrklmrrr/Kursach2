@@ -83,6 +83,12 @@ class MedicalRecordController {
     res.json(out);
   }
 
+  /** Список инструментальных результатов текущего пациента (только свой аккаунт) */
+  async getMyInstrumentalResults(req, res) {
+    const results = await this.medicalRecordService.getInstrumentalResults(req.userId);
+    res.json(results);
+  }
+
   async getInstrumentalResults(req, res) {
     const results = await this.medicalRecordService.getInstrumentalResults(req.params.patientId);
     res.json(results);

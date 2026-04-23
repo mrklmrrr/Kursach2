@@ -18,5 +18,7 @@ export const medicalRecordApi = {
   postPatientLabInsight: (researchResultId) =>
     api.post('/medical-record/me/lab-insights', { researchResultId }),
   getInstrumentalResults: (patientId) => api.get(`/medical-record/patient/${patientId}/instrumental-research`),
+  /** Список инструментальных результатов текущего пациента */
+  getMyInstrumentalResults: () => api.get('/medical-record/me/instrumental-research'),
   createResearchResult: (patientId, payload) => api.post(`/medical-record/patient/${patientId}/research-results`, payload)
 };

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { formatDateTime, formatHistoryDate } from '../utils/profileUtils';
 import PatientLaboratorySection from './PatientLaboratorySection';
+import InstrumentalInvestigationsSection from './InstrumentalInvestigationsSection';
 
-export const MedicalCardSection = ({ medicalRecord, laboratoryResults = [], loading, error, allLeaves, currentLeaf }) => {
+export const MedicalCardSection = ({ medicalRecord, laboratoryResults = [], instrumentalResults = [], loading, error, allLeaves, currentLeaf }) => {
   const [medicalRecordOpen, setMedicalRecordOpen] = useState(false);
   const [expandedMedicalSection, setExpandedMedicalSection] = useState('');
   const [medicalHistoryOpen, setMedicalHistoryOpen] = useState(false);
@@ -50,6 +51,13 @@ export const MedicalCardSection = ({ medicalRecord, laboratoryResults = [], load
               onClick={() => setMedicalRecordTab('laboratory')}
             >
               Лабораторные анализы
+            </button>
+            <button
+              type="button"
+              className={`profile-tab-btn ${medicalRecordTab === 'instrumental' ? 'active' : ''}`}
+              onClick={() => setMedicalRecordTab('instrumental')}
+            >
+              Инструментальные исследования
             </button>
           </div>
 
@@ -121,6 +129,10 @@ export const MedicalCardSection = ({ medicalRecord, laboratoryResults = [], load
 
           {medicalRecordTab === 'laboratory' && (
             <PatientLaboratorySection results={laboratoryResults} loading={loading} />
+          )}
+
+          {medicalRecordTab === 'instrumental' && (
+            <InstrumentalInvestigationsSection results={instrumentalResults} loading={loading} />
           )}
 
           {/* Вкладка: Лист нетрудоспособности */}
