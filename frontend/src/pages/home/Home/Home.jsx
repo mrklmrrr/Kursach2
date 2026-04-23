@@ -212,7 +212,7 @@ export default function Home() {
                     <div className="upcoming-doctor">{item.doctorName}</div>
                     <div className="upcoming-spec">{item.specialty}</div>
                   </div>
-                  <div className="upcoming-time">{item.time}</div>
+                   <div className="upcoming-time">{formatDateTime(item.date, item.time)}</div>
                 </div>
               ))}
             </div>

@@ -1,6 +1,11 @@
 import { CONSULTATION_TYPE_LABELS, APPOINTMENT_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "../../constants/labels";
 import { EmptyState } from '../../../../components/ui';
 
+const formatDateTime = (date, time) => {
+  const [yyyy, mm, dd] = date.split('-');
+  return `${dd}.${mm}.${yyyy} ${time}`;
+};
+
 export default function UpcomingTab({ schedule, onSelectPatient }) {
   return (
     <div className="consultations-list">
@@ -27,7 +32,7 @@ export default function UpcomingTab({ schedule, onSelectPatient }) {
               <p className="consult-type">
                 {CONSULTATION_TYPE_LABELS[item.consultationType] || '🌐 Онлайн'}
               </p>
-              <p className="consult-date">{item.date} в {item.time}</p>
+              <p className="consult-date">{formatDateTime(item.date, item.time)}</p>
               {index === 0 && <span className="status-badge active">Ближайшая консультация</span>}
               <span className={`status-badge payment-${item.paymentStatus || 'unpaid'}`}>
                 {PAYMENT_STATUS_LABELS[item.paymentStatus || 'unpaid']}
