@@ -1,5 +1,10 @@
 import { CONSULTATION_TYPE_LABELS } from "../../constants/labels";
 
+const formatDateTime = (date, time) => {
+  const [yyyy, mm, dd] = date.split('-');
+  return `${dd}.${mm}.${yyyy} ${time}`;
+};
+
 export default function CommentModal({ open, appointment, text, onChangeText, onSave, onClose }) {
   if (!open) return null;
 
@@ -8,7 +13,7 @@ export default function CommentModal({ open, appointment, text, onChangeText, on
       <div className="patient-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <h3>Комментарий к записи</h3>
         <p>
-          {appointment?.date} в {appointment?.time} {' '}
+          {appointment?.date && appointment?.time ? formatDateTime(appointment.date, appointment.time) : ''} {' '}
           • {CONSULTATION_TYPE_LABELS[appointment?.consultationType] || 'Консультация'}
         </p>
         <textarea

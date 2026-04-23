@@ -123,15 +123,7 @@ function LaboratoryResearch() {
   const [selectedTypeId, setSelectedTypeId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  // Используем локальную дату, а не UTC
-  const getLocalDateString = () => {
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  };
-  const [studyDate, setStudyDate] = useState(getLocalDateString());
+  const [studyDate, setStudyDate] = useState('');
   const [fieldResults, setFieldResults] = useState({});
   const [gridCells, setGridCells] = useState([]);
   const [customResults, setCustomResults] = useState([]);
@@ -393,8 +385,8 @@ function LaboratoryResearch() {
   };
 
   const saveStudy = async () => {
-    if (!selectedTypeId || !studyDate) {
-      alert('Выберите тип и дату');
+    if (!selectedTypeId) {
+      alert('Выберите тип исследования');
       return;
     }
 
@@ -426,7 +418,7 @@ function LaboratoryResearch() {
 
         await medicalRecordApi.createResearchResult(patientId, {
           researchTypeId: selectedTypeId,
-          date: studyDate,
+          date: studyDate || undefined,
           gridResults,
           studyNote,
           overallStatus
@@ -434,7 +426,7 @@ function LaboratoryResearch() {
       } else {
         const payload = {
           researchTypeId: selectedTypeId,
-          date: studyDate,
+          date: studyDate || undefined,
           results: fieldResults,
           customResults: customResults.filter((cr) => cr.name && cr.value !== undefined && cr.value !== ''),
           studyNote,
@@ -565,7 +557,7 @@ function LaboratoryResearch() {
             )}
             <div className="form-group">
               <label>Дата</label>
-              <input type="date" value={studyDate} onChange={(e) => setStudyDate(e.target.value)} required />
+              <input type="date" value={studyDate} onChange={(e) => setStudyDate(e.target.value)} />
             </div>
 
             {selectedType && isGridType && selectedGridNorm && (

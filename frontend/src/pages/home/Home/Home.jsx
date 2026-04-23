@@ -8,6 +8,11 @@ import { DoctorCard } from '../../../components/features';
 import { EmptyState, ConfirmModal } from '../../../components/ui';
 import './Home.css';
 
+const formatDateTime = (date, time) => {
+  const [yyyy, mm, dd] = date.split('-');
+  return `${dd}.${mm}.${yyyy} ${time}`;
+};
+
 const HEALTH_TIPS = [
   { icon: 'water_drop', title: 'Вода', text: '1,5–2 л жидкости в день — мягкая поддержка давления и концентрации.' },
   { icon: 'directions_walk', title: 'Движение', text: 'Короткая прогулка после еды улучшает обмен веществ и настроение.' },
@@ -312,8 +317,7 @@ export default function Home() {
                   selectedAppointment.doctorName
                 )}
               </div>
-              <div><span>Дата:</span> {selectedAppointment.date}</div>
-              <div><span>Время:</span> {selectedAppointment.rawTime}</div>
+              <div><span>Дата и время:</span> {formatDateTime(selectedAppointment.date, selectedAppointment.rawTime)}</div>
               <div><span>Формат:</span> {detailsType}</div>
               <div><span>Статус:</span> {selectedAppointment.status}</div>
               <div><span>Длительность:</span> {selectedAppointment.duration} мин.</div>

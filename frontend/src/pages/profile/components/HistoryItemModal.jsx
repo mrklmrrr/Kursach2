@@ -1,4 +1,9 @@
-import { formatHistoryDate, getDoctorInfo } from '../utils/profileUtils';
+import { getDoctorInfo } from '../utils/profileUtils';
+
+const formatDateTime = (date, time) => {
+  const [yyyy, mm, dd] = date.split('-');
+  return `${dd}.${mm}.${yyyy} ${time}`;
+};
 
 export const HistoryItemModal = ({ item, onClose }) => {
   if (!item) return null;
@@ -7,13 +12,12 @@ export const HistoryItemModal = ({ item, onClose }) => {
     <div className="patient-modal-overlay" role="presentation" onClick={onClose}>
       <div className="patient-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <h3>Информация о записи</h3>
-        <p><strong>Дата:</strong> {formatHistoryDate(item.date)}</p>
+        <p><strong>Дата и время:</strong> {formatDateTime(item.date, item.rawAppointment?.time || '')}</p>
         <p>
           <strong>Врач:</strong> {getDoctorInfo(item).doctorName} ({getDoctorInfo(item).doctorProfession})
         </p>
         {item.source === 'appointment' && item.rawAppointment && (
           <>
-            <p><strong>Время:</strong> {item.rawAppointment.time}</p>
             <p><strong>Тип консультации:</strong> {item.specialty}</p>
             <p><strong>Длительность:</strong> {item.duration || 0} мин</p>
             {item.rawAppointment.doctorComment && (

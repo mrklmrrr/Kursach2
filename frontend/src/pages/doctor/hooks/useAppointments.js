@@ -5,8 +5,7 @@ export const useAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [appointmentForm, setAppointmentForm] = useState({
     patientId: '',
-    date: '',
-    time: '',
+    datetime: '',
     type: 'online',
     consultationType: 'online',
     duration: 30
@@ -15,8 +14,7 @@ export const useAppointments = () => {
   const resetForm = () => {
     setAppointmentForm({
       patientId: '',
-      date: '',
-      time: '',
+      datetime: '',
       type: 'online',
       consultationType: 'online',
       duration: 30
@@ -30,7 +28,15 @@ export const useAppointments = () => {
   const handleAssign = async (e, loadData) => {
     e.preventDefault();
     try {
-      await appointmentApi.assignAppointment(appointmentForm);
+      let payload = { ...appointmentForm };
+      if (payload.datetime) {
+        const [date, timeWithSec] = payload.datetime.split('T');
+        const time = timeWithSec.slice(0, 5);
+        payload.date = date;
+        payload.time = time;
+        delete payload.datetime;
+      }
+      await appointmentApi.assignAppointment(payload);
       alert('Запись создана');
       resetForm();
       loadData();

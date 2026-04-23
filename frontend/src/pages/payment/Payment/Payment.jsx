@@ -10,6 +10,11 @@ import { ROUTES } from '../../../constants';
 import { useToast } from '../../../contexts/ToastProvider/useToast';
 import './Payment.css';
 
+const formatDateTime = (date, time) => {
+  const [yyyy, mm, dd] = date.split('-');
+  return `${dd}.${mm}.${yyyy} ${time}`;
+};
+
 export default function Payment() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -106,7 +111,7 @@ export default function Payment() {
               <div className="doctor-name">{doctor?.name || appointment?.doctorName || 'Врач'}</div>
               <div className="doctor-specialty">
                 {isAppointmentPayment
-                  ? `${appointment?.date || '—'} в ${appointment?.time || '—'}`
+                  ? formatDateTime(appointment?.date, appointment?.time) || '—'
                   : doctor?.specialty}
               </div>
             </div>

@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { DAY_MAP, CONSULTATION_TYPE_LABELS, APPOINTMENT_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "../../constants/labels";
 import { EmptyState } from '../../../../components/ui';
 
+const formatDateTime = (date, time) => {
+  const [yyyy, mm, dd] = date.split('-');
+  return `${dd}.${mm}.${yyyy} ${time}`;
+};
+
 export default function AppointmentsTab({
   appointmentForm,
   patients,
@@ -41,12 +46,8 @@ export default function AppointmentsTab({
             </select>
           </div>
           <div className="form-group">
-            <label>Дата</label>
-            <input type="date" name="date" value={appointmentForm.date} onChange={onFormChange} required />
-          </div>
-          <div className="form-group">
-            <label>Время</label>
-            <input type="time" name="time" value={appointmentForm.time} onChange={onFormChange} required />
+            <label>Дата и время</label>
+            <input type="datetime-local" name="datetime" value={appointmentForm.datetime} onChange={onFormChange} required />
           </div>
           <div className="form-group">
             <label>Тип консультации</label>
@@ -145,7 +146,7 @@ export default function AppointmentsTab({
               >
                 <div className="appointment-info">
                   <h4>{a.patientName}</h4>
-                  <p className="appointment-date">{a.date} в {a.time}</p>
+                   <p className="appointment-date">{formatDateTime(a.date, a.time)}</p>
                   <p className="appointment-type">
                     {CONSULTATION_TYPE_LABELS[a.consultationType] || '🌐 Онлайн'} • {a.duration} мин
                   </p>

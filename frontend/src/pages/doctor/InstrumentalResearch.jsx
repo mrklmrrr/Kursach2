@@ -118,15 +118,7 @@ function InstrumentalResearch() {
   const [selectedTypeId, setSelectedTypeId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  // Используем локальную дату, а не UTC
-  const getLocalDateString = () => {
-    const d = new Date();
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  };
-  const [studyDate, setStudyDate] = useState(getLocalDateString());
+  const [studyDate, setStudyDate] = useState('');
   const [fieldResults, setFieldResults] = useState({});
   const [gridCells, setGridCells] = useState([]);
 
@@ -412,8 +404,8 @@ function InstrumentalResearch() {
   };
 
   const saveStudy = async () => {
-    if (!researchTypeText.trim() || !studyDate) {
-      alert('Введите тип исследования и дату');
+    if (!researchTypeText.trim()) {
+      alert('Введите тип исследования');
       return;
     }
 
@@ -461,7 +453,7 @@ function InstrumentalResearch() {
 
         await medicalRecordApi.createResearchResult(patientId, {
           researchTypeId: selectedTypeId,
-          date: studyDate,
+          date: studyDate || undefined,
           gridResults,
           studyNote,
           overallStatus
@@ -469,7 +461,7 @@ function InstrumentalResearch() {
       } else {
         const payload = {
           researchTypeId: selectedTypeId,
-          date: studyDate,
+          date: studyDate || undefined,
           results: fieldResults,
           studyNote,
           overallStatus
@@ -620,7 +612,6 @@ function InstrumentalResearch() {
                 type="date"
                 value={studyDate}
                 onChange={(e) => setStudyDate(e.target.value)}
-                required
               />
             </div>
 
