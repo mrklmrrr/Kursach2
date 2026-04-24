@@ -11,7 +11,8 @@ async function detectFileType(filePath) {
   }
 
   if (typeof fileTypeFromFileCompat !== 'function') {
-    throw new Error('file-type detector is unavailable');
+    const ApiError = require('../utils/ApiError');
+    throw new ApiError(500, 'file-type detector is unavailable');
   }
 
   return fileTypeFromFileCompat(filePath);
@@ -35,7 +36,8 @@ function fileFilter(req, file, cb) {
   const isImage = file.mimetype.startsWith('image/');
   const isVideo = file.mimetype.startsWith('video/');
   if (!isImage && !isVideo) {
-    return cb(new Error('Разрешены только фото и видео'));
+    const ApiError = require('../utils/ApiError');
+    return cb(new ApiError(400, 'Разрешены только фото и видео'));
   }
   cb(null, true);
 }
@@ -65,7 +67,7 @@ async function validateUploadedFile(req, res, next) {
     if (fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
-    return next(new Error('Ошибка проверки загруженного файла'));
+    return next(require('../utils/ApiError').badRequest('Ошибка проверки загруженного файла'));
   }
 }
 

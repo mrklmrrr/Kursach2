@@ -31,7 +31,7 @@ class AppointmentRepository {
     const appointment = await Appointment.findByIdAndUpdate(
       id,
       { status },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
     return appointment ? appointment.toObject() : null;
   }
@@ -40,7 +40,7 @@ class AppointmentRepository {
     const appointment = await Appointment.findByIdAndUpdate(
       id,
       { consultationId },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
     return appointment ? appointment.toObject() : null;
   }
@@ -49,7 +49,7 @@ class AppointmentRepository {
     const appointment = await Appointment.findByIdAndUpdate(
       id,
       { doctorComment },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
     return appointment ? appointment.toObject() : null;
   }
@@ -63,7 +63,7 @@ class AppointmentRepository {
         paidAt: new Date(),
         status: 'confirmed'
       },
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     );
     return appointment ? appointment.toObject() : null;
   }

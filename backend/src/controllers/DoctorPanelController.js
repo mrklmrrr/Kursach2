@@ -9,83 +9,59 @@ class DoctorPanelController {
 
   /** Профиль врача */
   async getProfile(req, res) {
-    try {
-      const doctor = await this.doctorService.getById(req.userId);
-      if (!doctor) {
-        return res.status(404).json({ message: 'Профиль не найден' });
-      }
-      res.json(doctor);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+    const doctor = await this.doctorService.getById(req.userId);
+    if (!doctor) {
+      throw ApiError.notFound('Профиль не найден');
     }
+    res.json(doctor);
   }
 
   /** Обновить профиль */
   async updateProfile(req, res) {
-    try {
-      const { specialty, price, experience, description } = req.body;
-      const updates = {};
-      if (specialty) updates.specialty = specialty;
-      if (price !== undefined) updates.price = Number(price);
-      if (experience !== undefined) updates.experience = Number(experience);
-      if (description !== undefined) updates.description = description;
+    const { specialty, price, experience, description } = req.body;
+    const updates = {};
+    if (specialty) updates.specialty = specialty;
+    if (price !== undefined) updates.price = Number(price);
+    if (experience !== undefined) updates.experience = Number(experience);
+    if (description !== undefined) updates.description = description;
 
-      const doctor = await this.doctorService.updateDoctor(req.userId, updates);
-      if (!doctor) {
-        return res.status(404).json({ message: 'Профиль не найден' });
-      }
-      res.json(doctor);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+    const doctor = await this.doctorService.updateDoctor(req.userId, updates);
+    if (!doctor) {
+      throw ApiError.notFound('Профиль не найден');
     }
+    res.json(doctor);
   }
 
   /** Переключить онлайн-статус */
   async toggleOnline(req, res) {
-    try {
-      const { isOnline } = req.body;
-      const doctor = await this.doctorService.toggleOnline(req.userId, isOnline);
-      if (!doctor) {
-        return res.status(404).json({ message: 'Профиль не найден' });
-      }
-      res.json(doctor);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+    const { isOnline } = req.body;
+    const doctor = await this.doctorService.toggleOnline(req.userId, isOnline);
+    if (!doctor) {
+      throw ApiError.notFound('Профиль не найден');
     }
+    res.json(doctor);
   }
 
   /** Список всех консультаций врача */
   async getConsultations(req, res) {
-    try {
-      const consultations = await this.consultationService.getByDoctorId(req.userId);
-      res.json(consultations);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
+    const consultations = await this.consultationService.getByDoctorId(req.userId);
+    res.json(consultations);
   }
 
   /** Заявки на консультацию (pending) */
   async getPendingConsultations(req, res) {
-    try {
-      const all = await this.consultationService.getByDoctorId(req.userId);
-      const pending = all.filter(c => c.status === consultationStatus.PENDING);
-      res.json(pending);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
+    const all = await this.consultationService.getByDoctorId(req.userId);
+    const pending = all.filter(c => c.status === consultationStatus.PENDING);
+    res.json(pending);
   }
 
   /** Ближайшие консультации (paid, active) */
   async getUpcomingConsultations(req, res) {
-    try {
-      const all = await this.consultationService.getByDoctorId(req.userId);
-      const upcoming = all.filter(c =>
-        c.status === consultationStatus.PAID || c.status === consultationStatus.ACTIVE
-      );
-      res.json(upcoming);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
+    const all = await this.consultationService.getByDoctorId(req.userId);
+    const upcoming = all.filter(c =>
+      c.status === consultationStatus.PAID || c.status === consultationStatus.ACTIVE
+    );
+    res.json(upcoming);
   }
 
   /** Принять заявку */
@@ -129,42 +105,38 @@ class DoctorPanelController {
 
   /** Список пациентов */
   async getPatients(req, res) {
-    try {
-      const consultations = await this.consultationService.getByDoctorId(req.userId);
-      const patientIds = [...new Set(consultations.map(c => String(c.patientId)))].filter(Boolean);
+    const consultations = await this.consultationService.getByDoctorId(req.userId);
+    const patientIds = [...new Set(consultations.map(c => String(c.patientId)))].filter(Boolean);
 
-      const { UserRepository } = require('../repositories');
-      const userRepo = new UserRepository();
+    const { UserRepository } = require('../repositories');
+    const userRepo = new UserRepository();
 
-      const patients = [];
-      for (const id of patientIds) {
-        const user = await userRepo.findById(id);
-        if (!user) continue;
+    const patients = [];
+    for (const id of patientIds) {
+      const user = await userRepo.findById(id);
+      if (!user) continue;
 
-        const objectId = String(user.id || user._id || '');
-        const legacyId = user.legacyId !== undefined && user.legacyId !== null
-          ? String(user.legacyId)
-          : null;
+      const objectId = String(user.id || user._id || '');
+      const legacyId = user.legacyId !== undefined && user.legacyId !== null
+        ? String(user.legacyId)
+        : null;
 
-        const consultationCount = consultations.filter((c) => {
-          const consultationPatientId = String(c.patientId);
-          return consultationPatientId === objectId || (legacyId && consultationPatientId === legacyId);
-        }).length;
+      const consultationCount = consultations.filter((c) => {
+        const consultationPatientId = String(c.patientId);
+        return consultationPatientId === objectId || (legacyId && consultationPatientId === legacyId);
+      }).length;
 
-        patients.push({
-          id: objectId || id,
-          name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-          phone: user.phone || '',
-          birthDate: user.birthDate || '',
-          age: user.age || null,
-          consultationCount
-        });
-      }
-
-      res.json(patients);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+      patients.push({
+        id: objectId || id,
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        phone: user.phone || '',
+        birthDate: user.birthDate || '',
+        age: user.age || null,
+        consultationCount
+      });
     }
+
+    res.json(patients);
   }
 }
 

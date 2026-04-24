@@ -10,84 +10,84 @@ module.exports = function medicalRecordRoutes(medicalRecordController) {
     '/api/medical-record/me',
     authMiddleware,
     isPatient,
-    asyncHandler((req, res) => medicalRecordController.getMyRecord(req, res))
+    asyncHandler((...args) => medicalRecordController.getMyRecord(...args))
   );
 
   router.get(
     '/api/medical-record/me/laboratory-research',
     authMiddleware,
     isPatient,
-    asyncHandler((req, res) => medicalRecordController.getMyLaboratoryResults(req, res))
+    asyncHandler((...args) => medicalRecordController.getMyLaboratoryResults(...args))
   );
 
   router.get(
     '/api/medical-record/me/lab-insight-config',
     authMiddleware,
     isPatient,
-    asyncHandler((req, res) => medicalRecordController.getMyLabInsightConfig(req, res))
+    asyncHandler((...args) => medicalRecordController.getMyLabInsightConfig(...args))
   );
 
   router.post(
     '/api/medical-record/me/lab-insights',
     authMiddleware,
     isPatient,
-    asyncHandler((req, res) => medicalRecordController.postPatientLabInsight(req, res))
+    asyncHandler((...args) => medicalRecordController.postPatientLabInsight(...args))
   );
 
   router.get(
     '/api/medical-record/me/instrumental-research',
     authMiddleware,
     isPatient,
-    asyncHandler((req, res) => medicalRecordController.getMyInstrumentalResults(req, res))
+    asyncHandler((...args) => medicalRecordController.getMyInstrumentalResults(...args))
   );
 
   router.get(
     '/api/medical-record/patient/:patientId',
     authMiddleware,
     isDoctor,
-    asyncHandler((req, res) => medicalRecordController.getPatientRecord(req, res))
+    asyncHandler((...args) => medicalRecordController.getPatientRecord(...args))
   );
 
   router.patch(
     '/api/medical-record/patient/:patientId/sections/:sectionKey',
     authMiddleware,
     isDoctor,
-    asyncHandler((req, res) => medicalRecordController.updatePatientSection(req, res))
+    asyncHandler((...args) => medicalRecordController.updatePatientSection(...args))
   );
 
   router.post(
     '/api/medical-record/patient/:patientId/sick-leaves',
     authMiddleware,
     isDoctor,
-    asyncHandler((req, res) => medicalRecordController.createPatientSickLeave(req, res))
+    asyncHandler((...args) => medicalRecordController.createPatientSickLeave(...args))
   );
 
   router.patch(
     '/api/medical-record/patient/:patientId/sick-leaves/:sickLeaveId',
     authMiddleware,
     isDoctor,
-    asyncHandler((req, res) => medicalRecordController.updatePatientSickLeave(req, res))
+    asyncHandler((...args) => medicalRecordController.updatePatientSickLeave(...args))
   );
 
   router.get(
     '/api/medical-record/patient/:patientId/laboratory-research',
     authMiddleware,
     isDoctor,
-    asyncHandler((req, res) => medicalRecordController.getLaboratoryResults(req, res))
+    asyncHandler((...args) => medicalRecordController.getLaboratoryResults(...args))
   );
 
   router.get(
     '/api/medical-record/patient/:patientId/instrumental-research',
     authMiddleware,
     isDoctor,
-    asyncHandler((req, res) => medicalRecordController.getInstrumentalResults(req, res))
+    asyncHandler((...args) => medicalRecordController.getInstrumentalResults(...args))
   );
 
   router.post(
     '/api/medical-record/patient/:patientId/research-results',
     authMiddleware,
     isDoctor,
-    asyncHandler((req, res) => medicalRecordController.createResearchResult(req, res))
+    asyncHandler((...args) => medicalRecordController.createResearchResult(...args))
   );
 
   return router;

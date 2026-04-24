@@ -114,7 +114,7 @@ class ConsultationRepository {
     const consultation = await Consultation.findByIdAndUpdate(
       consultationId,
       { $push: { messages: messageData } },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!consultation) return null;
     const lastMessage = consultation.messages?.[consultation.messages.length - 1];
@@ -125,7 +125,7 @@ class ConsultationRepository {
     const consultation = await Consultation.findByIdAndUpdate(
       consultationId,
       { status },
-      { new: true }
+      { returnDocument: 'after' }
     );
     return consultation ? consultation.toObject() : null;
   }
@@ -138,7 +138,7 @@ class ConsultationRepository {
         paymentId: Date.now(),
         paidAt: new Date().toISOString()
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
     return consultation ? consultation.toObject() : null;
   }
@@ -155,7 +155,7 @@ class ConsultationRepository {
     const consultation = await Consultation.findByIdAndUpdate(
       consultationId,
       { $set: videoRoomData },
-      { new: true }
+      { returnDocument: 'after' }
     );
     return consultation ? consultation.toObject() : null;
   }

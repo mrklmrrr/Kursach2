@@ -141,7 +141,8 @@ async function callOpenAiChat(systemPrompt, userPrompt) {
       hint +=
         ' | OpenRouter: пополните баланс (Settings → Credits / Billing) и убедитесь, что API-ключ создан в том же аккаунте: https://openrouter.ai/settings/credits';
     }
-    throw new Error(`ИИ (${res.status}): ${errText.slice(0, 280)}${hint}`);
+    const ApiError = require('../utils/ApiError');
+    throw new ApiError(502, `ИИ (${res.status}): ${errText.slice(0, 280)}${hint}`);
   }
 
   const data = await res.json();

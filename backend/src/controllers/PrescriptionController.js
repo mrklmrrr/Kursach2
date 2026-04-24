@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const { Prescription, User } = require('../models');
 const { roles } = require('../constants');
 const { logAudit } = require('../utils/auditHelper');
+const ApiError = require('../utils/ApiError');
 
 class PrescriptionController {
   async listForPatient(req, res) {
@@ -14,17 +15,17 @@ class PrescriptionController {
   async createByDoctor(req, res) {
     const { patientId, items, consultationId, recommendations } = req.body;
     if (!patientId || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ message: 'Укажите пациента и хотя бы одно назначение' });
+      throw ApiError.badRequest('Укажите пациента и хотя бы одно назначение');
     }
 
     const patient = await User.findById(patientId).lean();
     if (!patient || patient.role !== roles.PATIENT) {
-      return res.status(400).json({ message: 'Некорректный пациент' });
+      throw ApiError.badRequest('Некорректный пациент');
     }
 
     const doctor = await User.findById(req.userId).lean();
     if (!doctor || doctor.role !== roles.DOCTOR) {
-      return res.status(403).json({ message: 'Доступ только для врача' });
+      throw ApiError.forbidden('Доступ только для врача');
     }
 
     const doctorName = `${doctor.firstName || ''} ${doctor.lastName || ''}`.trim();
@@ -49,11 +50,7 @@ class PrescriptionController {
     }
 
     const { notifyPrescriptionTelegram } = require('../services/prescriptionNotify.service');
-    try {
-      await notifyPrescriptionTelegram(patient, doc.toObject());
-    } catch (e) {
-      console.warn('[prescription] telegram notify', e.message);
-    }
+    await notifyPrescriptionTelegram(patient, doc.toObject());
 
     await logAudit({
       actorId: req.userId,

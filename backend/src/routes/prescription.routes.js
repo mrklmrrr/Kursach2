@@ -6,8 +6,8 @@ const asyncHandler = require('../middleware/asyncHandler');
 module.exports = function(prescriptionController) {
   const router = express.Router();
   router.get('/api/prescriptions', authMiddleware, isPatient,
-    asyncHandler((req, res) => prescriptionController.listForPatient(req, res)));
+    asyncHandler((...args) => prescriptionController.listForPatient(...args)));
   router.post('/api/doctor/prescriptions', authMiddleware, isDoctor,
-    asyncHandler((req, res) => prescriptionController.createByDoctor(req, res)));
+    asyncHandler((...args) => prescriptionController.createByDoctor(...args)));
   return router;
 };

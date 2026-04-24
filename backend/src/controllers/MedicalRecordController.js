@@ -1,3 +1,5 @@
+const ApiError = require('../utils/ApiError');
+
 class MedicalRecordController {
   constructor(medicalRecordService, userRepository) {
     this.medicalRecordService = medicalRecordService;
@@ -7,7 +9,7 @@ class MedicalRecordController {
   async getMyRecord(req, res) {
     const patient = await this.userRepository.findById(req.userId);
     if (!patient) {
-      return res.status(404).json({ message: 'Пациент не найден' });
+      throw ApiError.notFound('Пациент не найден');
     }
 
     const record = await this.medicalRecordService.getByPatientId(req.userId);
@@ -20,7 +22,7 @@ class MedicalRecordController {
   async getPatientRecord(req, res) {
     const patient = await this.userRepository.findById(req.params.patientId);
     if (!patient) {
-      return res.status(404).json({ message: 'Пациент не найден' });
+      throw ApiError.notFound('Пациент не найден');
     }
 
     const record = await this.medicalRecordService.getByPatientId(req.params.patientId);

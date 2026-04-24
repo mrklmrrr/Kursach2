@@ -1,3 +1,5 @@
+const ApiError = require('../utils/ApiError');
+
 class AppointmentService {
   constructor(appointmentRepository, userRepository) {
     this.appointmentRepository = appointmentRepository;
@@ -8,13 +10,13 @@ class AppointmentService {
     const doctor = await this.userRepository.findById(doctorId);
     const patient = await this.userRepository.findById(patientId);
 
-    if (!doctor) throw new Error('Врач не найден');
-    if (!patient) throw new Error('Пациент не найден');
+    if (!doctor) throw ApiError.notFound('Врач не найден');
+    if (!patient) throw ApiError.notFound('Пациент не найден');
 
     // Проверка, что время в пределах рабочего дня врача
     const dayOfWeek = this._getDayOfWeekCode(data.date);
     if (!doctor.workingDays || !doctor.workingDays.includes(dayOfWeek)) {
-      throw new Error('Врач не работает в этот день');
+      throw ApiError.badRequest('Врач не работает в этот день');
     }
 
     const [timeHour, timeMin] = data.time.split(':').map(Number);
@@ -26,22 +28,22 @@ class AppointmentService {
     const endInMinutes = endHour * 60 + endMin;
 
     if (timeInMinutes < startInMinutes || timeInMinutes >= endInMinutes) {
-      throw new Error('Время выходит за рамки рабочего дня врача');
+      throw ApiError.badRequest('Время выходит за рамки рабочего дня врача');
     }
 
     const appointmentDateTime = new Date(`${data.date}T${data.time}:00`);
     if (Number.isNaN(appointmentDateTime.getTime())) {
-      throw new Error('Некорректная дата или время записи');
+      throw ApiError.badRequest('Некорректная дата или время записи');
     }
     if (appointmentDateTime <= new Date()) {
-      throw new Error('Нельзя записаться на прошедшую дату или время');
+      throw ApiError.badRequest('Нельзя записаться на прошедшую дату или время');
     }
 
     // Проверка, что слот не занят
     const bookedAppointments = await this.appointmentRepository.findByDoctorIdAndDate(doctorId, data.date);
     const isBooked = bookedAppointments.some(a => a.time === data.time && a.status !== 'cancelled');
     if (isBooked) {
-      throw new Error('Этот временной слот уже занят');
+      throw new ApiError(409, 'Этот временной слот уже занят');
     }
 
     return this.appointmentRepository.create({
@@ -75,9 +77,7 @@ class AppointmentService {
     const appointment = await this.getById(appointmentId);
     if (!appointment) return null;
     if (String(appointment.patientId) !== String(patientId)) {
-      const error = new Error('Нельзя отменять чужую запись');
-      error.status = 403;
-      throw error;
+      throw ApiError.forbidden('Нельзя отменять чужую запись');
     }
     return this.updateStatus(appointmentId, 'cancelled');
   }
@@ -94,9 +94,7 @@ class AppointmentService {
     const appointment = await this.getById(appointmentId);
     if (!appointment) return null;
     if (String(appointment.doctorId) !== String(doctorId)) {
-      const error = new Error('Нельзя менять комментарий чужой записи');
-      error.status = 403;
-      throw error;
+      throw ApiError.forbidden('Нельзя менять комментарий чужой записи');
     }
     return this.updateDoctorComment(appointmentId, doctorComment);
   }
@@ -106,15 +104,11 @@ class AppointmentService {
     if (!appointment) return null;
 
     if (String(appointment.patientId) !== String(patientId)) {
-      const error = new Error('Нельзя оплачивать чужую запись');
-      error.status = 403;
-      throw error;
+      throw ApiError.forbidden('Нельзя оплачивать чужую запись');
     }
 
     if (appointment.status === 'cancelled') {
-      const error = new Error('Нельзя оплатить отмененную запись');
-      error.status = 400;
-      throw error;
+      throw ApiError.badRequest('Нельзя оплатить отмененную запись');
     }
 
     if (appointment.paymentStatus === 'paid') {
@@ -133,16 +127,14 @@ class AppointmentService {
     const appointment = await this.getById(appointmentId);
     if (!appointment) return null;
     if (String(appointment.doctorId) !== String(doctorId)) {
-      const error = new Error('Нельзя удалять чужую запись');
-      error.status = 403;
-      throw error;
+      throw ApiError.forbidden('Нельзя удалять чужую запись');
     }
     return this.delete(appointmentId);
   }
 
   async getAvailableSlots(doctorId, date) {
     const doctor = await this.userRepository.findById(doctorId);
-    if (!doctor) throw new Error('Врач не найден');
+    if (!doctor) throw ApiError.notFound('Врач не найден');
 
     const dayOfWeek = this._getDayOfWeekCode(date);
     if (!doctor.workingDays || !doctor.workingDays.includes(dayOfWeek)) {

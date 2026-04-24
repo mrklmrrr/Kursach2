@@ -17,18 +17,22 @@ class DependentService {
     if (relativeUsername) {
       const un = relativeUsername.replace(/^@+/, '').toLowerCase();
       if (!/^[a-z0-9_]{3,24}$/.test(un)) {
-        throw new Error('Username: 3–24 символа, латиница, цифры и подчёркивание');
+        const ApiError = require('../utils/ApiError');
+        throw ApiError.badRequest('Username: 3–24 символа, латиница, цифры и подчёркивание');
       }
       const target = await this.userRepository.findByUsername(un);
       if (!target || target.role !== roles.PATIENT) {
-        throw new Error('Пациент с таким username не найден');
+        const ApiError = require('../utils/ApiError');
+        throw ApiError.notFound('Пациент с таким username не найден');
       }
       if (String(target._id) === String(userId)) {
-        throw new Error('Нельзя добавить себя в родственники');
+        const ApiError = require('../utils/ApiError');
+        throw ApiError.badRequest('Нельзя добавить себя в родственники');
       }
       const dup = await this.dependentRepository.findByOwnerAndLinkedUserId(userId, target._id);
       if (dup) {
-        throw new Error('Этот пользователь уже в вашем списке');
+        const ApiError = require('../utils/ApiError');
+        throw ApiError.badRequest('Этот пользователь уже в вашем списке');
       }
       const name = `${target.firstName || ''} ${target.lastName || ''}`.trim() || un;
       const ageNum = calculateAge(target.birthDate);
@@ -60,7 +64,8 @@ class DependentService {
     } = data;
     const ageNum = parseInt(age, 10);
     if (!name || Number.isNaN(ageNum)) {
-      throw new Error('Укажите имя и возраст или username родственника в приложении');
+      const ApiError = require('../utils/ApiError');
+      throw ApiError.badRequest('Укажите имя и возраст или username родственника в приложении');
     }
     return this.dependentRepository.create(userId, {
       name,

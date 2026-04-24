@@ -8,28 +8,28 @@ const { authSchemas } = require('../validation/schemas');
 
 module.exports = function(adminController) {
   // Вход админа (публичный)
-  router.post('/api/admin/login', validate(authSchemas.adminLogin), asyncHandler((req, res) => adminController.loginAdmin(req, res)));
+  router.post('/api/admin/login', validate(authSchemas.adminLogin), asyncHandler((...args) => adminController.loginAdmin(...args)));
 
   // Все маршруты защищены: auth + isAdmin
   router.get('/api/admin/dashboard', authMiddleware, isAdmin,
-    asyncHandler((req, res) => adminController.getDashboard(req, res)));
+    asyncHandler((...args) => adminController.getDashboard(...args)));
 
   // Врачи
   router.get('/api/admin/doctors', authMiddleware, isAdmin,
-    asyncHandler((req, res) => adminController.getDoctors(req, res)));
+    asyncHandler((...args) => adminController.getDoctors(...args)));
   router.post('/api/admin/doctors', authMiddleware, isAdmin,
-    asyncHandler((req, res) => adminController.createDoctor(req, res)));
+    asyncHandler((...args) => adminController.createDoctor(...args)));
   router.put('/api/admin/doctors/:id', authMiddleware, isAdmin,
-    asyncHandler((req, res) => adminController.updateDoctor(req, res)));
+    asyncHandler((...args) => adminController.updateDoctor(...args)));
   router.delete('/api/admin/doctors/:id', authMiddleware, isAdmin,
-    asyncHandler((req, res) => adminController.deleteDoctor(req, res)));
+    asyncHandler((...args) => adminController.deleteDoctor(...args)));
   router.patch('/api/admin/doctors/:id/online', authMiddleware, isAdmin,
-    asyncHandler((req, res) => adminController.toggleDoctorOnline(req, res)));
+    asyncHandler((...args) => adminController.toggleDoctorOnline(...args)));
 
   router.get('/api/admin/b2b-metrics', authMiddleware, isAdmin,
-    asyncHandler((req, res) => adminController.getB2BMetrics(req, res)));
+    asyncHandler((...args) => adminController.getB2BMetrics(...args)));
   router.get('/api/admin/audit-log', authMiddleware, isAdmin,
-    asyncHandler((req, res) => adminController.getAuditLog(req, res)));
+    asyncHandler((...args) => adminController.getAuditLog(...args)));
 
   return router;
 };

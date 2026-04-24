@@ -15,32 +15,32 @@ module.exports = function(videoRoomController) {
   router.post('/',
     authMiddleware,
     validate(consultationSchemas.createVideoRoom),
-    asyncHandler(async (req, res) => videoRoomController.create(req, res))
+    asyncHandler((...args) => videoRoomController.create(...args))
   );
 
   // Получить информацию о комнате
   router.get('/:roomId',
     authMiddleware,
-    asyncHandler(async (req, res) => videoRoomController.getInfo(req, res))
+    asyncHandler((...args) => videoRoomController.getInfo(...args))
   );
 
   // Присоединиться к комнате (для API подтверждения, основная логика в socket)
   router.post('/:roomId/join',
     authMiddleware,
-    asyncHandler(async (req, res) => videoRoomController.join(req, res))
+    asyncHandler((...args) => videoRoomController.join(...args))
   );
 
   // Покинуть комнату
   router.post('/:roomId/leave',
     authMiddleware,
-    asyncHandler(async (req, res) => videoRoomController.leave(req, res))
+    asyncHandler((...args) => videoRoomController.leave(...args))
   );
 
   // Завершить комнату (только врач)
   router.post('/:roomId/end',
     authMiddleware,
     isDoctor,
-    asyncHandler(async (req, res) => videoRoomController.end(req, res))
+    asyncHandler((...args) => videoRoomController.end(...args))
   );
 
   return router;

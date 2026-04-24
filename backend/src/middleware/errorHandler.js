@@ -1,10 +1,11 @@
 const config = require('../config');
+const logger = require('../utils/logger');
 
 function errorHandler(err, req, res, next) {
-  console.error(`[ERROR] ${err.message}`);
+  logger.error(`[ERROR] ${err.message}`);
 
   if (config.nodeEnv === 'development') {
-    console.error(err.stack);
+    logger.error(err.stack);
   }
 
   const status = err.status || 500;

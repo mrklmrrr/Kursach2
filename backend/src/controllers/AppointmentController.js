@@ -19,15 +19,11 @@ class AppointmentController {
 
   /** Получить запись по ID */
   async getById(req, res) {
-    try {
-      const appointment = await this.appointmentService.getById(req.params.id);
-      if (!appointment) {
-        return res.status(404).json({ message: 'Запись не найдена' });
-      }
-      res.json(appointment);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+    const appointment = await this.appointmentService.getById(req.params.id);
+    if (!appointment) {
+      throw ApiError.notFound('Запись не найдена');
     }
+    res.json(appointment);
   }
 
   /** Получить записи текущего пользователя (пациента) */
@@ -105,36 +101,28 @@ class AppointmentController {
 
   /** Обновить рабочее время врача */
   async updateWorkingHours(req, res) {
-    try {
-      const { workingHours, workingDays } = req.body;
-      const updates = {};
-      if (workingHours) updates.workingHours = workingHours;
-      if (workingDays) updates.workingDays = workingDays;
+    const { workingHours, workingDays } = req.body;
+    const updates = {};
+    if (workingHours) updates.workingHours = workingHours;
+    if (workingDays) updates.workingDays = workingDays;
 
-      const doctor = await this.userRepository.updateDoctor(req.userId, updates);
-      if (!doctor) {
-        return res.status(404).json({ message: 'Врач не найден' });
-      }
-      res.json({ message: 'Рабочее время обновлено', doctor });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+    const doctor = await this.userRepository.updateDoctor(req.userId, updates);
+    if (!doctor) {
+      throw ApiError.notFound('Врач не найден');
     }
+    res.json({ message: 'Рабочее время обновлено', doctor });
   }
 
   /** Получить рабочее время врача */
   async getWorkingHours(req, res) {
-    try {
-      const doctor = await this.userRepository.findById(req.userId);
-      if (!doctor) {
-        return res.status(404).json({ message: 'Врач не найден' });
-      }
-      res.json({
-        workingHours: doctor.workingHours,
-        workingDays: doctor.workingDays
-      });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+    const doctor = await this.userRepository.findById(req.userId);
+    if (!doctor) {
+      throw ApiError.notFound('Врач не найден');
     }
+    res.json({
+      workingHours: doctor.workingHours,
+      workingDays: doctor.workingDays
+    });
   }
 }
 

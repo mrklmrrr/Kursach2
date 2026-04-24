@@ -2,15 +2,10 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { calculateAge } = require('../utils/helpers');
 const config = require('../config');
-
-function resolveAvatarUrl(stored) {
-  if (!stored) return '';
-  const s = String(stored);
-  if (/^https?:\/\//i.test(s)) return s;
-  const base = config.publicApiBase || '';
-  return `${base}${s.startsWith('/') ? s : `/${s}`}`;
-}
+const logger = require('../utils/logger');
+const { formatUser, normalizeUsername } = require('../utils/userSerializer');
 const { roles } = require('../constants');
+const ApiError = require('../utils/ApiError');
 
 class AuthService {
   constructor(userRepository) {
@@ -47,7 +42,7 @@ class AuthService {
 
   async login(phone, password) {
     if (typeof phone !== 'string' || typeof password !== 'string') {
-      throw new Error('Некорректные данные для входа');
+      throw ApiError.badRequest('Некорректные данные для входа');
     }
 
     let user = await this.userRepository.findByPhone(phone);
@@ -55,16 +50,16 @@ class AuthService {
       user = await this.userRepository.findByEmail(phone);
     }
     if (!user) {
-      throw new Error('Пользователь не найден');
+      throw ApiError.notFound('Пользователь не найден');
     }
 
     if (!user.password) {
-      throw new Error('Учётная запись не имеет пароля');
+      throw ApiError.badRequest('Учётная запись не имеет пароля');
     }
 
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
-      throw new Error('Неверный пароль');
+      throw ApiError.unauthorized('Неверный пароль');
     }
 
     const token = this._createAccessToken(user);
@@ -79,25 +74,25 @@ class AuthService {
 
   async loginAdmin(email, password) {
     if (typeof email !== 'string' || typeof password !== 'string') {
-      throw new Error('Некорректные данные для входа');
+      throw ApiError.badRequest('Некорректные данные для входа');
     }
 
     const user = await this.userRepository.findByEmail(email);
     if (!user) {
-      throw new Error('Пользователь не найден');
+      throw ApiError.notFound('Пользователь не найден');
     }
 
     if (user.role !== roles.ADMIN) {
-      throw new Error('Доступ только для администраторов');
+      throw ApiError.forbidden('Доступ только для администраторов');
     }
 
     if (!user.password) {
-      throw new Error('Учётная запись не имеет пароля');
+      throw ApiError.badRequest('Учётная запись не имеет пароля');
     }
 
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
-      throw new Error('Неверный пароль');
+      throw ApiError.unauthorized('Неверный пароль');
     }
 
     const token = this._createAccessToken(user);
@@ -111,7 +106,7 @@ class AuthService {
   async getMe(userId) {
     const user = await this.userRepository.findById(userId);
     if (!user) {
-      throw new Error('Пользователь не найден');
+      throw ApiError.notFound('Пользователь не найден');
     }
     return this.formatUser(user);
   }
@@ -123,16 +118,16 @@ class AuthService {
   async changePassword(userId, currentPassword, newPassword) {
     const user = await this.userRepository.findById(userId);
     if (!user) {
-      throw new Error('Пользователь не найден');
+      throw ApiError.notFound('Пользователь не найден');
     }
 
     if (!user.password) {
-      throw new Error('Для этой учетной записи пароль не задан');
+      throw ApiError.badRequest('Для этой учетной записи пароль не задан');
     }
 
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isCurrentPasswordValid) {
-      throw new Error('Текущий пароль неверный');
+      throw ApiError.unauthorized('Текущий пароль неверный');
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -140,54 +135,11 @@ class AuthService {
   }
 
   formatUser(user) {
-    const base = {
-      id: user._id,
-      legacyId: user.legacyId,
-      role: user.role,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      phone: user.phone,
-      birthDate: user.birthDate,
-      gender: user.gender,
-      age: user.age
-    };
-
-    if (user.role === roles.DOCTOR) {
-      return {
-        ...base,
-        avatarUrl: resolveAvatarUrl(user.avatarUrl),
-        specialty: user.specialty,
-        price: user.price,
-        experience: user.experience,
-        description: user.description,
-        isOnline: user.isOnline,
-        rating: user.rating
-      };
-    }
-
-    if (user.role === roles.ADMIN) {
-      return { ...base, email: user.email, avatarUrl: resolveAvatarUrl(user.avatarUrl) };
-    }
-
-    return {
-      ...base,
-      avatarUrl: resolveAvatarUrl(user.avatarUrl),
-      username: user.username || '',
-      reminderEmail: user.reminderEmail !== false,
-      reminderTelegram: Boolean(user.reminderTelegram),
-      telegramUsername: user.telegramUsername || '',
-      telegramChatId: user.telegramChatId || '',
-      consentPersonalDataAt: user.consentPersonalDataAt || null,
-      consentMarketing: Boolean(user.consentMarketing)
-    };
+    return formatUser(user);
   }
 
   normalizeUsername(raw) {
-    const s = String(raw || '').trim().replace(/^@+/g, '').toLowerCase();
-    if (!/^[a-z0-9_]{3,24}$/.test(s)) {
-      throw new Error('Username: 3–24 символа, только латиница, цифры и _');
-    }
-    return s;
+    return normalizeUsername(raw);
   }
 
   async checkUsernameAvailability(raw) {
@@ -204,18 +156,18 @@ class AuthService {
   async setUsername(userId, raw) {
     const user = await this.userRepository.findById(userId);
     if (!user) {
-      throw new Error('Пользователь не найден');
+      throw ApiError.notFound('Пользователь не найден');
     }
     if (user.role !== roles.PATIENT) {
-      throw new Error('Только для аккаунтов пациентов');
+      throw ApiError.forbidden('Только для аккаунтов пациентов');
     }
     const username = this.normalizeUsername(raw);
     const taken = await this.userRepository.findByUsername(username);
     if (taken && String(taken._id) !== String(userId)) {
-      throw new Error('Этот username уже занят');
+      throw ApiError.badRequest('Этот username уже занят');
     }
     const updated = await this.userRepository.updateById(userId, { username });
-    if (!updated) throw new Error('Не удалось сохранить');
+    if (!updated) throw new ApiError(500, 'Не удалось сохранить');
     return this.formatUser(updated);
   }
 
@@ -228,10 +180,10 @@ class AuthService {
       updates.telegramChatId = telegramChatId.replace(/\s/g, '');
     }
     if (Object.keys(updates).length === 0) {
-      throw new Error('Нет данных для обновления');
+      throw ApiError.badRequest('Нет данных для обновления');
     }
     const user = await this.userRepository.updateById(userId, updates);
-    if (!user) throw new Error('Пользователь не найден');
+    if (!user) throw ApiError.notFound('Пользователь не найден');
     return this.formatUser(user);
   }
 

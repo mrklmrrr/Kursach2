@@ -6,7 +6,8 @@ class UserRepository {
     // Проверка на дубликат
     const existing = await User.findOne({ phone: userData.phone });
     if (existing) {
-      throw new Error('Пользователь с таким номером телефона уже существует');
+      const ApiError = require('../utils/ApiError');
+      throw new ApiError(409, 'Пользователь с таким номером телефона уже существует');
     }
 
     const counter = await User.countDocuments();

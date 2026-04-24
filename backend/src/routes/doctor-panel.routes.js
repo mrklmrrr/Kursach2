@@ -7,31 +7,31 @@ const asyncHandler = require('../middleware/asyncHandler');
 module.exports = function(doctorPanelController) {
   // Все маршруты защищены: auth + isDoctor
   router.get('/api/doctor/profile', authMiddleware, isDoctor,
-    asyncHandler((req, res) => doctorPanelController.getProfile(req, res)));
+    asyncHandler((...args) => doctorPanelController.getProfile(...args)));
   router.put('/api/doctor/profile', authMiddleware, isDoctor,
-    asyncHandler((req, res) => doctorPanelController.updateProfile(req, res)));
+    asyncHandler((...args) => doctorPanelController.updateProfile(...args)));
   router.patch('/api/doctor/online', authMiddleware, isDoctor,
-    asyncHandler((req, res) => doctorPanelController.toggleOnline(req, res)));
+    asyncHandler((...args) => doctorPanelController.toggleOnline(...args)));
 
   // Консультации
   router.get('/api/doctor/consultations', authMiddleware, isDoctor,
-    asyncHandler((req, res) => doctorPanelController.getConsultations(req, res)));
+    asyncHandler((...args) => doctorPanelController.getConsultations(...args)));
   router.get('/api/doctor/consultations/pending', authMiddleware, isDoctor,
-    asyncHandler((req, res) => doctorPanelController.getPendingConsultations(req, res)));
+    asyncHandler((...args) => doctorPanelController.getPendingConsultations(...args)));
   router.get('/api/doctor/consultations/upcoming', authMiddleware, isDoctor,
-    asyncHandler((req, res) => doctorPanelController.getUpcomingConsultations(req, res)));
+    asyncHandler((...args) => doctorPanelController.getUpcomingConsultations(...args)));
 
   // Управление заявками
   router.patch('/api/doctor/consultations/:id/accept', authMiddleware, isDoctor,
-    asyncHandler((req, res) => doctorPanelController.acceptConsultation(req, res)));
+    asyncHandler((...args) => doctorPanelController.acceptConsultation(...args)));
   router.patch('/api/doctor/consultations/:id/reject', authMiddleware, isDoctor,
-    asyncHandler((req, res) => doctorPanelController.rejectConsultation(req, res)));
+    asyncHandler((...args) => doctorPanelController.rejectConsultation(...args)));
   router.patch('/api/doctor/consultations/:id/complete', authMiddleware, isDoctor,
-    asyncHandler((req, res) => doctorPanelController.completeConsultation(req, res)));
+    asyncHandler((...args) => doctorPanelController.completeConsultation(...args)));
 
   // Пациенты
   router.get('/api/doctor/patients', authMiddleware, isDoctor,
-    asyncHandler((req, res) => doctorPanelController.getPatients(req, res)));
+    asyncHandler((...args) => doctorPanelController.getPatients(...args)));
 
   return router;
 };
