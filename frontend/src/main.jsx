@@ -43,8 +43,8 @@ import './pages/profile/Profile/Profile.css';
 import './pages/profile/AddRelative/AddRelative.css';
 import './pages/payment/Payment/Payment.css';
 import './pages/payment/Confirm/Confirm.css';
-import './pages/doctor/DoctorPanel.css';
-import './pages/doctor/ResearchManagement.css';
+import './pages/doctorPanel/DoctorPanel.css';
+import './pages/doctorPanel/ResearchManagement.css';
 import './pages/admin/Admin.css';
 import './pages/admin/AdminDashboard.css';
 
