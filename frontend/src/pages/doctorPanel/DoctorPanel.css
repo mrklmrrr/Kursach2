@@ -228,6 +228,11 @@
   gap: 8px;
 }
 
+.patient-info {
+  display: flex;
+  flex-direction: column;
+}
+
 .patient-info h3 {
   font-size: 1rem;
   color: #1f2937;
@@ -237,7 +242,7 @@
 .patient-info p {
   color: #6b7280;
   font-size: 0.85rem;
-  margin: 0;
+  margin: 0 0 8px 0;
 }
 
 .consult-count {

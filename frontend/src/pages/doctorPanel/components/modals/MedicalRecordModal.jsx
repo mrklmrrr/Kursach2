@@ -27,7 +27,8 @@ export default function MedicalRecordModal({
   onSaveSickLeave,
   onToggleHistory,
   onClose,
-  onToggleSickLeaveHistory
+  onToggleSickLeaveHistory,
+  onPrescription
 }) {
   const navigate = useNavigate();
 
@@ -75,6 +76,15 @@ export default function MedicalRecordModal({
               >
                 Инструментальные исследования
               </button>
+              {onPrescription && (
+                <button
+                  type="button"
+                  className="profile-tab-btn"
+                  onClick={() => onPrescription(patient)}
+                >
+                  E-назначение
+                </button>
+              )}
             </div>
 
             {tab === 'systems' && (

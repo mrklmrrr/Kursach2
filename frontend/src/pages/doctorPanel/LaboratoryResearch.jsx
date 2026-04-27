@@ -456,11 +456,9 @@ function LaboratoryResearch() {
 
     const day = String(parsed.getDate()).padStart(2, '0');
     const month = String(parsed.getMonth() + 1).padStart(2, '0');
-    const year = parsed.getFullYear();
-    const hours = String(parsed.getHours()).padStart(2, '0');
-    const minutes = String(parsed.getMinutes()).padStart(2, '0');
+    const year = String(parsed.getFullYear());
 
-    return `${day}.${month}.${year} ${hours}:${minutes}`;
+    return `${day}.${month}.${year}`;
   };
 
   const getGridTemplateForResult = (result) => {

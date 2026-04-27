@@ -490,11 +490,9 @@ function InstrumentalResearch() {
 
     const day = String(parsed.getDate()).padStart(2, '0');
     const month = String(parsed.getMonth() + 1).padStart(2, '0');
-    const year = parsed.getFullYear();
-    const hours = String(parsed.getHours()).padStart(2, '0');
-    const minutes = String(parsed.getMinutes()).padStart(2, '0');
+    const year = String(parsed.getFullYear());
 
-    return `${day}.${month}.${year} ${hours}:${minutes}`;
+    return `${day}.${month}.${year}`;
   };
 
   const getGridTemplateForResult = (result) => {
@@ -521,6 +519,11 @@ function InstrumentalResearch() {
             <h2>Инструментальные исследования — {patient?.name || 'Пациент'}</h2>
           </div>
           <div className="research-header-actions">
+            {chatId && (
+              <button type="button" className="btn btn-outline" onClick={() => navigate(`/chat/${chatId}`)}>
+                <span className="material-icons">chat</span> Написать
+              </button>
+            )}
             <button
               type="button"
               className={`btn ${currentMode === 'template' ? 'btn-primary' : 'btn-outline'}`}

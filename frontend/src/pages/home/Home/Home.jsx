@@ -10,7 +10,7 @@ import './Home.css';
 
 const formatDateTime = (date, time) => {
   const [yyyy, mm, dd] = date.split('-');
-  return `${dd}.${mm}.${yyyy} ${time}`;
+  return `${dd}.${mm} ${time}`;
 };
 
 const HEALTH_TIPS = [

@@ -15,7 +15,7 @@
 
 /* Экраны без нижней навигации (чат и т.п.) */
 .page-shell--no-bottom-nav {
-  padding-bottom: 24px;
+  padding-bottom: 0px;
 }
 
 @media (min-width: 768px) {
@@ -34,8 +34,8 @@
 
 @media (min-width: 1200px) {
   .page-shell {
-    padding-left: 32px;
-    padding-right: 32px;
+    padding-left: 0px;
+    padding-right: 0px;
   }
 }
 

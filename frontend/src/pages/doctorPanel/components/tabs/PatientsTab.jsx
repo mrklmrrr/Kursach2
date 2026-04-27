@@ -1,6 +1,6 @@
 import { EmptyState } from '../../../../components/ui';
 
-export default function PatientsTab({ patients, onSelectPatient, onPrescription }) {
+export default function PatientsTab({ patients, onSelectPatient }) {
   return (
     <div className="patients-list">
       {patients.length === 0 ? (
@@ -27,15 +27,6 @@ export default function PatientsTab({ patients, onSelectPatient, onPrescription 
             </div>
             <div className="patient-card-actions">
               <span className="consult-count">{p.consultationCount} консульт.</span>
-              {onPrescription && (
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={() => onPrescription(p)}
-                >
-                  E-назначение
-                </button>
-              )}
               <button
                 type="button"
                 className="btn btn-outline"

@@ -215,7 +215,6 @@ export default function DoctorPanel() {
           <PatientsTab
             patients={panelData.patients}
             onSelectPatient={handleOpenPatientMedicalRecord}
-            onPrescription={(p) => setPrescriptionPatient(p)}
           />
         )}
 
@@ -267,6 +266,7 @@ export default function DoctorPanel() {
           onSaveSickLeave={medicalRecord.saveSickLeave}
           onToggleHistory={() => medicalRecord.setHistoryOpen(!medicalRecord.historyOpen)}
           onToggleSickLeaveHistory={() => medicalRecord.setShowSickLeaveHistory(!medicalRecord.showSickLeaveHistory)}
+          onPrescription={(p) => setPrescriptionPatient(p)}
           onClose={medicalRecord.closeMedicalRecord}
         />
       </div>
