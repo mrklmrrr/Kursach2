@@ -22,7 +22,7 @@ function InstrumentalResearch() {
 
   const { patient, results, researchTypes, templates, loading, loadData } = useResearchData(patientId, 'instrumental');
 
-  const [showAddStudy, setShowAddStudy] = useState(false);
+  const [panelMode, setPanelMode] = useState('study');
   const [selectedTypeId, setSelectedTypeId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -34,18 +34,25 @@ function InstrumentalResearch() {
 
   const {
     studyDate, setStudyDate, fieldResults, handleFieldChange,
-    gridCells, updateGridCell, customResults, setCustomResults,
+    gridCells, updateGridCell,
     studyNote, setStudyNote, overallStatus, setOverallStatus,
     isGridType, gridTemplate, saveStudy, resetForm
   } = useResearchForm(selectedType, loadData);
 
   const {
     showTemplateBuilder, setShowTemplateBuilder, editingTemplateId, templateName, setTemplateName,
+    templateMode, setTemplateMode,
     rows, setRows, cols, setCols, rowHeaders, setRowHeaders, colHeaders, setColHeaders,
-    colUnits, setColUnits, cells, updateCell, saveTemplate, deleteTemplate, openNewTemplate, openEditTemplate
+    colUnits, setColUnits, cells, setCells, updateCell, saveTemplate, deleteTemplate, openNewTemplate, openEditTemplate
   } = useTemplateBuilder('instrumental', loadData);
 
   const [expandedResults, setExpandedResults] = useState({});
+
+  useEffect(() => {
+    if (!showTemplateBuilder && panelMode === 'template') {
+      setPanelMode('study');
+    }
+  }, [showTemplateBuilder, panelMode]);
 
   const toggleResultExpanded = (resultId) => {
     setExpandedResults((prev) => ({ ...prev, [resultId]: !prev[resultId] }));
@@ -81,13 +88,13 @@ function InstrumentalResearch() {
   const openLabTemplateForEntry = (t) => {
     setSelectedTypeId(String(t._id));
     resetForm();
-    setShowAddStudy(true);
+    setPanelMode('study');
   };
 
   const handleSaveStudy = async (e) => {
     e.preventDefault();
     const success = await saveStudy(patientId);
-    if (success) { setShowAddStudy(false); setSelectedTypeId(''); }
+    if (success) { setSelectedTypeId(''); setSearchQuery(''); }
   };
 
   useEffect(() => {
@@ -107,18 +114,31 @@ function InstrumentalResearch() {
       <div className="research-management lab-research-premium">
         <div className="research-header">
           <div className="research-header-top">
-            <button className="btn btn-outline btn-back" onClick={() => navigate(-1)}>← Назад</button>
+            <button className="btn-back-compact" onClick={() => navigate('/doctor', { state: { openMedicalRecordForPatientId: patientId } })}>
+              <span className="material-icons">arrow_back</span>
+              <span>К пациенту</span>
+            </button>
             <h2>Инструментальные исследования — {patient?.name || 'Пациент'}</h2>
           </div>
           <div className="research-header-actions">
-            <button type="button" className="btn btn-outline" onClick={openNewTemplate}>Новый шаблон</button>
-            <button type="button" className="btn btn-primary" onClick={() => { setShowAddStudy(!showAddStudy); if (!showAddStudy) resetForm(); }}>
-              {showAddStudy ? 'Отмена' : 'Добавить исследование'}
+            <button
+              type="button"
+              className={`btn ${panelMode === 'template' ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => { setPanelMode('template'); openNewTemplate(); }}
+            >
+              Новый шаблон
+            </button>
+            <button
+              type="button"
+              className={`btn ${panelMode === 'study' ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => { setPanelMode('study'); resetForm(); }}
+            >
+              Добавить исследование
             </button>
           </div>
         </div>
 
-        {showAddStudy && (
+        {panelMode === 'study' && (
           <form className="research-form lab-add-study" onSubmit={handleSaveStudy}>
             <h3>Новое инструментальное исследование</h3>
             <div className="form-group">
@@ -162,29 +182,48 @@ function InstrumentalResearch() {
                 ))}
               </div>
             )}
-            {selectedType && !isGridType && (
-              <div className="custom-results-section">
-                <h4>Дополнительно</h4>
-                {customResults.map((cr, idx) => (
-                  <div key={idx} className="custom-result-row">
-                    <input placeholder="Название" value={cr.name} onChange={(e) => { const n = [...customResults]; n[idx] = { ...n[idx], name: e.target.value }; setCustomResults(n); }} />
-                    <input placeholder="Значение" value={cr.value} onChange={(e) => { const n = [...customResults]; n[idx] = { ...n[idx], value: e.target.value }; setCustomResults(n); }} />
-                    <input placeholder="Ед." value={cr.unit} onChange={(e) => { const n = [...customResults]; n[idx] = { ...n[idx], unit: e.target.value }; setCustomResults(n); }} />
-                    <button type="button" className="btn btn-outline btn-small" onClick={() => setCustomResults((p) => p.filter((_, i) => i !== idx))}>✕</button>
-                  </div>
-                ))}
-                <button type="button" className="btn btn-outline" onClick={() => setCustomResults((p) => [...p, { name: '', value: '', unit: '' }])}>+ Показатель</button>
-              </div>
-            )}
             <div className="form-actions">
               <button type="submit" className="btn btn-primary">Сохранить</button>
-              <button type="button" className="btn btn-outline" onClick={() => { setShowAddStudy(false); resetForm(); }}>Отмена</button>
+              <button type="button" className="btn btn-outline" onClick={() => { resetForm(); setSelectedTypeId(''); setSearchQuery(''); }}>Очистить</button>
             </div>
           </form>
         )}
 
-        {templates.length > 0 && <GridTemplatesList templates={visibleGridTemplates} onTemplateSelect={openLabTemplateForEntry} onEditTemplate={openEditTemplate} onDeleteTemplate={deleteTemplate} searchQuery={searchQuery} onSearchChange={setSearchQuery} />}
-        {showTemplateBuilder && !showAddStudy && <GridTemplateBuilder editingTemplateId={editingTemplateId} templateName={templateName} onTemplateNameChange={setTemplateName} rows={rows} onRowsChange={setRows} cols={cols} onColsChange={setCols} rowHeaders={rowHeaders} setRowHeaders={setRowHeaders} colHeaders={colHeaders} setColHeaders={setColHeaders} colUnits={colUnits} setColUnits={setColUnits} cells={cells} updateCell={updateCell} onSave={saveTemplate} onCancel={() => { setShowTemplateBuilder(false); setShowAddStudy(true); }} />}
+        {panelMode === 'template' && (
+          <GridTemplateBuilder
+            editingTemplateId={editingTemplateId}
+            templateName={templateName}
+            onTemplateNameChange={setTemplateName}
+            rows={rows}
+            onRowsChange={setRows}
+            cols={cols}
+            onColsChange={setCols}
+            rowHeaders={rowHeaders}
+            setRowHeaders={setRowHeaders}
+            colHeaders={colHeaders}
+            setColHeaders={setColHeaders}
+            colUnits={colUnits}
+            setColUnits={setColUnits}
+            cells={cells}
+            setCells={setCells}
+            updateCell={updateCell}
+            onSave={saveTemplate}
+            onCancel={() => { setShowTemplateBuilder(false); setPanelMode('study'); }}
+            templateMode={templateMode}
+            onTemplateModeChange={setTemplateMode}
+          />
+        )}
+        {templates.length > 0 && (
+          <GridTemplatesList
+            templates={visibleGridTemplates}
+            onTemplateSelect={openLabTemplateForEntry}
+            onEditTemplate={openEditTemplate}
+            onDeleteTemplate={deleteTemplate}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
+        )}
+
         <ResearchResultsList results={visibleResults} expandedResults={expandedResults} onToggleExpanded={toggleResultExpanded} formatDateTime={formatDateTime} getGridTemplateForResult={getGridTemplateForResult} onOpenTemplate={() => {}} />
       </div>
     </PageLayout>

@@ -201,6 +201,8 @@ export function useTemplateBuilder(category, loadData) {
   const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
   const [editingTemplateId, setEditingTemplateId] = useState(null);
   const [templateName, setTemplateName] = useState('');
+  const [templateMode, setTemplateMode] = useState('grid');
+  const [fields, setFields] = useState([]);
   const [rows, setRows] = useState(3);
   const [cols, setCols] = useState(4);
   const [rowHeaders, setRowHeaders] = useState(['Строка 1', 'Строка 2', 'Строка 3']);
@@ -232,34 +234,51 @@ export function useTemplateBuilder(category, loadData) {
       return;
     }
 
-    const cellDefaults = cells
-      .filter((cell) =>
-        (cell.value !== '' && cell.value != null) ||
-        (cell.comment && String(cell.comment).trim()) ||
-        cell.status !== 'normal'
-      )
-      .map((cell) => ({
-        row: cell.row,
-        col: cell.col,
-        value: cell.value,
-        comment: cell.comment || '',
-        status: cell.status || 'normal'
-      }));
+    let payload;
+    if (templateMode === 'grid') {
+      const cellDefaults = cells
+        .filter((cell) =>
+          (cell.value !== '' && cell.value != null) ||
+          (cell.comment && String(cell.comment).trim()) ||
+          cell.status !== 'normal'
+        )
+        .map((cell) => ({
+          row: cell.row,
+          col: cell.col,
+          value: cell.value,
+          comment: cell.comment || '',
+          status: cell.status || 'normal'
+        }));
 
-    const payload = {
-      name: templateName.trim(),
-      category,
-      templateMode: 'grid',
-      template: [],
-      gridTemplate: {
-        rows,
-        cols,
-        rowHeaders: rowHeaders.map((s) => s.trim() || '—'),
-        colHeaders: colHeaders.map((s) => s.trim() || '—'),
-        colUnits: colUnits.map((s) => String(s || '').trim().slice(0, 32)),
-        cellDefaults
-      }
-    };
+      payload = {
+        name: templateName.trim(),
+        category,
+        templateMode: 'grid',
+        template: [],
+        gridTemplate: {
+          rows,
+          cols,
+          rowHeaders: rowHeaders.map((s) => s.trim() || '—'),
+          colHeaders: colHeaders.map((s) => s.trim() || '—'),
+          colUnits: colUnits.map((s) => String(s || '').trim().slice(0, 32)),
+          cellDefaults
+        }
+      };
+    } else {
+      const validFields = (fields || []).filter((f) => f.name && String(f.name).trim());
+      payload = {
+        name: templateName.trim(),
+        category,
+        templateMode: 'fields',
+        template: validFields.map((f) => ({
+          name: String(f.name).trim(),
+          type: ['number', 'string', 'date'].includes(f.type) ? f.type : 'string',
+          unit: String(f.unit || '').trim(),
+          required: !!f.required
+        })),
+        gridTemplate: {}
+      };
+    }
 
     try {
       if (editingTemplateId) {
@@ -287,6 +306,8 @@ export function useTemplateBuilder(category, loadData) {
   const openNewTemplate = () => {
     setEditingTemplateId(null);
     setTemplateName('');
+    setTemplateMode('grid');
+    setFields([]);
     setRows(3);
     setCols(4);
     setRowHeaders(['Строка 1', 'Строка 2', 'Строка 3']);
@@ -297,17 +318,30 @@ export function useTemplateBuilder(category, loadData) {
   };
 
   const openEditTemplate = (t) => {
-    const gt = t.gridTemplate || {};
-    const r = Number(gt.rows) || 3;
-    const c = Number(gt.cols) || 3;
+    const mode = t.templateMode === 'grid' || isTemplateGrid(t) ? 'grid' : 'fields';
     setEditingTemplateId(t._id);
     setTemplateName(t.name);
-    setRows(r);
-    setCols(c);
-    setRowHeaders(gt.rowHeaders || []);
-    setColHeaders(gt.colHeaders || []);
-    setColUnits(gt.colUnits || []);
-    setCells(mergeCellDefaults(r, c, gt.cellDefaults));
+    setTemplateMode(mode);
+    if (mode === 'fields') {
+      setFields(Array.isArray(t.template) ? t.template.map((f) => ({ ...f })) : []);
+      setRows(3);
+      setCols(4);
+      setRowHeaders(['Строка 1', 'Строка 2', 'Строка 3']);
+      setColHeaders(['Столбец 1', 'Столбец 2', 'Столбец 3', 'Столбец 4']);
+      setColUnits(['', '', '', '']);
+      setCells([]);
+    } else {
+      setFields([]);
+      const gt = t.gridTemplate || {};
+      const r = Number(gt.rows) || 3;
+      const c = Number(gt.cols) || 3;
+      setRows(r);
+      setCols(c);
+      setRowHeaders(gt.rowHeaders || []);
+      setColHeaders(gt.colHeaders || []);
+      setColUnits(gt.colUnits || []);
+      setCells(mergeCellDefaults(r, c, gt.cellDefaults));
+    }
     setShowTemplateBuilder(true);
   };
 
@@ -317,6 +351,10 @@ export function useTemplateBuilder(category, loadData) {
     editingTemplateId,
     templateName,
     setTemplateName,
+    templateMode,
+    setTemplateMode,
+    fields,
+    setFields,
     rows,
     setRows,
     cols,
@@ -328,6 +366,7 @@ export function useTemplateBuilder(category, loadData) {
     colUnits,
     setColUnits,
     cells,
+    setCells,
     updateCell,
     saveTemplate,
     deleteTemplate,

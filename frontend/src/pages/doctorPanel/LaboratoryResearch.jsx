@@ -22,7 +22,7 @@ function LaboratoryResearch() {
 
   const { patient, results, researchTypes, templates, loading, loadData } = useResearchData(patientId, 'laboratory');
 
-  const [showAddStudy, setShowAddStudy] = useState(false);
+  const [panelMode, setPanelMode] = useState('study');
   const [selectedTypeId, setSelectedTypeId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -42,10 +42,16 @@ function LaboratoryResearch() {
   const {
     showTemplateBuilder, setShowTemplateBuilder, editingTemplateId, templateName, setTemplateName,
     rows, setRows, cols, setCols, rowHeaders, setRowHeaders, colHeaders, setColHeaders,
-    colUnits, setColUnits, cells, updateCell, saveTemplate, deleteTemplate, openNewTemplate, openEditTemplate
+    colUnits, setColUnits, cells, setCells, updateCell, saveTemplate, deleteTemplate, openNewTemplate, openEditTemplate
   } = useTemplateBuilder('laboratory', loadData);
 
   const [expandedResults, setExpandedResults] = useState({});
+
+  useEffect(() => {
+    if (!showTemplateBuilder && panelMode === 'template') {
+      setPanelMode('study');
+    }
+  }, [showTemplateBuilder, panelMode]);
 
   const toggleResultExpanded = (resultId) => {
     setExpandedResults((prev) => ({ ...prev, [resultId]: !prev[resultId] }));
@@ -81,13 +87,13 @@ function LaboratoryResearch() {
   const openLabTemplateForEntry = (t) => {
     setSelectedTypeId(String(t._id));
     resetForm();
-    setShowAddStudy(true);
+    setPanelMode('study');
   };
 
   const handleSaveStudy = async (e) => {
     e.preventDefault();
     const success = await saveStudy(patientId);
-    if (success) { setShowAddStudy(false); setSelectedTypeId(''); }
+    if (success) { setSelectedTypeId(''); setSearchQuery(''); }
   };
 
   useEffect(() => {
@@ -107,18 +113,31 @@ function LaboratoryResearch() {
       <div className="research-management lab-research-premium">
         <div className="research-header">
           <div className="research-header-top">
-            <button className="btn btn-outline btn-back" onClick={() => navigate(-1)}>← Назад</button>
+            <button className="btn-back-compact" onClick={() => navigate('/doctor', { state: { openMedicalRecordForPatientId: patientId } })}>
+              <span className="material-icons">arrow_back</span>
+              <span>К пациенту</span>
+            </button>
             <h2>Лабораторные исследования — {patient?.name || 'Пациент'}</h2>
           </div>
           <div className="research-header-actions">
-            <button type="button" className="btn btn-outline" onClick={openNewTemplate}>Новый шаблон</button>
-            <button type="button" className="btn btn-primary" onClick={() => { setShowAddStudy(!showAddStudy); if (!showAddStudy) resetForm(); }}>
-              {showAddStudy ? 'Отмена' : 'Добавить исследование'}
+            <button
+              type="button"
+              className={`btn ${panelMode === 'template' ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => { setPanelMode('template'); openNewTemplate(); }}
+            >
+              Новый шаблон
+            </button>
+            <button
+              type="button"
+              className={`btn ${panelMode === 'study' ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => { setPanelMode('study'); resetForm(); }}
+            >
+              Добавить исследование
             </button>
           </div>
         </div>
 
-        {showAddStudy && (
+        {panelMode === 'study' && (
           <form className="research-form lab-add-study" onSubmit={handleSaveStudy}>
             <h3>Новое лабораторное исследование</h3>
             <div className="form-group">
@@ -178,14 +197,53 @@ function LaboratoryResearch() {
             )}
             <div className="form-actions">
               <button type="submit" className="btn btn-primary">Сохранить</button>
-              <button type="button" className="btn btn-outline" onClick={() => { setShowAddStudy(false); resetForm(); }}>Отмена</button>
+              <button type="button" className="btn btn-outline" onClick={() => { resetForm(); setSelectedTypeId(''); setSearchQuery(''); }}>Очистить</button>
             </div>
           </form>
         )}
 
-        {templates.length > 0 && <GridTemplatesList templates={visibleGridTemplates} onTemplateSelect={openLabTemplateForEntry} onEditTemplate={openEditTemplate} onDeleteTemplate={deleteTemplate} searchQuery={searchQuery} onSearchChange={setSearchQuery} />}
-        {showTemplateBuilder && !showAddStudy && <GridTemplateBuilder editingTemplateId={editingTemplateId} templateName={templateName} onTemplateNameChange={setTemplateName} rows={rows} onRowsChange={setRows} cols={cols} onColsChange={setCols} rowHeaders={rowHeaders} setRowHeaders={setRowHeaders} colHeaders={colHeaders} setColHeaders={setColHeaders} colUnits={colUnits} setColUnits={setColUnits} cells={cells} updateCell={updateCell} onSave={saveTemplate} onCancel={() => { setShowTemplateBuilder(false); setShowAddStudy(true); }} />}
-        <ResearchResultsList results={visibleResults} expandedResults={expandedResults} onToggleExpanded={toggleResultExpanded} formatDateTime={formatDateTime} getGridTemplateForResult={getGridTemplateForResult} onOpenTemplate={() => {}} />
+        {panelMode === 'template' && (
+          <GridTemplateBuilder
+            editingTemplateId={editingTemplateId}
+            templateName={templateName}
+            onTemplateNameChange={setTemplateName}
+            rows={rows}
+            onRowsChange={setRows}
+            cols={cols}
+            onColsChange={setCols}
+            rowHeaders={rowHeaders}
+            setRowHeaders={setRowHeaders}
+            colHeaders={colHeaders}
+            setColHeaders={setColHeaders}
+            colUnits={colUnits}
+            setColUnits={setColUnits}
+            cells={cells}
+            setCells={setCells}
+            updateCell={updateCell}
+            onSave={saveTemplate}
+            onCancel={() => { setShowTemplateBuilder(false); setPanelMode('study'); }}
+          />
+        )}
+
+        {templates.length > 0 && (
+          <GridTemplatesList
+            templates={visibleGridTemplates}
+            onTemplateSelect={openLabTemplateForEntry}
+            onEditTemplate={openEditTemplate}
+            onDeleteTemplate={deleteTemplate}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
+        )}
+
+        <ResearchResultsList
+          results={visibleResults}
+          expandedResults={expandedResults}
+          onToggleExpanded={toggleResultExpanded}
+          formatDateTime={formatDateTime}
+          getGridTemplateForResult={getGridTemplateForResult}
+          onOpenTemplate={() => {}}
+        />
       </div>
     </PageLayout>
   );

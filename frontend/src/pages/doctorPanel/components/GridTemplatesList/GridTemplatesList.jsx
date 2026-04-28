@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { isTemplateGrid } from '@utils/gridUtils';
 
 /**
@@ -11,6 +12,8 @@ export default function GridTemplatesList({
   searchQuery,
   onSearchChange,
 }) {
+  const [expanded, setExpanded] = useState(false);
+
   const visibleTemplates = templates.filter((t) => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return true;
@@ -22,11 +25,15 @@ export default function GridTemplatesList({
       <button 
         type="button" 
         className="btn btn-outline lab-templates-toggle" 
-        onClick={() => {}}
+        onClick={() => setExpanded((p) => !p)}
       >
+        <span className={`lab-expand-icon${expanded ? ' expanded' : ''}`}>
+          <span className="material-icons">expand_more</span>
+        </span>
         Бланки и шаблоны таблиц
       </button>
 
+      {expanded && (
       <div className="lab-templates-panel">
         <h3>Бланки и шаблоны таблиц</h3>
         <p className="lab-help">
@@ -119,6 +126,7 @@ export default function GridTemplatesList({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

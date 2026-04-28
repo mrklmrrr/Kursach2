@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { doctorPanelApi } from '@services/doctorPanelApi';
 import { useAuth } from '@hooks/useAuth';
 import PageLayout from '@components/layout/PageLayout/PageLayout';
@@ -30,6 +30,7 @@ import './DoctorPanel.css';
 
 export default function DoctorPanel() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { showToast } = useToast();
 
@@ -86,6 +87,18 @@ export default function DoctorPanel() {
     });
     return map;
   }, [panelData.patients]);
+
+  // Автооткрытие медкарты при возврате из lab/instrumental
+  useEffect(() => {
+    const targetId = location.state?.openMedicalRecordForPatientId;
+    if (!targetId || panelData.loading) return;
+    const patient = patientById.get(String(targetId));
+    if (patient) {
+      medicalRecord.openMedicalRecord(patient);
+      navigate('/doctor', { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, panelData.loading, patientById]);
 
   const activeAppointmentsCount = useMemo(
     () =>

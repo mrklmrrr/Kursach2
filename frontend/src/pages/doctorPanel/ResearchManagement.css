@@ -24,25 +24,41 @@
   color: #2c3e50;
 }
 
-.btn-back {
-  background-color: transparent;
-  color: #6c757d;
-  border: 1px solid #dee2e6;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s;
-  display: flex;
+.btn-back-compact {
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  padding: 5px 12px 5px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: #fff;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
-.btn-back:hover {
-  background-color: #f8f9fa;
-  color: #495057;
-  border-color: #adb5bd;
+.btn-back-compact .material-icons {
+  font-size: 18px;
+  color: #64748b;
+  transition: color 0.2s ease;
+}
+
+.btn-back-compact:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+
+.btn-back-compact:hover .material-icons {
+  color: #0f172a;
+}
+
+.btn-back-compact:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
 }
 
 .checkbox-label {
@@ -1209,4 +1225,79 @@
 .lab-templates-panel {
   margin-top: 16px;
   animation: slideDown 0.3s ease-out;
+}
+
+/* Переключатель режимов в шапке */
+.research-header-actions .btn {
+  min-width: 200px;
+  justify-content: center;
+}
+
+.research-header-actions .btn-primary {
+  box-shadow: 0 2px 6px rgba(0, 123, 255, 0.25);
+}
+
+.research-header-actions .btn-outline {
+  background: #fff;
+}
+
+.lab-templates-section {
+  margin-bottom: 24px;
+}
+
+/* Переключатель таблица / поля */
+.lab-template-mode-toggle {
+  margin-bottom: 16px;
+}
+
+.lab-template-mode-toggle .checkbox-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* Редактор полей шаблона */
+.fields-template-builder {
+  margin: 16px 0;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+}
+
+.fields-template-builder h4 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  color: #334155;
+}
+
+.field-template-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.field-template-row input,
+.field-template-row select {
+  padding: 6px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+  font-size: 13px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.field-template-row .checkbox-label {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.field-template-row .btn-small {
+  padding: 4px 8px;
+  font-size: 12px;
 }
