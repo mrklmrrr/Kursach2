@@ -11,7 +11,7 @@ export default function ConsultationCard({ consultation }) {
       className="consultation-card"
       onClick={() => navigate(`/consultation/${consultation.id}`)}
     >
-      <Avatar name={consultation.doctorName} size="medium" />
+      <Avatar name={consultation.doctorName} src={consultation.avatarUrl || consultation.avatar || consultation.doctorAvatar || undefined} size="medium" />
       <div className="consultation-info">
         <div className="consultation-doctor">{consultation.doctorName}</div>
         <div className="consultation-spec">{consultation.specialty}</div>

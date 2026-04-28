@@ -1,4 +1,5 @@
 const { hasConsultationAccess } = require('../utils/chatAccess');
+const { resolveAvatarUrl } = require('../utils/userSerializer');
 const ApiError = require('../utils/ApiError');
 
 const ConsultationController = class {
@@ -57,6 +58,30 @@ const ConsultationController = class {
 
   async getChats(req, res) {
     const consultations = await this.consultationService.getChatsForUser(req.userId, req.userRole);
+
+    // Batch-загрузка аватаров для врачей и пациентов
+    const doctorIds = [...new Set(consultations.map((c) => String(c.doctorId)))];
+    const patientIds = [...new Set(consultations.map((c) => c.patientId))].filter(Boolean);
+
+    const [doctors, patients] = await Promise.all([
+      Promise.all(doctorIds.map((id) => this.doctorRepository.findById(id))),
+      Promise.all(patientIds.map((id) => this.userRepository.findById(id)))
+    ]);
+
+    const doctorMap = new Map();
+    doctors.filter(Boolean).forEach((d) => {
+      doctorMap.set(String(d.id || d._id), resolveAvatarUrl(d.avatarUrl || ''));
+    });
+
+    const patientMap = new Map();
+    patients.filter(Boolean).forEach((p) => {
+      const avatar = resolveAvatarUrl(p.avatarUrl || '');
+      patientMap.set(String(p.id || p._id), avatar);
+      if (p.legacyId != null) {
+        patientMap.set(String(p.legacyId), avatar);
+      }
+    });
+
     const chats = consultations.map((consultation) => {
       const messages = consultation.messages || [];
       const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
@@ -72,7 +97,9 @@ const ConsultationController = class {
         createdAt: consultation.createdAt,
         updatedAt: consultation.updatedAt,
         lastMessage,
-        messageCount: messages.length
+        messageCount: messages.length,
+        doctorAvatarUrl: doctorMap.get(String(consultation.doctorId)) || '',
+        patientAvatarUrl: patientMap.get(String(consultation.patientId)) || ''
       };
     });
 

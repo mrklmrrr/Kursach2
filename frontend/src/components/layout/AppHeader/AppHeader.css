@@ -39,19 +39,6 @@ body.dark .app-header {
   color: transparent;
 }
 
-.app-header .avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 1rem;
-}
-
 .back-btn {
   display: flex;
   align-items: center;

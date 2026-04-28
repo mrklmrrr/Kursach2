@@ -14,14 +14,13 @@ export const ProfileHeader = ({ user }) => {
   const avatarSrc = user?.avatarUrl || '';
 
   const pickPhoto = () => {
-    if (user?.role !== 'patient') return;
     inputRef.current?.click();
   };
 
   const onFile = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = '';
-    if (!file || user?.role !== 'patient') return;
+    if (!file) return;
 
     setUploading(true);
     try {
@@ -43,15 +42,13 @@ export const ProfileHeader = ({ user }) => {
         type="button"
         className="profile-avatar-btn"
         onClick={pickPhoto}
-        disabled={uploading || user?.role !== 'patient'}
-        aria-label={user?.role === 'patient' ? 'Загрузить фото профиля' : undefined}
+        disabled={uploading}
+        aria-label="Загрузить фото профиля"
       >
         <Avatar name={fullName} src={avatarSrc || undefined} size="xlarge" />
-        {user?.role === 'patient' && (
-          <span className="profile-avatar-edit">
-            {uploading ? '…' : 'Фото'}
-          </span>
-        )}
+        <span className="profile-avatar-edit">
+          {uploading ? '…' : 'Фото'}
+        </span>
       </button>
       <input
         ref={inputRef}

@@ -33,12 +33,14 @@ export default function ChatRoom() {
     ? {
         id: chatMeta?.patientId,
         name: chatMeta?.patientName || 'Пациент',
-        specialty: 'Пациент'
+        specialty: 'Пациент',
+        avatarUrl: chatMeta?.patientAvatarUrl || chatMeta?.patientAvatar || ''
       }
     : {
         id: doctor.id || chatMeta?.doctorId,
         name: doctor.name || chatMeta?.doctorName || 'Врач',
-        specialty: doctor.specialty || chatMeta?.specialty || 'Специалист'
+        specialty: doctor.specialty || chatMeta?.specialty || 'Специалист',
+        avatarUrl: doctor.avatarUrl || doctor.avatar || chatMeta?.doctorAvatarUrl || chatMeta?.doctorAvatar || ''
       };
 
   useEffect(() => {
@@ -186,7 +188,7 @@ export default function ChatRoom() {
           className="chat-room-header-info"
           onClick={handleHeaderProfileClick}
         >
-          <Avatar name={chatCompanion.name} size="small" />
+          <Avatar name={chatCompanion.name} src={chatCompanion.avatarUrl || undefined} size="small" />
           <div>
             <div className="chat-room-doctor-name">{chatCompanion.name}</div>
             <div className="chat-room-doctor-spec">
@@ -224,7 +226,7 @@ export default function ChatRoom() {
                 key={msg._id || msg.id || `${msg.timestamp}-${msg.message || 'media'}`}
                 className={`message-wrapper ${own ? 'user' : 'doctor'}`}
               >
-                {!own && <Avatar name={chatCompanion.name} size="small" />}
+                {!own && <Avatar name={chatCompanion.name} src={chatCompanion.avatarUrl || undefined} size="small" />}
                 <div>
                   <div className="message-bubble">
                     {msg.fileUrl && msg.messageType === 'image' && (

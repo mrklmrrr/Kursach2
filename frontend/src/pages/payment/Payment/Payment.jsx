@@ -106,7 +106,7 @@ export default function Payment() {
         <p className="payment-subtitle">Безопасный платеж в зашифрованном контуре клиники.</p>
         <div className="payment-summary">
           <div className="doctor-info">
-            <Avatar name={doctor?.name || appointment?.doctorName || 'Врач'} size="medium" />
+            <Avatar name={doctor?.name || appointment?.doctorName || 'Врач'} src={doctor?.avatarUrl || doctor?.avatar || appointment?.doctorAvatar || undefined} size="medium" />
             <div>
               <div className="doctor-name">{doctor?.name || appointment?.doctorName || 'Врач'}</div>
               <div className="doctor-specialty">

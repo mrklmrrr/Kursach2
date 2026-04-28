@@ -211,7 +211,7 @@ export default function DoctorProfile() {
       <div className="doctor-profile-content page-shell page-shell--flex-grow">
         <div className="doctor-hero">
           <div className="doctor-hero-avatar-wrap">
-            <Avatar name={doctor.name} size="xlarge" />
+            <Avatar name={doctor.name} src={doctor.avatarUrl || doctor.avatar || undefined} size="xlarge" />
           </div>
           <h1>{doctor.name}</h1>
           <p className="doctor-specialty">{doctor.specialty}</p>

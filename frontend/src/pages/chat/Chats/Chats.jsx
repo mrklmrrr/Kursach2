@@ -50,7 +50,9 @@ export default function Chats() {
           })(),
           time: formatChatTime(chat.lastMessage?.timestamp || chat.updatedAt),
           unread: 0,
-          avatar: isDoctor ? '🙂' : '👨‍⚕️',
+          avatarUrl: isDoctor
+            ? (chat.patientAvatarUrl || chat.patientAvatar || '')
+            : (chat.doctorAvatarUrl || chat.doctorAvatar || ''),
           isOnline: false
         }));
         setChats(normalized);

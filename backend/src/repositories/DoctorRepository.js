@@ -1,13 +1,14 @@
 const { User } = require('../models');
 const { roles } = require('../constants');
 const { findById, updateById, deleteById } = require('../utils/dbHelpers');
+const { resolveAvatarUrl } = require('../utils/userSerializer');
 
 const DOCTOR_FILTER = { role: roles.DOCTOR };
 
 class DoctorRepository {
   async findAll() {
     const doctors = await User.find(DOCTOR_FILTER)
-      .select('firstName lastName specialty price rating isOnline avatar')
+      .select('firstName lastName specialty price rating isOnline avatarUrl')
       .sort({ rating: -1 })
       .lean();
     return doctors.map((d) => this._format(d));
@@ -52,7 +53,8 @@ class DoctorRepository {
     return {
       ...doc,
       id,
-      name: `${doc.firstName} ${doc.lastName}`
+      name: `${doc.firstName} ${doc.lastName}`,
+      avatarUrl: resolveAvatarUrl(doc.avatarUrl || doc.avatar || '')
     };
   }
 }

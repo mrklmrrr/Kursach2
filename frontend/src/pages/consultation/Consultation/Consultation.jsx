@@ -18,13 +18,13 @@ export default function Consultation() {
           id: parseInt(id, 10),
           doctorName: doctorFromState.name,
           specialty: doctorFromState.specialty,
-          avatar: doctorFromState.avatar || '👩‍⚕️',
+          avatarUrl: doctorFromState.avatarUrl || doctorFromState.avatar || '',
         }
       : {
           id: parseInt(id, 10),
           doctorName: 'Врач',
           specialty: 'Специалист',
-          avatar: '👩‍⚕️',
+          avatarUrl: '',
         };
   }, [id, doctorFromState]);
 
@@ -41,7 +41,7 @@ export default function Consultation() {
       <div className="consultation-header">
         <BackButton onClick={endConsultation} label="Завершить" />
         <div className="doctor-info-header">
-          <Avatar name={consultation.doctorName} emoji={consultation.avatar} size="small" />
+          <Avatar name={consultation.doctorName} src={consultation.avatarUrl || undefined} size="small" />
           <div>
             <div className="doctor-name-header">{consultation.doctorName}</div>
             <div className="doctor-spec-header">{consultation.specialty}</div>

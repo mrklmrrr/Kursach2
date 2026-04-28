@@ -29,7 +29,7 @@ export default function Confirm() {
       <div className="confirm-page page-shell page-shell--flex-grow">
         <h2 className="confirm-title">Подтверждение консультации</h2>
         <div className="confirm-card">
-          <Avatar name={doctor.name} size="xlarge" />
+          <Avatar name={doctor.name} src={doctor.avatarUrl || doctor.avatar || undefined} size="xlarge" />
           <h3>{doctor.name}</h3>
           <p className="doctor-specialty-confirm">{doctor.specialty}</p>
           <div className="consultation-details">

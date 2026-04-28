@@ -59,8 +59,8 @@ class AuthController {
 
   async uploadAvatar(req, res) {
     const { roles } = require('../constants');
-    if (req.userRole !== roles.PATIENT) {
-      throw ApiError.forbidden('Только для пациентов');
+    if (req.userRole !== roles.PATIENT && req.userRole !== roles.DOCTOR) {
+      throw ApiError.forbidden('Только для пациентов и врачей');
     }
     if (!req.file) {
       throw ApiError.badRequest('Файл не загружен');
