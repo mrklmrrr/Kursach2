@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../hooks/useAuth';
-import { AppHeader, BottomNav } from '../../../components/layout';
-import { useConsultationHistory } from '../hooks/useConsultationHistory';
-import { useMedicalRecord } from '../hooks/useMedicalRecord';
-import { dependentApi } from '../../../services/dependentApi';
+import { useAuth } from '@hooks/useAuth';
+import { AppHeader, BottomNav } from '@components/layout';
+import { useConsultationHistory, useMedicalRecord } from '@hooks/profile';
+import { dependentApi } from '@services/dependentApi';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { MedicalCardSection } from '../components/MedicalCardSection';
 import { ConsultationHistorySection } from '../components/ConsultationHistorySection';

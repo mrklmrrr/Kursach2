@@ -1,4 +1,4 @@
-import { usePasswordChange } from '../hooks/usePasswordChange';
+import { usePasswordChange } from '@hooks/profile';
 
 export const PasswordChangeSection = () => {
   const {

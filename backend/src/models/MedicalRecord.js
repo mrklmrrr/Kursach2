@@ -1,14 +1,16 @@
 const mongoose = require('mongoose');
 
 const MEDICAL_SYSTEMS = [
-  { key: 'cardiovascular', name: 'Сердечно-сосудистая система' },
+  { key: 'musculoskeletal', name: 'Опорно-двигательная система (скелетная и мышечная)' },
+  { key: 'nervous', name: 'Нервная система' },
+  { key: 'cardiovascular', name: 'Кровеносная система (сердечно-сосудистая)' },
   { key: 'respiratory', name: 'Дыхательная система' },
   { key: 'digestive', name: 'Пищеварительная система' },
-  { key: 'nervous', name: 'Нервная система' },
-  { key: 'musculoskeletal', name: 'Костно-мышечная система' },
+  { key: 'urinary', name: 'Мочевыделительная система' },
   { key: 'endocrine', name: 'Эндокринная система' },
-  { key: 'genitourinary', name: 'Мочеполовая система' },
-  { key: 'immune', name: 'Иммунная система' }
+  { key: 'immune', name: 'Иммунная и лимфатическая системы' },
+  { key: 'integumentary', name: 'Покровная система' },
+  { key: 'reproductive', name: 'Репродуктивная система (половая)' }
 ];
 
 const systemSectionSchema = new mongoose.Schema({

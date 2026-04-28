@@ -56,3 +56,9 @@ export const STATUS_LABELS = {
   completed: 'Завершена',
   cancelled: 'Отменена'
 };
+
+export const STATUS_OPTIONS = [
+  { value: 'normal', label: 'Норма' },
+  { value: 'deviation', label: 'Отклонение от нормы' },
+  { value: 'severe', label: 'Сильное нарушение' }
+];

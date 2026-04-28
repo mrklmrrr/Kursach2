@@ -1,0 +1,45 @@
+/* DoctorPanelTabs - Навигация табов */
+.doctor-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+.d-tab {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.d-tab.active {
+  background: #4f46e5;
+  color: white;
+}
+
+.badge {
+  background: rgba(255, 255, 255, 0.3);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.d-tab:not(.active) .badge {
+  background: #e5e7eb;
+}
+
+/* Dark theme */
+body.dark .d-tab {
+  background: #1f2937;
+  color: #9ca3af;
+}
