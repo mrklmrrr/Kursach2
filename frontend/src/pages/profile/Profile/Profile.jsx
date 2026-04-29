@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 import { AppHeader, BottomNav } from '@components/layout';
 import { Card } from '@components/ui';
+import DoctorSidebar from '@pages/doctorPanel/components/DoctorSidebar/DoctorSidebar';
 import { useConsultationHistory, useMedicalRecord } from '@hooks/profile';
 import { dependentApi } from '@services/dependentApi';
 import { ProfileHeader } from '../components/ProfileHeader';
@@ -49,8 +50,11 @@ export default function Profile() {
       .finally(() => setDependentsLoading(false));
   }, [user]);
 
+  const isDoctor = user?.role === 'doctor';
+
   return (
-    <div className="profile-page">
+    <div className={`profile-page ${isDoctor ? 'doctor-panel-layout' : ''}`}>
+      {isDoctor && <DoctorSidebar profile={user} />}
       <AppHeader />
       <div className="profile-content page-shell page-shell--flex-grow">
         <ProfileHeader user={user} />

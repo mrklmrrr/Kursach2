@@ -5,6 +5,7 @@ import { ChatItem } from '../../../components/features';
 import { EmptyState } from '../../../components/ui';
 import { chatApi } from '../../../services/chatApi';
 import { useAuth } from '../../../hooks/useAuth';
+import DoctorSidebar from '../../doctorPanel/components/DoctorSidebar/DoctorSidebar';
 import './Chats.css';
 
 function formatChatTime(value) {
@@ -67,12 +68,15 @@ export default function Chats() {
     loadChats();
   }, [user?.role]);
 
+  const isDoctor = user?.role === 'doctor';
+
   return (
-    <div className="chats-page">
+    <div className={`chats-page ${isDoctor ? 'doctor-panel-layout' : ''}`}>
+      {isDoctor && <DoctorSidebar profile={user} />}
       <AppHeader />
       <div className="chats-content page-shell page-shell--flex-grow">
         <div className="section-title">
-          {user?.role === 'doctor' ? 'Мои чаты с пациентами' : 'Мои чаты с врачами'}
+          {isDoctor ? 'Мои чаты с пациентами' : 'Мои чаты с врачами'}
         </div>
         {loading ? (
           <div className="empty-state">Загрузка чатов...</div>
@@ -88,7 +92,7 @@ export default function Chats() {
             icon="chat_bubble_outline"
             title="Пока нет диалогов"
             description={
-              user?.role === 'doctor'
+              isDoctor
                 ? 'Чаты появятся, когда пациенты напишут вам из записи или консультации.'
                 : 'Начните с записи к врачу — после приёма сможете продолжить общение в чате.'
             }

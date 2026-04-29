@@ -71,7 +71,7 @@ export default function OnboardingGate() {
     const path = location.pathname;
     if (path === '/login' || path === '/register' || path.startsWith('/admin')) return;
 
-    if (user.role === 'doctor' && path === '/doctor') {
+    if (user.role === 'doctor' && path.startsWith('/doctor')) {
       setOpen(true);
       setStep(0);
       return;
@@ -86,7 +86,7 @@ export default function OnboardingGate() {
     if (!open || !user) return;
     const path = location.pathname;
     const stay =
-      (user.role === 'patient' && path === '/home') || (user.role === 'doctor' && path === '/doctor');
+      (user.role === 'patient' && path === '/home') || (user.role === 'doctor' && path.startsWith('/doctor'));
     if (!stay) setOpen(false);
   }, [location.pathname, open, user]);
 

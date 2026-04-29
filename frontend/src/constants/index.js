@@ -13,7 +13,7 @@ export const ROUTES = {
   REGISTER: '/register',
   LOGIN: '/login',
   DOCTORS: '/doctors',
-  DOCTOR_PROFILE: (id) => `/doctor/${id}`,
+  DOCTOR_PROFILE: (id) => `/doctors/${id}`,
   CHATS: '/chats',
   CHAT_ROOM: (id) => `/chat/${id}`,
   EMERGENCY: '/emergency',

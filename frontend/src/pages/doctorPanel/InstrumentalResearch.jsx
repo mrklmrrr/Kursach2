@@ -121,7 +121,7 @@ function InstrumentalResearch() {
         <div className="research-management lab-research-premium">
         <div className="research-header">
           <div className="research-header-top">
-            <button className="btn-back-compact" onClick={() => navigate('/doctor', { state: { openMedicalRecordForPatientId: patientId } })}>
+            <button className="btn-back-compact" onClick={() => navigate('/doctor/permit', { state: { openMedicalRecordForPatientId: patientId } })}>
               <span className="material-icons">arrow_back</span>
               <span>К пациенту</span>
             </button>

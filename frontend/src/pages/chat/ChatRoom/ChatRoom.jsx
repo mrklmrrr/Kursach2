@@ -157,7 +157,7 @@ export default function ChatRoom() {
     }
     const doctorId = chatCompanion.id;
     if (doctorId) {
-      navigate(`/doctor/${doctorId}`);
+      navigate(`/doctors/${doctorId}`);
     }
   };
 

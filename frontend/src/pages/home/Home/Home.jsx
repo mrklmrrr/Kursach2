@@ -50,7 +50,7 @@ export default function Home() {
   // Редирект врача на его панель
   useEffect(() => {
     if (user?.role === 'doctor') {
-      navigate('/doctor');
+      navigate('/doctor/permit');
     }
   }, [user]);
 
@@ -296,7 +296,7 @@ export default function Home() {
                           type="button"
                           className="appointment-doctor-link"
                           onClick={() => {
-                            navigate(`/doctor/${selectedAppointment.doctorId}`);
+                            navigate(`/doctors/${selectedAppointment.doctorId}`);
                             setSelectedAppointment(null);
                           }}
                         >

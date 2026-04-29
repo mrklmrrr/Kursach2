@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { doctorPanelApi } from '@services/doctorPanelApi';
 import { useAuth } from '@hooks/useAuth';
 import PageLayout from '@components/layout/PageLayout/PageLayout';
 import { AppHeader, BottomNav } from '@components/layout';
-import { Tabs } from '@components/ui';
 
 import {
   useDoctorPanelData,
@@ -26,12 +25,24 @@ import {
   AppointmentsTab,
   PatientsTab
 } from './components';
+import DoctorSidebar from './components/DoctorSidebar/DoctorSidebar';
 
 import './DoctorPanel.css';
+
+/** Маппинг URL-segment → внутреннее имя таба */
+const TAB_MAP = {
+  permit: 'requests',
+  schedule: 'upcoming',
+  appointments: 'appointments',
+  patients: 'patients',
+};
+
+const VALID_TABS = Object.keys(TAB_MAP);
 
 export default function DoctorPanel() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { tab: urlTab } = useParams();
   const { user } = useAuth();
   const { showToast } = useToast();
 
@@ -43,12 +54,22 @@ export default function DoctorPanel() {
   const appointments = useAppointments();
   const workingHours = useWorkingHours();
 
+  // Определяем активный таб из URL; невалидный → редирект
+  const activeTab = TAB_MAP[urlTab] || null;
+
   // Local state
-  const [tab, setTab] = React.useState('requests');
   const [selectedPatient, setSelectedPatient] = React.useState(null);
   const [prescriptionPatient, setPrescriptionPatient] = React.useState(null);
 
   /* eslint-disable react-hooks/exhaustive-deps -- кабинет врача: узкие deps, полный список даёт лишние циклы с panelData / хуками */
+
+  // Редирект невалидного или пустого tab → /doctor/permit
+  useEffect(() => {
+    if (!urlTab || !VALID_TABS.includes(urlTab)) {
+      navigate('/doctor/permit', { replace: true });
+    }
+  }, [urlTab, navigate]);
+
   // Initialize data on mount
   useEffect(() => {
     if (user?.role !== 'doctor') {
@@ -96,7 +117,7 @@ export default function DoctorPanel() {
     const patient = patientById.get(String(targetId));
     if (patient) {
       medicalRecord.openMedicalRecord(patient);
-      navigate('/doctor', { replace: true, state: {} });
+      navigate('/doctor/permit', { replace: true, state: {} });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state, panelData.loading, patientById]);
@@ -159,135 +180,135 @@ export default function DoctorPanel() {
   }
 
   return (
-    <PageLayout>
-      <PageLayout.Header>
-        <AppHeader title="Кабинет врача" />
-      </PageLayout.Header>
-      <PageLayout.Content>
-        <div className="doctor-panel">
-        {/* Profile Header */}
-        <ProfileHeader
-          profile={panelData.profile}
-          isOnline={panelData.profile?.isOnline}
-          onToggleOnline={handleToggleOnline}
-        />
+    <div className="doctor-panel-layout">
+      <DoctorSidebar profile={panelData.profile} />
 
-        {/* Stats Cards */}
-        <DoctorPanelStats
-          pendingConsultationsCount={consultations.pendingConsultations.length}
-          upcomingScheduleCount={upcomingSchedule.length}
-          activeAppointmentsCount={activeAppointmentsCount}
-        />
-
-        {/* Tabs Navigation */}
-        <Tabs value={tab} onValueChange={setTab}>
-          <Tabs.List>
-            <Tabs.Trigger value="requests">
-              Заявки
-              {consultations.pendingConsultations.length > 0 && (
-                <span className="badge">{consultations.pendingConsultations.length}</span>
-              )}
-            </Tabs.Trigger>
-            <Tabs.Trigger value="upcoming">
-              Расписание
-              {upcomingSchedule.length > 0 && (
-                <span className="badge">{upcomingSchedule.length}</span>
-              )}
-            </Tabs.Trigger>
-            <Tabs.Trigger value="appointments">
-              Записи
-              {activeAppointmentsCount > 0 && (
-                <span className="badge">{activeAppointmentsCount}</span>
-              )}
-            </Tabs.Trigger>
-            <Tabs.Trigger value="patients">Пациенты</Tabs.Trigger>
-          </Tabs.List>
-
-          <Tabs.Content value="requests">
-            <RequestsTab
-              consultations={consultations.pendingConsultations}
-              onAccept={consultations.handleAccept}
-              onReject={consultations.handleReject}
+      <PageLayout>
+        <PageLayout.Header>
+          <AppHeader title="Кабинет врача" />
+        </PageLayout.Header>
+        <PageLayout.Content>
+          <div className="doctor-panel">
+            {/* Profile Header */}
+            <ProfileHeader
+              profile={panelData.profile}
+              isOnline={panelData.profile?.isOnline}
+              onToggleOnline={handleToggleOnline}
             />
-          </Tabs.Content>
 
-          <Tabs.Content value="upcoming">
-            <UpcomingTab
-              schedule={upcomingSchedule}
-              onSelectPatient={handleOpenPatientProfile}
+            {/* Stats Cards */}
+            <DoctorPanelStats
+              pendingConsultationsCount={consultations.pendingConsultations.length}
+              upcomingScheduleCount={upcomingSchedule.length}
+              activeAppointmentsCount={activeAppointmentsCount}
             />
-          </Tabs.Content>
 
-          <Tabs.Content value="appointments">
-            <AppointmentsTab
-              appointmentForm={appointments.appointmentForm}
-              patients={panelData.patients}
-              workingHours={workingHours.workingHours}
-              workingDays={workingHours.workingDays}
+            {/* Mobile Tabs Navigation */}
+            <div className="doctor-tabs">
+              {[
+                { id: 'requests', label: 'Заявки', path: 'permit', badge: consultations.pendingConsultations.length },
+                { id: 'upcoming', label: 'Расписание', path: 'schedule', badge: upcomingSchedule.length },
+                { id: 'appointments', label: 'Записи', path: 'appointments', badge: activeAppointmentsCount },
+                { id: 'patients', label: 'Пациенты', path: 'patients', badge: null },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className={`d-tab ${activeTab === t.id ? 'active' : ''}`}
+                  onClick={() => navigate(`/doctor/${t.path}`)}
+                >
+                  {t.label}
+                  {t.badge > 0 && <span className="badge">{t.badge}</span>}
+                </button>
+              ))}
+            </div>
+
+            {/* Content by route */}
+            {activeTab === 'requests' && (
+              <RequestsTab
+                consultations={consultations.pendingConsultations}
+                onAccept={consultations.handleAccept}
+                onReject={consultations.handleReject}
+              />
+            )}
+
+            {activeTab === 'upcoming' && (
+              <UpcomingTab
+                schedule={upcomingSchedule}
+                onSelectPatient={handleOpenPatientProfile}
+              />
+            )}
+
+            {activeTab === 'appointments' && (
+              <AppointmentsTab
+                appointmentForm={appointments.appointmentForm}
+                patients={panelData.patients}
+                workingHours={workingHours.workingHours}
+                workingDays={workingHours.workingDays}
+                appointments={appointments.appointments}
+                onFormChange={appointments.handleFormChange}
+                onAssign={(e) => appointments.handleAssign(e, panelData.loadData)}
+                onSaveWorkingHours={workingHours.save}
+                onToggleDay={workingHours.toggleDay}
+                onSetWorkingHours={workingHours.setWorkingHours}
+                onCancelAppointment={(id) => appointments.handleCancel(id, panelData.loadData)}
+                onOpenCommentModal={commentModal.openModal}
+              />
+            )}
+
+            {activeTab === 'patients' && (
+              <PatientsTab
+                patients={panelData.patients}
+                onSelectPatient={handleOpenPatientMedicalRecord}
+              />
+            )}
+
+            {/* Modals */}
+            <DoctorPanelModals
+              // CommentModal
+              commentModal={commentModal.modal}
               appointments={appointments.appointments}
-              onFormChange={appointments.handleFormChange}
-              onAssign={(e) => appointments.handleAssign(e, panelData.loadData)}
-              onSaveWorkingHours={workingHours.save}
-              onToggleDay={workingHours.toggleDay}
-              onSetWorkingHours={workingHours.setWorkingHours}
-              onCancelAppointment={(id) => appointments.handleCancel(id, panelData.loadData)}
-              onOpenCommentModal={commentModal.openModal}
-            />
-          </Tabs.Content>
+              setAppointments={appointments.setAppointments}
+              onCloseCommentModal={commentModal.closeModal}
+              onSaveComment={commentModal.save}
 
-          <Tabs.Content value="patients">
-            <PatientsTab
-              patients={panelData.patients}
-              onSelectPatient={handleOpenPatientMedicalRecord}
-            />
-          </Tabs.Content>
-        </Tabs>
+              // PatientProfileModal
+              selectedPatient={selectedPatient}
+              onClosePatientProfile={() => setSelectedPatient(null)}
+              onOpenMedicalRecord={handleOpenPatientMedicalRecord}
 
-        {/* Modals */}
-        <DoctorPanelModals
-          // CommentModal
-          commentModal={commentModal.modal}
-          appointments={appointments.appointments}
-          setAppointments={appointments.setAppointments}
-          onCloseCommentModal={commentModal.closeModal}
-          onSaveComment={commentModal.save}
-          
-          // PatientProfileModal
-          selectedPatient={selectedPatient}
-          onClosePatientProfile={() => setSelectedPatient(null)}
-          onOpenMedicalRecord={handleOpenPatientMedicalRecord}
-          
-          // PrescriptionModal
-          prescriptionPatient={prescriptionPatient}
-          onClosePrescription={() => setPrescriptionPatient(null)}
-          onPrescriptionSaved={() => panelData.loadData()}
-          
-          // MedicalRecordModal
-          medicalRecordModal={{
-            ...medicalRecord.modal,
-            tab: medicalRecord.tab,
-            expandedSection: medicalRecord.expandedSection,
-            historyOpen: medicalRecord.historyOpen,
-            showSickLeaveHistory: medicalRecord.showSickLeaveHistory
-          }}
-          user={user}
-          onCloseMedicalRecord={medicalRecord.closeMedicalRecord}
-          onSetTab={medicalRecord.setTab}
-          onToggleSection={medicalRecord.setExpandedSection}
-          onFieldChange={medicalRecord.updateMedicalField}
-          onSaveSection={medicalRecord.saveSection}
-          onAddSickLeaveDraft={medicalRecord.addSickLeaveDraft}
-          onSickLeaveFieldChange={medicalRecord.updateSickLeaveField}
-          onSaveSickLeave={medicalRecord.saveSickLeave}
-          onToggleHistory={(isOpen) => medicalRecord.setHistoryOpen(isOpen)}
-          onToggleSickLeaveHistory={() => medicalRecord.setShowSickLeaveHistory(!medicalRecord.showSickLeaveHistory)}
-          onOpenPrescription={setPrescriptionPatient}
-        />
-        </div>
-      </PageLayout.Content>
-      <PageLayout.Footer>
-        <BottomNav />
-      </PageLayout.Footer>
-    </PageLayout>
+              // PrescriptionModal
+              prescriptionPatient={prescriptionPatient}
+              onClosePrescription={() => setPrescriptionPatient(null)}
+              onPrescriptionSaved={() => panelData.loadData()}
+
+              // MedicalRecordModal
+              medicalRecordModal={{
+                ...medicalRecord.modal,
+                tab: medicalRecord.tab,
+                expandedSection: medicalRecord.expandedSection,
+                historyOpen: medicalRecord.historyOpen,
+                showSickLeaveHistory: medicalRecord.showSickLeaveHistory
+              }}
+              user={user}
+              onCloseMedicalRecord={medicalRecord.closeMedicalRecord}
+              onSetTab={medicalRecord.setTab}
+              onToggleSection={medicalRecord.setExpandedSection}
+              onFieldChange={medicalRecord.updateMedicalField}
+              onSaveSection={medicalRecord.saveSection}
+              onAddSickLeaveDraft={medicalRecord.addSickLeaveDraft}
+              onSickLeaveFieldChange={medicalRecord.updateSickLeaveField}
+              onSaveSickLeave={medicalRecord.saveSickLeave}
+              onToggleHistory={(isOpen) => medicalRecord.setHistoryOpen(isOpen)}
+              onToggleSickLeaveHistory={() => medicalRecord.setShowSickLeaveHistory(!medicalRecord.showSickLeaveHistory)}
+              onOpenPrescription={setPrescriptionPatient}
+            />
+          </div>
+        </PageLayout.Content>
+        <PageLayout.Footer>
+          <BottomNav />
+        </PageLayout.Footer>
+      </PageLayout>
+    </div>
   );
 }

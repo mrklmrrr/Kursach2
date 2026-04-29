@@ -39,7 +39,7 @@ export const routes = {
   protected: [
     { path: '/home', element: <Home /> },
     { path: '/doctors', element: <Doctors /> },
-    { path: '/doctor/:id', element: <DoctorProfile /> },
+    { path: '/doctors/:id', element: <DoctorProfile /> },
     { path: '/chats', element: <Chats /> },
     { path: '/chat/:id', element: <ChatRoom /> },
     { path: '/emergency', element: <Emergency /> },
@@ -52,7 +52,7 @@ export const routes = {
     { path: '/video-room/:id', element: <VideoRoom /> }
   ],
   doctorOnly: [
-    { path: '/doctor', element: <DoctorPanel /> },
+    { path: '/doctor/:tab?', element: <DoctorPanel /> },
     { path: '/doctor/patient/:patientId/laboratory', element: <LaboratoryResearch /> },
     { path: '/doctor/patient/:patientId/instrumental', element: <InstrumentalResearch /> }
   ]

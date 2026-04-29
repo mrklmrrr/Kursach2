@@ -7,7 +7,7 @@ export default function DoctorCard({ doctor, variant = 'compact' }) {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/doctor/${doctor.id}`);
+    navigate(`/doctors/${doctor.id}`);
   };
 
   const avatarSrc = doctor.avatarUrl || doctor.avatar || undefined;
