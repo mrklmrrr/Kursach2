@@ -5,7 +5,7 @@ import { doctorApi } from '../../../services/doctorApi';
 import { appointmentApi } from '../../../services/appointmentApi';
 import { AppHeader, BottomNav } from '../../../components/layout';
 import { DoctorCard } from '../../../components/features';
-import { EmptyState, ConfirmModal } from '../../../components/ui';
+import { EmptyState, ConfirmModal, Modal } from '../../../components/ui';
 import './Home.css';
 
 const formatDateTime = (date, time) => {
@@ -278,68 +278,60 @@ export default function Home() {
           </div>
         </section>
       </div>
-      {selectedAppointment && (
-        <div
-          className="appointment-details-overlay"
-          onClick={() => setSelectedAppointment(null)}
-          role="presentation"
-        >
-          <div
-            className="appointment-details-modal"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
-            <button
-              type="button"
-              className="appointment-details-close"
-              onClick={() => setSelectedAppointment(null)}
-              aria-label="Закрыть детали записи"
-            >
-              ×
-            </button>
-            <h3>Детали записи</h3>
-            <div className="appointment-details-grid">
-              <div>
-                <span>Врач:</span>{' '}
-                {selectedAppointment.doctorId ? (
-                  <button
-                    type="button"
-                    className="appointment-doctor-link"
-                    onClick={() => {
-                      navigate(`/doctor/${selectedAppointment.doctorId}`);
-                      setSelectedAppointment(null);
-                    }}
-                  >
-                    {selectedAppointment.doctorName}
-                  </button>
-                ) : (
-                  selectedAppointment.doctorName
-                )}
-              </div>
-              <div><span>Дата и время:</span> {formatDateTime(selectedAppointment.date, selectedAppointment.rawTime)}</div>
-              <div><span>Формат:</span> {detailsType}</div>
-              <div><span>Статус:</span> {selectedAppointment.status}</div>
-              <div><span>Длительность:</span> {selectedAppointment.duration} мин.</div>
-            </div>
-            <div className="appointment-details-comment">
-                <span>Комментарий врача:</span>{' '}
-                {selectedAppointment.doctorComment?.trim() || 'Комментарий отсутствует'}
-            </div>
-            {(selectedAppointment.status === 'Запланирована' || selectedAppointment.status === 'Подтверждена') && (
-              <div className="appointment-details-actions">
-                <button
-                  type="button"
-                  className="cancel-btn"
-                  onClick={() => handleCancelAppointment(selectedAppointment.id)}
-                >
-                  Отменить запись
-                </button>
-              </div>
-            )}
-           </div>
-         </div>
-       )}
+      <Modal open={Boolean(selectedAppointment)} onClose={() => setSelectedAppointment(null)}>
+        <Modal.Overlay>
+          <Modal.Content>
+            <Modal.Header>
+              <h3>Детали записи</h3>
+            </Modal.Header>
+
+            <Modal.Body>
+              {selectedAppointment && (
+                <>
+                  <div className="appointment-details-grid">
+                    <div>
+                      <span>Врач:</span>{' '}
+                      {selectedAppointment.doctorId ? (
+                        <button
+                          type="button"
+                          className="appointment-doctor-link"
+                          onClick={() => {
+                            navigate(`/doctor/${selectedAppointment.doctorId}`);
+                            setSelectedAppointment(null);
+                          }}
+                        >
+                          {selectedAppointment.doctorName}
+                        </button>
+                      ) : (
+                        selectedAppointment.doctorName
+                      )}
+                    </div>
+                    <div><span>Дата и время:</span> {formatDateTime(selectedAppointment.date, selectedAppointment.rawTime)}</div>
+                    <div><span>Формат:</span> {detailsType}</div>
+                    <div><span>Статус:</span> {selectedAppointment.status}</div>
+                    <div><span>Длительность:</span> {selectedAppointment.duration} мин.</div>
+                  </div>
+                  <div className="appointment-details-comment">
+                    <span>Комментарий врача:</span>{' '}
+                    {selectedAppointment.doctorComment?.trim() || 'Комментарий отсутствует'}
+                  </div>
+                  {(selectedAppointment.status === 'Запланирована' || selectedAppointment.status === 'Подтверждена') && (
+                    <div className="appointment-details-actions">
+                      <button
+                        type="button"
+                        className="cancel-btn"
+                        onClick={() => handleCancelAppointment(selectedAppointment.id)}
+                      >
+                        Отменить запись
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </Modal.Body>
+          </Modal.Content>
+        </Modal.Overlay>
+      </Modal>
        <ConfirmModal
          open={confirmModal.open}
          title={confirmModal.title}

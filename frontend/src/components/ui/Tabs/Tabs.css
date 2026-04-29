@@ -1,0 +1,75 @@
+.tabs-root {
+  width: 100%;
+}
+
+.tabs-list {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+.tab-trigger {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+}
+
+.tab-trigger.active {
+  background: #4f46e5;
+  color: white;
+}
+
+.tab-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Badge inside tab trigger */
+.tab-trigger .badge {
+  background: rgba(255, 255, 255, 0.3);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.tab-trigger:not(.active) .badge {
+  background: #e5e7eb;
+}
+
+.tab-content {
+  animation: tabFadeIn 0.2s ease;
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark theme */
+body.dark .tab-trigger {
+  background: #1f2937;
+  color: #9ca3af;
+}
+
+body.dark .tab-trigger.active {
+  background: #4f46e5;
+  color: white;
+}

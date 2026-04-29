@@ -7,3 +7,7 @@ export { default as EmptyState } from './EmptyState/EmptyState';
 export { default as AlertBanner } from './AlertBanner/AlertBanner';
 export { default as SkeletonCard } from './SkeletonCard/SkeletonCard';
 export { default as ConfirmModal } from './ConfirmModal';
+export { default as Tabs } from './Tabs/Tabs';
+export { default as Modal } from './Modal/Modal';
+export { default as Card } from './Card/Card';
+export { default as Accordion } from './Accordion/Accordion';

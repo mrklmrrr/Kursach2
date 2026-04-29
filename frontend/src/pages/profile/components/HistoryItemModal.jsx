@@ -1,3 +1,4 @@
+import { Modal } from '@components/ui';
 import { getDoctorInfo } from '../utils/profileUtils';
 
 const formatDateTime = (date, time) => {
@@ -6,39 +7,49 @@ const formatDateTime = (date, time) => {
 };
 
 export const HistoryItemModal = ({ item, onClose }) => {
-  if (!item) return null;
+  const isOpen = Boolean(item);
 
   return (
-    <div className="patient-modal-overlay" role="presentation" onClick={onClose}>
-      <div className="patient-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-        <h3>Информация о записи</h3>
-        <p><strong>Дата и время:</strong> {formatDateTime(item.date, item.rawAppointment?.time || '')}</p>
-        <p>
-          <strong>Врач:</strong> {getDoctorInfo(item).doctorName} ({getDoctorInfo(item).doctorProfession})
-        </p>
-        {item.source === 'appointment' && item.rawAppointment && (
-          <>
-            <p><strong>Тип консультации:</strong> {item.specialty}</p>
-            <p><strong>Длительность:</strong> {item.duration || 0} мин</p>
-            {item.rawAppointment.doctorComment && (
-              <p><strong>Комментарий врача:</strong> {item.rawAppointment.doctorComment}</p>
+    <Modal open={isOpen} onClose={onClose}>
+      <Modal.Overlay>
+        <Modal.Content>
+          <Modal.Header>
+            <h3>Информация о записи</h3>
+          </Modal.Header>
+
+          <Modal.Body>
+            <p><strong>Дата и время:</strong> {item ? formatDateTime(item.date, item.rawAppointment?.time || '') : ''}</p>
+            <p>
+              <strong>Врач:</strong> {item ? `${getDoctorInfo(item).doctorName} (${getDoctorInfo(item).doctorProfession})` : ''}
+            </p>
+            {item?.source === 'appointment' && item.rawAppointment && (
+              <>
+                <p><strong>Тип консультации:</strong> {item.specialty}</p>
+                <p><strong>Длительность:</strong> {item.duration || 0} мин</p>
+                {item.rawAppointment.doctorComment && (
+                  <p><strong>Комментарий врача:</strong> {item.rawAppointment.doctorComment}</p>
+                )}
+              </>
             )}
-          </>
-        )}
-        {item.source === 'consultation' && (
-          <>
-            <p><strong>Тип:</strong> {item.specialty || 'Консультация'}</p>
-            <p><strong>Длительность:</strong> {item.duration || 0} мин</p>
-          </>
-        )}
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={onClose}
-        >
-          Закрыть
-        </button>
-      </div>
-    </div>
+            {item?.source === 'consultation' && (
+              <>
+                <p><strong>Тип:</strong> {item.specialty || 'Консультация'}</p>
+                <p><strong>Длительность:</strong> {item.duration || 0} мин</p>
+              </>
+            )}
+          </Modal.Body>
+
+          <Modal.Footer>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={onClose}
+            >
+              Закрыть
+            </button>
+          </Modal.Footer>
+        </Modal.Content>
+      </Modal.Overlay>
+    </Modal>
   );
 };

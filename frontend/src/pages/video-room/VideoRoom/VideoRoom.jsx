@@ -22,26 +22,30 @@ export default function VideoRoom() {
 
   if (!roomId) {
     return (
-      <PageLayout hideBack>
-        <div className="video-room-error">
-          <p>Видео комната не найдена</p>
-        </div>
+      <PageLayout>
+        <PageLayout.Content>
+          <div className="video-room-error">
+            <p>Видео комната не найдена</p>
+          </div>
+        </PageLayout.Content>
       </PageLayout>
     );
   }
 
   return (
-    <PageLayout hideBack>
-      <div className="video-room-wrapper">
-        <div className="video-room-header">
-          <BackButton onClick={handleEndCall} label="Завершить" />
-          <div className="timer">{formatted}</div>
-        </div>
+    <PageLayout>
+      <PageLayout.Content>
+        <div className="video-room-wrapper">
+          <div className="video-room-header">
+            <BackButton onClick={handleEndCall} label="Завершить" />
+            <div className="timer">{formatted}</div>
+          </div>
 
-        <div className="video-room-content">
-          <VideoCall roomId={roomId} onEndCall={handleEndCall} />
+          <div className="video-room-content">
+            <VideoCall roomId={roomId} onEndCall={handleEndCall} />
+          </div>
         </div>
-      </div>
+      </PageLayout.Content>
     </PageLayout>
   );
 }

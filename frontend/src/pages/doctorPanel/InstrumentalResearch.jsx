@@ -107,11 +107,18 @@ function InstrumentalResearch() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  if (loading) return <PageLayout><div className="loading-spinner">Загрузка...</div></PageLayout>;
+  if (loading) return (
+    <PageLayout>
+      <PageLayout.Content>
+        <div className="loading-spinner">Загрузка...</div>
+      </PageLayout.Content>
+    </PageLayout>
+  );
 
   return (
     <PageLayout>
-      <div className="research-management lab-research-premium">
+      <PageLayout.Content>
+        <div className="research-management lab-research-premium">
         <div className="research-header">
           <div className="research-header-top">
             <button className="btn-back-compact" onClick={() => navigate('/doctor', { state: { openMedicalRecordForPatientId: patientId } })}>
@@ -224,8 +231,9 @@ function InstrumentalResearch() {
           />
         )}
 
-        <ResearchResultsList results={visibleResults} expandedResults={expandedResults} onToggleExpanded={toggleResultExpanded} formatDateTime={formatDateTime} getGridTemplateForResult={getGridTemplateForResult} onOpenTemplate={() => {}} />
-      </div>
+        <ResearchResultsList results={visibleResults} expandedResults={expandedResults} onToggleExpanded={toggleResultExpanded} formatDateTime={formatDateTime} getGridTemplateForResult={getGridTemplateForResult} onOpenTemplate={() => {}}         />
+        </div>
+      </PageLayout.Content>
     </PageLayout>
   );
 }

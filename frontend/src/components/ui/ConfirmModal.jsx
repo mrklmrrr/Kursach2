@@ -1,8 +1,7 @@
-import { useMemo } from 'react';
-import './ConfirmModal.css';
+import Modal from './Modal/Modal';
 
 /**
- * Reusable confirmation dialog component
+ * Reusable confirmation dialog component (built on top of compound Modal)
  */
 export default function ConfirmModal({
   open,
@@ -14,77 +13,41 @@ export default function ConfirmModal({
   onCancel,
   type = 'danger' // 'danger' | 'primary' | 'warning'
 }) {
-  const modalClass = useMemo(() => {
-    const base = 'confirm-modal-overlay';
-    return open ? `${base} open` : base;
-  }, [open]);
-
-  if (!open) return null;
-
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onCancel?.();
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Escape') {
-      onCancel?.();
-    }
-  };
-
-  const handleConfirm = () => {
-    onConfirm?.();
-  };
-
-  const handleCancel = () => {
-    onCancel?.();
-  };
+  const icon =
+    type === 'danger' ? '⚠️' : type === 'warning' ? '⚡' : 'ℹ️';
 
   return (
-    <div
-      className={modalClass}
-      role="presentation"
-      onClick={handleOverlayClick}
-      onKeyDown={handleKeyDown}
-    >
-      <div
-        className="confirm-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="confirm-modal-title"
-        tabIndex={-1}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="confirm-modal-header">
-          <span className="confirm-modal-icon">
-            {type === 'danger' && '⚠️'}
-            {type === 'warning' && '⚡'}
-            {type === 'primary' && 'ℹ️'}
-          </span>
-          <h3 id="confirm-modal-title">{title}</h3>
-        </div>
+    <Modal open={open} onClose={onCancel}>
+      <Modal.Overlay>
+        <Modal.Content className="modal-content--confirm">
+          <Modal.Header className="modal-header--center" showClose={false}>
+            <span className="modal-icon">{icon}</span>
+            <h3>{title}</h3>
+          </Modal.Header>
 
-        <p className="confirm-modal-message">{message}</p>
+          <Modal.Body>
+            <p className="modal-message">{message}</p>
+          </Modal.Body>
 
-        <div className="confirm-modal-actions">
-          <button
-            type="button"
-            className="btn btn-outline"
-            onClick={handleCancel}
-            autoFocus
-          >
-            {cancelText}
-          </button>
-          <button
-            type="button"
-            className={`btn ${type === 'danger' ? 'btn-danger' : 'btn-primary'}`}
-            onClick={handleConfirm}
-          >
-            {confirmText}
-          </button>
-        </div>
-      </div>
-    </div>
+          <Modal.Footer>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={onCancel}
+              autoFocus
+            >
+              {cancelText}
+            </button>
+            <button
+              type="button"
+              className={`btn ${type === 'danger' ? 'btn-danger' : 'btn-primary'}`}
+              onClick={onConfirm}
+            >
+              {confirmText}
+            </button>
+          </Modal.Footer>
+        </Modal.Content>
+      </Modal.Overlay>
+    </Modal>
   );
 }

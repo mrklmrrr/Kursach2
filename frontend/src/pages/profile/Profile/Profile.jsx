@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 import { AppHeader, BottomNav } from '@components/layout';
+import { Card } from '@components/ui';
 import { useConsultationHistory, useMedicalRecord } from '@hooks/profile';
 import { dependentApi } from '@services/dependentApi';
 import { ProfileHeader } from '../components/ProfileHeader';
@@ -56,25 +57,31 @@ export default function Profile() {
 
         {user?.role !== 'doctor' && (
           <>
-            <section className="section-card">
-              <h3>Мои родственники</h3>
-              {dependentsLoading ? (
-                <p className="empty-info">Загрузка списка родственников...</p>
-              ) : dependents.length > 0 ? (
-                <ul className="profile-simple-list">
-                  {dependents.map((item) => (
-                    <li key={item.id || item._id}>
-                      {item.fullName || item.name} {item.relation ? `(${item.relation})` : ''}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="empty-info">Родственники пока не добавлены.</p>
-              )}
-              <button type="button" className="btn btn-outline btn-small" onClick={() => navigate('/profile/add-relative')}>
-                Добавить родственника
-              </button>
-            </section>
+            <Card>
+              <Card.Header>
+                <Card.Title>Мои родственники</Card.Title>
+              </Card.Header>
+              <Card.Body>
+                {dependentsLoading ? (
+                  <p className="empty-info">Загрузка списка родственников...</p>
+                ) : dependents.length > 0 ? (
+                  <ul className="profile-simple-list">
+                    {dependents.map((item) => (
+                      <li key={item.id || item._id}>
+                        {item.fullName || item.name} {item.relation ? `(${item.relation})` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="empty-info">Родственники пока не добавлены.</p>
+                )}
+              </Card.Body>
+              <Card.Footer>
+                <button type="button" className="btn btn-outline btn-small" onClick={() => navigate('/profile/add-relative')}>
+                  Добавить родственника
+                </button>
+              </Card.Footer>
+            </Card>
 
             <MedicalCardSection
               medicalRecord={medicalRecord}

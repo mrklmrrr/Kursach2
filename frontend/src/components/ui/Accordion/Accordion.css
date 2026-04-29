@@ -1,0 +1,68 @@
+.accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.accordion-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin: 12px 0;
+  overflow: hidden;
+}
+
+.accordion-trigger {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.accordion-trigger-label {
+  text-align: left;
+}
+
+.accordion-trigger-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+  color: #6b7280;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.accordion-content {
+  padding: 6px 10px 10px;
+  animation: accordionSlideDown 0.2s ease;
+}
+
+@keyframes accordionSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark theme */
+body.dark .accordion-item {
+  border-color: #374151;
+}
+
+body.dark .accordion-trigger {
+  color: #f3f4f6;
+}
+
+body.dark .accordion-trigger-icon {
+  color: #9ca3af;
+}

@@ -1,0 +1,157 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: modalOverlayIn 0.2s ease;
+}
+
+@keyframes modalOverlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  width: min(100%, 420px);
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 20px;
+  animation: modalContentIn 0.2s ease;
+}
+
+@keyframes modalContentIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.modal-header-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0 0 0 8px;
+  margin: -4px -4px 0 0;
+  transition: color 0.15s;
+}
+
+.modal-close:hover {
+  color: #111827;
+}
+
+.modal-body {
+  margin-bottom: 16px;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.modal-footer .btn {
+  flex: 1;
+  padding: 12px 20px;
+  font-size: 1rem;
+}
+
+/* Wide modal variant (e.g. medical record) */
+.modal-content--wide {
+  width: min(100%, 860px);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Confirm modal variant */
+.modal-content--confirm {
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
+}
+
+/* Prescription modal variant */
+.modal-content--prescription {
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header--center {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.modal-icon {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+
+.modal-message {
+  text-align: center;
+  color: #6b7280;
+  font-size: 1rem;
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+/* Dark theme */
+body.dark .modal-content {
+  background: #1f2937;
+  color: #f3f4f6;
+}
+
+body.dark .modal-header h3 {
+  color: #f9fafb;
+}
+
+body.dark .modal-close {
+  color: #9ca3af;
+}
+
+body.dark .modal-close:hover {
+  color: #f3f4f6;
+}
+
+body.dark .modal-message {
+  color: #9ca3af;
+}

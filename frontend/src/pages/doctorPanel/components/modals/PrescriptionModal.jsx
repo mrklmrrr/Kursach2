@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import { Modal } from '@components/ui';
 import { prescriptionApi } from '../../../../services/prescriptionApi';
 import { useToast } from '../../../../contexts/ToastProvider/useToast';
 import './PrescriptionModal.css';
-
 
 export default function PrescriptionModal({ patient, onClose, onSaved }) {
   const { showToast } = useToast();
@@ -44,62 +44,63 @@ export default function PrescriptionModal({ patient, onClose, onSaved }) {
     }
   };
 
+  const isOpen = Boolean(patient);
+
   return (
-    <div className="rx-overlay" role="presentation" onClick={onClose}>
-      <div
-        className="rx-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="rx-title"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button type="button" className="rx-close" onClick={onClose} aria-label="Закрыть">
-          ×
-        </button>
-        <h2 id="rx-title">Назначения: {patient?.name}</h2>
-        <form onSubmit={submit}>
-          {items.map((row, i) => (
-            <div key={i} className="rx-row">
-              <input
-                placeholder="Препарат"
-                value={row.name}
-                onChange={(e) => updateRow(i, 'name', e.target.value)}
-                required={i === 0}
+    <Modal open={isOpen} onClose={onClose}>
+      <Modal.Overlay>
+        <Modal.Content className="modal-content--prescription" aria-labelledby="rx-title">
+          <Modal.Header>
+            <h2 id="rx-title">Назначения: {patient?.name}</h2>
+          </Modal.Header>
+
+          <Modal.Body>
+            <form id="rx-form" onSubmit={submit}>
+              {items.map((row, i) => (
+                <div key={i} className="rx-row">
+                  <input
+                    placeholder="Препарат"
+                    value={row.name}
+                    onChange={(e) => updateRow(i, 'name', e.target.value)}
+                    required={i === 0}
+                  />
+                  <input
+                    placeholder="Дозировка"
+                    value={row.dosage}
+                    onChange={(e) => updateRow(i, 'dosage', e.target.value)}
+                  />
+                  <input
+                    placeholder="Комментарий"
+                    value={row.notes}
+                    onChange={(e) => updateRow(i, 'notes', e.target.value)}
+                  />
+                </div>
+              ))}
+              <button type="button" className="rx-add" onClick={addRow}>
+                + Строка
+              </button>
+              <label className="rx-rec-label" htmlFor="rx-rec">Рекомендации врача</label>
+              <textarea
+                id="rx-rec"
+                className="rx-rec-textarea"
+                rows={3}
+                placeholder="Режим, диета, контрольные визиты — пациент получит это в Telegram вместе с препаратами"
+                value={recommendations}
+                onChange={(e) => setRecommendations(e.target.value)}
               />
-              <input
-                placeholder="Дозировка"
-                value={row.dosage}
-                onChange={(e) => updateRow(i, 'dosage', e.target.value)}
-              />
-              <input
-                placeholder="Комментарий"
-                value={row.notes}
-                onChange={(e) => updateRow(i, 'notes', e.target.value)}
-              />
-            </div>
-          ))}
-          <button type="button" className="rx-add" onClick={addRow}>
-            + Строка
-          </button>
-          <label className="rx-rec-label" htmlFor="rx-rec">Рекомендации врача</label>
-          <textarea
-            id="rx-rec"
-            className="rx-rec-textarea"
-            rows={3}
-            placeholder="Режим, диета, контрольные визиты — пациент получит это в Telegram вместе с препаратами"
-            value={recommendations}
-            onChange={(e) => setRecommendations(e.target.value)}
-          />
-          <div className="rx-actions">
+            </form>
+          </Modal.Body>
+
+          <Modal.Footer>
             <button type="button" className="rx-cancel" onClick={onClose}>
               Отмена
             </button>
-            <button type="submit" className="rx-save" disabled={saving}>
+            <button type="submit" className="rx-save" form="rx-form" disabled={saving}>
               {saving ? 'Сохранение...' : 'Сохранить'}
             </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          </Modal.Footer>
+        </Modal.Content>
+      </Modal.Overlay>
+    </Modal>
   );
 }

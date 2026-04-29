@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Avatar } from '../../../components/ui';
+import { Avatar, Modal } from '../../../components/ui';
 import { chatApi } from '../../../services/chatApi';
 import { videoRoomApi } from '../../../services/videoRoomApi';
 import { useAuth } from '../../../hooks/useAuth';
@@ -270,17 +270,27 @@ export default function ChatRoom() {
         </div>
       </div>
 
-      {showPatientProfile && isDoctor && (
-        <div className="chat-room-profile-modal-overlay" role="presentation" onClick={() => setShowPatientProfile(false)}>
-          <div className="chat-room-profile-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-            <h3>Профиль пациента</h3>
-            <p><strong>Имя:</strong> {chatMeta?.patientName || 'Пациент'}</p>
-            <p><strong>ID:</strong> {chatMeta?.patientId || '—'}</p>
-            <button type="button" className="btn btn-primary" onClick={() => setShowPatientProfile(false)}>
-              Закрыть
-            </button>
-          </div>
-        </div>
+      {isDoctor && (
+        <Modal open={showPatientProfile} onClose={() => setShowPatientProfile(false)}>
+          <Modal.Overlay>
+            <Modal.Content>
+              <Modal.Header>
+                <h3>Профиль пациента</h3>
+              </Modal.Header>
+
+              <Modal.Body>
+                <p><strong>Имя:</strong> {chatMeta?.patientName || 'Пациент'}</p>
+                <p><strong>ID:</strong> {chatMeta?.patientId || '—'}</p>
+              </Modal.Body>
+
+              <Modal.Footer>
+                <button type="button" className="btn btn-primary" onClick={() => setShowPatientProfile(false)}>
+                  Закрыть
+                </button>
+              </Modal.Footer>
+            </Modal.Content>
+          </Modal.Overlay>
+        </Modal>
       )}
     </div>
   );

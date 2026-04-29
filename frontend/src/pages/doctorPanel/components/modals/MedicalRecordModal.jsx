@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { Modal, Tabs } from '@components/ui';
 import MedicalSystemSection from './MedicalSystemSection';
 import SickLeaveSection from './SickLeaveSection';
 import { ResearchNavigation, MedicalHistory } from './MedicalRecordHelpers';
@@ -32,123 +33,108 @@ export default function MedicalRecordModal({
 }) {
   const navigate = useNavigate();
 
-  if (!open) return null;
-
   return (
-    <div className="patient-modal-overlay" role="presentation" onClick={onClose}>
-      <div className="patient-modal medical-record-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-        <h3>Карточка пациента</h3>
-        <p><strong>Пациент:</strong> {patient?.name || '—'}</p>
-        <p><strong>Дата рождения:</strong> {patient?.birthDate ? String(patient.birthDate).slice(0, 4) : '—'}</p>
-        <p><strong>Телефон:</strong> {patient?.phone || '—'}</p>
+    <Modal open={open} onClose={onClose}>
+      <Modal.Overlay>
+        <Modal.Content className="modal-content--wide">
+          <Modal.Header>
+            <h3>Карточка пациента</h3>
+          </Modal.Header>
 
-        {loading && <p>Загрузка карты...</p>}
-        {!loading && error && <p className="medical-record-error">{error}</p>}
+          <Modal.Body>
+            <p><strong>Пациент:</strong> {patient?.name || '—'}</p>
+            <p><strong>Дата рождения:</strong> {patient?.birthDate ? String(patient.birthDate).slice(0, 4) : '—'}</p>
+            <p><strong>Телефон:</strong> {patient?.phone || '—'}</p>
 
-        {!loading && (
-          <div>
-            <div className="medical-record-tabs">
-              <button
-                type="button"
-                className={`profile-tab-btn ${tab === 'systems' ? 'active' : ''}`}
-                onClick={() => onSetTab('systems')}
-              >
-                Медицинская карта
-              </button>
-              <button
-                type="button"
-                className={`profile-tab-btn ${tab === 'sickLeave' ? 'active' : ''}`}
-                onClick={() => onSetTab('sickLeave')}
-              >
-                Лист нетрудоспособности
-              </button>
-              <button
-                type="button"
-                className={`profile-tab-btn ${tab === 'laboratory' ? 'active' : ''}`}
-                onClick={() => onSetTab('laboratory')}
-              >
-                Лабораторные исследования
-              </button>
-              <button
-                type="button"
-                className={`profile-tab-btn ${tab === 'instrumental' ? 'active' : ''}`}
-                onClick={() => onSetTab('instrumental')}
-              >
-                Инструментальные исследования
-              </button>
-              {onPrescription && (
-                <button
-                  type="button"
-                  className="profile-tab-btn"
-                  onClick={() => onPrescription(patient)}
-                >
-                  E-назначение
-                </button>
-              )}
-            </div>
+            {loading && <p>Загрузка карты...</p>}
+            {!loading && error && <p className="medical-record-error">{error}</p>}
 
-            {tab === 'systems' && (
-              <>
-                <MedicalSystemSection
-                  systems={record?.systems || []}
-                  expandedSection={expandedSection}
-                  onToggleSection={onToggleSection}
-                  onFieldChange={onFieldChange}
-                  onSaveSection={onSaveSection}
-                  savingSectionKey={savingSectionKey}
-                />
-                <MedicalHistory
-                  logs={record?.changeLogs || []}
-                  historyOpen={historyOpen}
-                  onToggle={onToggleHistory}
-                />
-              </>
+            {!loading && (
+              <Tabs value={tab} onValueChange={onSetTab}>
+                <Tabs.List className="medical-record-tabs">
+                  <Tabs.Trigger value="systems" className="profile-tab-btn">
+                    Медицинская карта
+                  </Tabs.Trigger>
+                  <Tabs.Trigger value="sickLeave" className="profile-tab-btn">
+                    Лист нетрудоспособности
+                  </Tabs.Trigger>
+                  <Tabs.Trigger value="laboratory" className="profile-tab-btn">
+                    Лабораторные исследования
+                  </Tabs.Trigger>
+                  <Tabs.Trigger value="instrumental" className="profile-tab-btn">
+                    Инструментальные исследования
+                  </Tabs.Trigger>
+                  {onPrescription && (
+                    <button
+                      type="button"
+                      className="profile-tab-btn"
+                      onClick={() => onPrescription(patient)}
+                    >
+                      E-назначение
+                    </button>
+                  )}
+                </Tabs.List>
+
+                <Tabs.Content value="systems">
+                  <MedicalSystemSection
+                    systems={record?.systems || []}
+                    expandedSection={expandedSection}
+                    onToggleSection={onToggleSection}
+                    onFieldChange={onFieldChange}
+                    onSaveSection={onSaveSection}
+                    savingSectionKey={savingSectionKey}
+                  />
+                  <MedicalHistory
+                    logs={record?.changeLogs || []}
+                    historyOpen={historyOpen}
+                    onToggle={onToggleHistory}
+                  />
+                </Tabs.Content>
+
+                <Tabs.Content value="sickLeave">
+                  <SickLeaveSection
+                    sickLeaves={record?.sickLeaves || []}
+                    showHistory={showSickLeaveHistory}
+                    onToggleHistory={onToggleSickLeaveHistory}
+                    onAddDraft={onAddSickLeaveDraft}
+                    onFieldChange={onSickLeaveFieldChange}
+                    onSave={onSaveSickLeave}
+                    savingSectionKey={savingSectionKey}
+                  />
+                </Tabs.Content>
+
+                <Tabs.Content value="laboratory">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => navigate(`/doctor/patient/${patient?.id}/laboratory`)}
+                  >
+                    Добавить лаб анализы
+                  </button>
+                  <PatientLaboratorySection results={laboratoryResults} loading={loading} />
+                </Tabs.Content>
+
+                <Tabs.Content value="instrumental">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => navigate(`/doctor/patient/${patient?.id}/instrumental`)}
+                  >
+                    Добавить инструментальные исследования
+                  </button>
+                  <InstrumentalInvestigationsSection results={instrumentalResults} loading={loading} />
+                </Tabs.Content>
+              </Tabs>
             )}
+          </Modal.Body>
 
-            {tab === 'sickLeave' && (
-              <SickLeaveSection
-                sickLeaves={record?.sickLeaves || []}
-                showHistory={showSickLeaveHistory}
-                onToggleHistory={onToggleSickLeaveHistory}
-                onAddDraft={onAddSickLeaveDraft}
-                onFieldChange={onSickLeaveFieldChange}
-                onSave={onSaveSickLeave}
-                savingSectionKey={savingSectionKey}
-              />
-            )}
-
-            {tab === 'laboratory' && (
-              <>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => navigate(`/doctor/patient/${patient?.id}/laboratory`)}
-                >
-                  Добавить лаб анализы
-                </button>
-                <PatientLaboratorySection results={laboratoryResults} loading={loading} />
-              </>
-            )}
-
-            {tab === 'instrumental' && (
-              <>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => navigate(`/doctor/patient/${patient?.id}/instrumental`)}
-                >
-                  Добавить инструментальные исследования
-                </button>
-                <InstrumentalInvestigationsSection results={instrumentalResults} loading={loading} />
-              </>
-            )}
-          </div>
-        )}
-
-        <button type="button" className="btn btn-outline" onClick={onClose}>
-          Закрыть карту
-        </button>
-      </div>
-    </div>
+          <Modal.Footer>
+            <button type="button" className="btn btn-outline" onClick={onClose}>
+              Закрыть карту
+            </button>
+          </Modal.Footer>
+        </Modal.Content>
+      </Modal.Overlay>
+    </Modal>
   );
 }
