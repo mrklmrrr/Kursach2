@@ -50,11 +50,19 @@ export default function ChatRoom() {
   useEffect(() => {
     const loadMessages = async () => {
       try {
-        const [{ data: messagesData }, { data: chatsData = [] }] = await Promise.all([
-          chatApi.getMessages(id),
-          chatApi.getChats()
-        ]);
-        const currentChatMeta = chatsData.find((chat) => String(chat._id) === String(id)) || null;
+        const { data: messagesData } = await chatApi.getMessages(id);
+        
+        // Extract chat metadata from messages response
+        const currentChatMeta = {
+          _id: messagesData.consultationId || id,
+          doctorName: messagesData.doctorName,
+          specialty: messagesData.specialty,
+          // These will be filled later if needed from socket or user context
+          patientId: null,
+          patientName: null,
+          doctorId: null
+        };
+        
         setChatMeta(currentChatMeta);
         setMessages(Array.isArray(messagesData.messages) ? messagesData.messages : []);
       } catch (err) {
@@ -81,6 +89,8 @@ export default function ChatRoom() {
 
       socket.on('new-message', (message) => {
         setMessages((prev) => [...prev, message]);
+        // Invalidate chats cache to ensure list is updated
+        chatApi.invalidateChatsCache();
       });
     }
 

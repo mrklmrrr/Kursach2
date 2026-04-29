@@ -4,8 +4,9 @@ import { Avatar } from '@components/ui';
 
 const sidebarNav = [
   { id: 'requests', label: 'Заявки', icon: 'inbox', path: '/doctor/permit' },
-  { id: 'upcoming', label: 'Расписание', icon: 'calendar_today', path: '/doctor/schedule' },
+  { id: 'schedule', label: 'Расписание', icon: 'calendar_today', path: '/doctor/schedule' },
   { id: 'appointments', label: 'Записи', icon: 'event_note', path: '/doctor/appointments' },
+  { id: 'chats', label: 'Чаты', icon: 'chat', path: '/doctor/chats' },
   { id: 'patients', label: 'Пациенты', icon: 'people', path: '/doctor/patients' },
 ];
 

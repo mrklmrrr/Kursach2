@@ -12,6 +12,17 @@ export const useDoctorPanelData = () => {
   const [workingDays, setWorkingDays] = useState(['mon', 'tue', 'wed', 'thu', 'fri']);
   const [loading, setLoading] = useState(true);
 
+  const refreshAppointments = useCallback(async () => {
+    try {
+      const response = await appointmentApi.getDoctorAppointments();
+      const sortedAppointments = [...response.data].sort((a, b) => toDateTime(a) - toDateTime(b));
+      setAppointments(sortedAppointments);
+    } catch (err) {
+      setAppointments([]);
+      console.error('Ошибка загрузки записей врача:', err);
+    }
+  }, []);
+
   const loadData = useCallback(async () => {
     try {
       const [profileRes, pendingRes, patientsRes, appointmentsRes, workingHoursRes] = await Promise.allSettled([
@@ -80,6 +91,7 @@ export const useDoctorPanelData = () => {
     setWorkingDays,
     loading,
     setLoading,
-    loadData
+    loadData,
+    refreshAppointments
   };
 };

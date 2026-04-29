@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { appointmentApi } from '@services/appointmentApi';
 
 export const useAppointments = () => {
-  const [appointments, setAppointments] = useState([]);
   const [appointmentForm, setAppointmentForm] = useState({
     patientId: '',
     datetime: '',
@@ -25,7 +24,7 @@ export const useAppointments = () => {
     setAppointmentForm({ ...appointmentForm, [e.target.name]: e.target.value });
   };
 
-  const handleAssign = async (e, loadData) => {
+  const handleAssign = async (e, onSuccess) => {
     e.preventDefault();
     try {
       let payload = { ...appointmentForm };
@@ -36,10 +35,12 @@ export const useAppointments = () => {
         payload.time = time;
         delete payload.datetime;
       }
-      await appointmentApi.assignAppointment(payload);
+      const { data } = await appointmentApi.assignAppointment(payload);
       alert('Запись создана');
       resetForm();
-      loadData();
+      if (typeof onSuccess === 'function') {
+        onSuccess(data);
+      }
       return true;
     } catch (err) {
       alert(err.response?.data?.message || 'Ошибка создания записи');
@@ -47,12 +48,13 @@ export const useAppointments = () => {
     }
   };
 
-  const handleCancel = async (id, loadData) => {
+  const handleCancel = async (id, onSuccess) => {
     if (!confirm('Отменить эту запись?')) return;
     try {
       await appointmentApi.deleteAppointment(id);
-      setAppointments(prev => prev.filter(a => a._id !== id));
-      loadData();
+      if (typeof onSuccess === 'function') {
+        onSuccess(id);
+      }
       return true;
     } catch (err) {
       alert(err.response?.data?.message || 'Ошибка отмены');
@@ -61,8 +63,6 @@ export const useAppointments = () => {
   };
 
   return {
-    appointments,
-    setAppointments,
     appointmentForm,
     setAppointmentForm,
     handleFormChange,

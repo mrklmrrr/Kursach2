@@ -3,12 +3,12 @@ import { doctorPanelApi } from '@services/doctorPanelApi';
 import { appointmentApi } from '@services/appointmentApi';
 
 export const useConsultations = () => {
-  const [pendingConsultations, setPendingConsultations] = useState([]);
-
-  const handleAccept = async (id) => {
+  const handleAccept = async (id, onSuccess) => {
     try {
       await doctorPanelApi.acceptConsultation(id);
-      setPendingConsultations(prev => prev.filter(c => c._id !== id));
+      if (typeof onSuccess === 'function') {
+        onSuccess(id);
+      }
       return true;
     } catch (err) {
       alert(err.response?.data?.message || 'Ошибка');
@@ -16,10 +16,12 @@ export const useConsultations = () => {
     }
   };
 
-  const handleReject = async (id) => {
+  const handleReject = async (id, onSuccess) => {
     try {
       await doctorPanelApi.rejectConsultation(id);
-      setPendingConsultations(prev => prev.filter(c => c._id !== id));
+      if (typeof onSuccess === 'function') {
+        onSuccess(id);
+      }
       return true;
     } catch (err) {
       alert(err.response?.data?.message || 'Ошибка');
@@ -28,8 +30,6 @@ export const useConsultations = () => {
   };
 
   return {
-    pendingConsultations,
-    setPendingConsultations,
     handleAccept,
     handleReject
   };

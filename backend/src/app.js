@@ -85,20 +85,20 @@ async function startApp() {
   app.use(mongoSanitize());
   app.use(rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 600,
+    max: 2000,
     standardHeaders: true,
     legacyHeaders: false
   }));
   app.use(express.json());
   app.use('/api/auth/login', rateLimit({
     windowMs: 10 * 60 * 1000,
-    max: 20,
+    max: 300,
     standardHeaders: true,
     legacyHeaders: false
   }));
   app.use('/api/admin/login', rateLimit({
     windowMs: 10 * 60 * 1000,
-    max: 10,
+    max: 50,
     standardHeaders: true,
     legacyHeaders: false
   }));

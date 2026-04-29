@@ -20,7 +20,7 @@ const config = {
   publicApiBase: (process.env.PUBLIC_API_BASE || `http://localhost:${port}`).replace(/\/$/, ''),
   jwt: {
     secret: process.env.JWT_SECRET,
-    expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
     issuer: process.env.JWT_ISSUER || 'kursach-backend',
     audience: process.env.JWT_AUDIENCE || 'kursach-frontend'
   },
