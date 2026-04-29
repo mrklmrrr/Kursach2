@@ -297,3 +297,36 @@ body.dark .slot-chip.active {
   background: rgba(99, 102, 241, 0.2);
   color: #e0e7ff;
 }
+
+body.dark .doctor-profile-page {
+  background: #0b1220;
+}
+
+body.dark .online-status.online {
+  color: #4ade80;
+}
+
+body.dark .booking-sheet .booking-hint {
+  color: #9ca3af;
+}
+
+body.dark .booking-label {
+  color: #d1d5db;
+}
+
+body.dark .booking-muted {
+  color: #6b7280;
+}
+
+body.dark .date-pill-dow,
+body.dark .date-pill-mon {
+  color: #9ca3af;
+}
+
+body.dark .booking-toggle-custom {
+  color: #a5b4fc;
+}
+
+body.dark .not-found {
+  color: #9ca3af;
+}

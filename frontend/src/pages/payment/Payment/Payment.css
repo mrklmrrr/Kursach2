@@ -144,3 +144,12 @@ body.dark .card-form input {
   border-color: #4b5563;
   color: #f9fafb;
 }
+
+body.dark .price-big {
+  color: #818cf8;
+}
+
+body.dark .card-form input:focus {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}

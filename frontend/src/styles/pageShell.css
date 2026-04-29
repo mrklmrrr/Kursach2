@@ -50,3 +50,7 @@
   text-align: center;
   padding-top: 48px;
 }
+
+body.dark .page-shell {
+  color: #e2e8f0;
+}

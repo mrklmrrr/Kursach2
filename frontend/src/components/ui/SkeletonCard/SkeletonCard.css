@@ -17,3 +17,13 @@
   from { background-position: 200% 0; }
   to { background-position: -200% 0; }
 }
+
+body.dark .skeleton-card {
+  border-color: #334155;
+  background: #1f2937;
+}
+
+body.dark .skeleton-line {
+  background: linear-gradient(90deg, #334155, #475569, #334155);
+  background-size: 200% 100%;
+}

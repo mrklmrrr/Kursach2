@@ -440,3 +440,40 @@ body.dark .appointment-doctor-link:hover {
 body.dark .appointment-details-comment {
   border-top-color: #374151;
 }
+
+body.dark .health-tip-card {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .health-tip-card h4 {
+  color: #f9fafb;
+}
+
+body.dark .health-tip-card p {
+  color: #9ca3af;
+}
+
+body.dark .emergency-card {
+  background: linear-gradient(135deg, rgba(127, 29, 29, 0.4), rgba(153, 27, 27, 0.3));
+}
+
+body.dark .emergency-text h3 {
+  color: #fca5a5;
+}
+
+body.dark .emergency-text p {
+  color: #fecaca;
+}
+
+body.dark .arrow {
+  color: #fca5a5;
+}
+
+body.dark .upcoming-time {
+  color: #a5b4fc;
+}
+
+body.dark .highlight {
+  color: #4ade80;
+}

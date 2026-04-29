@@ -105,3 +105,43 @@
 .warning-block strong {
   color: #9b2c2c;
 }
+
+body.dark .emergency-page {
+  background-color: #0b1220;
+}
+
+body.dark .emergency-hero h1 {
+  color: #f1f5f9;
+}
+
+body.dark .emergency-subtitle {
+  color: #94a3b8;
+}
+
+body.dark .option-card {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .option-card:hover {
+  border-color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+body.dark .option-card h3 {
+  color: #f1f5f9;
+}
+
+body.dark .option-card p {
+  color: #94a3b8;
+}
+
+body.dark .warning-block {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-left-color: #ef4444;
+  color: #fca5a5;
+}
+
+body.dark .warning-block strong {
+  color: #fecaca;
+}

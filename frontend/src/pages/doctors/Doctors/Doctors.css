@@ -51,3 +51,7 @@ body.dark .filter-btn.active {
   background: #4f46e5;
   border-color: #4f46e5;
 }
+
+body.dark .doctors-page {
+  background: #0b1220;
+}

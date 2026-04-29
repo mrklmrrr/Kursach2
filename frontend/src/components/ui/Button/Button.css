@@ -64,3 +64,13 @@
   padding: 16px;
   font-size: 1.125rem;
 }
+
+body.dark .btn-outline {
+  border-color: #818cf8;
+  color: #818cf8;
+}
+
+body.dark .btn-outline:hover:not(:disabled) {
+  background: #818cf8;
+  color: #0f172a;
+}

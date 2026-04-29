@@ -29,3 +29,15 @@
 .toast-error {
   background: #dc2626;
 }
+
+body.dark .toast-info {
+  background: #475569;
+}
+
+body.dark .toast-success {
+  background: #059669;
+}
+
+body.dark .toast-error {
+  background: #b91c1c;
+}

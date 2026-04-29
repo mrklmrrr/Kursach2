@@ -166,6 +166,26 @@ body.dark .form-error {
   color: #fca5a5;
 }
 
+body.dark .checkbox-label {
+  color: #9ca3af;
+}
+
+body.dark .checkbox-label a {
+  color: #a5b4fc;
+}
+
+body.dark .auth-link {
+  color: #9ca3af;
+}
+
+body.dark .auth-link span {
+  color: #a5b4fc;
+}
+
+body.dark .field-error {
+  color: #fca5a5;
+}
+
 .register-content form {
   display: flex;
   flex-direction: column;

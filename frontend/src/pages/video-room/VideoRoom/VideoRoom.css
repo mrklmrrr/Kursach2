@@ -34,3 +34,12 @@
   font-weight: 700;
   color: #4f46e5;
 }
+
+body.dark .video-room-header {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .video-room-error {
+  color: #9ca3af;
+}

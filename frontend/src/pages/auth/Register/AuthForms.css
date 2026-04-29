@@ -80,3 +80,19 @@ body.dark .register-content select {
   border-color: #374151;
   color: #f9fafb;
 }
+
+body.dark .checkbox-label {
+  color: #9ca3af;
+}
+
+body.dark .checkbox-label a {
+  color: #a5b4fc;
+}
+
+body.dark .auth-link {
+  color: #9ca3af;
+}
+
+body.dark .auth-link span {
+  color: #a5b4fc;
+}

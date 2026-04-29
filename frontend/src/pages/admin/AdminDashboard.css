@@ -1,1 +1,5 @@
 /* Placeholder for AdminDashboard styles - can be shared with Admin.css */
+
+body.dark .admin-dashboard {
+  color: #e2e8f0;
+}

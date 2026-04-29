@@ -40,6 +40,52 @@ body.dark .prescription-item {
 body.dark .prescription-item ul {
   color: #d1d5db;
 }
+
+body.dark .profile-avatar-edit {
+  color: #a5b4fc;
+}
+
+body.dark .relatives-section .relative-card {
+  background: linear-gradient(135deg, #1f2937, #111827);
+  border-color: #374151;
+}
+
+body.dark .relative-card-meta {
+  color: #9ca3af;
+}
+
+body.dark .relative-card-notes {
+  border-top-color: #374151;
+  color: #d1d5db;
+}
+
+body.dark .relative-card-notes p {
+  color: #d1d5db;
+}
+
+body.dark .patient-lab-section-toggle:hover {
+  color: #f9fafb;
+}
+
+body.dark .patient-lab-show-more {
+  color: #60a5fa;
+}
+
+body.dark .patient-lab-show-more:hover {
+  color: #93c5fd;
+}
+
+body.dark .patient-lab-section-title {
+  color: #d1d5db;
+}
+
+body.dark .logout-row {
+  color: #f87171;
+}
+
+body.dark .prescription-date {
+  color: #9ca3af;
+}
 .profile-page {
   min-height: 100vh;
   display: flex;

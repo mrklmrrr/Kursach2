@@ -13,3 +13,7 @@
 .alert-success { background: #ecfdf3; border-color: #a7f3d0; color: #065f46; }
 .alert-error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
 .alert-info { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+
+body.dark .alert-success { background: #14532d; border-color: #22c55e; color: #86efac; }
+body.dark .alert-error { background: #7f1d1d; border-color: #ef4444; color: #fca5a5; }
+body.dark .alert-info { background: #1e3a5f; border-color: #3b82f6; color: #93c5fd; }

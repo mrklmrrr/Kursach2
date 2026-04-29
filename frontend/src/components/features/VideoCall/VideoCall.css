@@ -75,6 +75,8 @@
   border-radius: 20px;
   z-index: 10;
 }
+
+.reconnecting-banner {
   position: absolute;
   top: 16px;
   left: 50%;

@@ -341,3 +341,19 @@ body.dark .chat-room-video-btn {
 body.dark .chat-room-video-btn:hover {
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
 }
+
+body.dark .chat-room-page {
+  background: #0b1220;
+}
+
+body.dark .message-time {
+  color: #6b7280;
+}
+
+body.dark .chat-room-profile-modal h3 {
+  color: #f9fafb;
+}
+
+body.dark .chat-room-profile-modal p {
+  color: #9ca3af;
+}

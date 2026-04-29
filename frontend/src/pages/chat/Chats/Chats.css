@@ -123,3 +123,11 @@ body.dark .chat-doctor-name {
 body.dark .chat-last-message {
   color: #9ca3af;
 }
+
+body.dark .chats-page {
+  background: #0b1220;
+}
+
+body.dark .chat-time {
+  color: #6b7280;
+}

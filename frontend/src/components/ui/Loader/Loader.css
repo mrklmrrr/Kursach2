@@ -22,6 +22,11 @@
   to { transform: rotate(360deg); }
 }
 
+body.dark .loader-spinner {
+  border-color: #374151;
+  border-top-color: #6366f1;
+}
+
 .loading-dots {
   display: flex;
   gap: 4px;

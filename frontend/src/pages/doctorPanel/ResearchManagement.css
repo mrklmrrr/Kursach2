@@ -1301,3 +1301,495 @@
   padding: 4px 8px;
   font-size: 12px;
 }
+
+/* Dark theme */
+body.dark .research-header {
+  border-color: #374151;
+}
+
+body.dark .research-header h2 {
+  color: #f1f5f9;
+}
+
+body.dark .btn-back-compact {
+  background: #1f2937;
+  border-color: #374151;
+  color: #9ca3af;
+}
+
+body.dark .btn-back-compact .material-icons {
+  color: #9ca3af;
+}
+
+body.dark .btn-back-compact:hover {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f1f5f9;
+}
+
+body.dark .btn-back-compact:hover .material-icons {
+  color: #f1f5f9;
+}
+
+body.dark .checkbox-label {
+  color: #d1d5db;
+}
+
+body.dark .research-form {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .research-form h3 {
+  color: #f1f5f9;
+}
+
+body.dark .form-group label {
+  color: #d1d5db;
+}
+
+body.dark .form-group input,
+body.dark .form-group select,
+body.dark .form-group textarea {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f1f5f9;
+}
+
+body.dark .required {
+  color: #f87171;
+}
+
+body.dark .research-template-fields,
+body.dark .custom-results-section {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+body.dark .research-template-fields h4,
+body.dark .custom-results-section h4 {
+  color: #f1f5f9;
+}
+
+body.dark .custom-result-row {
+  background: #1f2937;
+}
+
+body.dark .custom-result-row input {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f1f5f9;
+}
+
+body.dark .research-results h3 {
+  color: #f1f5f9;
+  border-color: #374151;
+}
+
+body.dark .research-result-card {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .result-header h4 {
+  color: #f1f5f9;
+}
+
+body.dark .result-date,
+body.dark .result-doctor {
+  color: #9ca3af;
+}
+
+body.dark .result-item {
+  background: #374151;
+}
+
+body.dark .result-item.custom {
+  background: #422006;
+  border-color: #78350f;
+}
+
+body.dark .result-name {
+  color: #d1d5db;
+}
+
+body.dark .result-value {
+  color: #60a5fa;
+}
+
+body.dark .loading-spinner {
+  color: #9ca3af;
+}
+
+body.dark .lab-analysis-search {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .lab-analysis-search label {
+  color: #d1d5db;
+}
+
+body.dark .lab-analysis-search-input {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f1f5f9;
+}
+
+body.dark .lab-empty-filter {
+  color: #6b7280;
+}
+
+body.dark .lab-study-overall {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .lab-study-overall h4 {
+  color: #d1d5db;
+}
+
+body.dark .lab-study-note {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f1f5f9;
+}
+
+body.dark .lab-result-overall {
+  background: #1f2937;
+  border-left-color: #3b82f6;
+}
+
+body.dark .lab-result-note {
+  color: #d1d5db;
+}
+
+body.dark .lab-help {
+  color: #9ca3af;
+}
+
+body.dark .lab-templates-table-wrap {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .lab-templates-table thead th {
+  background: #374151;
+  color: #d1d5db;
+  border-color: #4b5563;
+}
+
+body.dark .lab-templates-table tbody tr {
+  border-color: #374151;
+}
+
+body.dark .lab-templates-table tbody tr:nth-child(even) {
+  background: #1f2937;
+}
+
+body.dark .lab-templates-table tbody tr:hover {
+  background: #374151;
+}
+
+body.dark .lab-templates-link-name {
+  color: #93c5fd;
+}
+
+body.dark .lab-templates-td-preview {
+  color: #d1d5db;
+}
+
+body.dark .lab-templates-muted {
+  color: #6b7280;
+}
+
+body.dark .lab-templates-sys {
+  color: #9ca3af;
+}
+
+body.dark .btn-danger-text {
+  color: #fca5a5;
+  border-color: #7f1d1d;
+}
+
+body.dark .btn-danger-text:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fecaca;
+}
+
+body.dark .lab-grid-scroll {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .lab-datagrid-shell {
+  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+  border-color: #374151;
+}
+
+body.dark .lab-dg-toolbar {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .lab-dg-toolbar-title {
+  color: #d1d5db;
+}
+
+body.dark .lab-dg-toolbar-divider {
+  background: #4b5563;
+}
+
+body.dark .lab-dg-tool {
+  background: #374151;
+  border-color: #4b5563;
+  color: #d1d5db;
+}
+
+body.dark .lab-dg-tool--add:hover:not(:disabled) {
+  background: #064e3b;
+  border-color: #059669;
+}
+
+body.dark .lab-dg-tool--remove:hover:not(:disabled) {
+  background: #7f1d1d;
+  border-color: #ef4444;
+}
+
+body.dark .lab-grid-scroll--datagrid {
+  background: #1f2937;
+}
+
+body.dark .lab-grid-table th,
+body.dark .lab-grid-table td {
+  border-color: #374151;
+}
+
+body.dark .lab-datagrid thead .lab-dg-col-title {
+  background: linear-gradient(180deg, #374151 0%, #1f2937 100%);
+  color: #f1f5f9;
+  border-color: #4b5563;
+}
+
+body.dark .lab-dg-subhead {
+  background: #1f2937;
+  color: #9ca3af;
+  border-color: #4b5563;
+}
+
+body.dark .lab-dg-th-unit {
+  color: #9ca3af;
+}
+
+body.dark .lab-template-units-label {
+  color: #9ca3af;
+}
+
+body.dark .lab-corner {
+  background: #374151;
+  color: #d1d5db;
+}
+
+body.dark .lab-sticky-col {
+  background: #1f2937;
+  border-color: #4b5563 !important;
+}
+
+body.dark .lab-dg-row-alt .lab-sticky-col {
+  background: #374151;
+}
+
+body.dark .lab-dg-row-alt td {
+  background: #1f2937;
+}
+
+body.dark .lab-row-label {
+  color: #f1f5f9;
+}
+
+body.dark .lab-header-input {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f1f5f9;
+}
+
+body.dark .lab-template-placeholder {
+  background: #1f2937;
+  color: #6b7280;
+}
+
+body.dark .lab-template-cell {
+  background: #374151;
+}
+
+body.dark .lab-template-cell-input {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f1f5f9;
+}
+
+body.dark .lab-dg-td {
+  background: #374151;
+}
+
+body.dark .lab-dg-input,
+body.dark .lab-dg-textarea,
+body.dark .lab-dg-select {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f1f5f9;
+}
+
+body.dark .lab-dg-td[data-status='deviation'] {
+  background: #422006;
+}
+
+body.dark .lab-dg-td[data-status='severe'] {
+  background: #450a0a;
+}
+
+body.dark .lab-history-dg-val {
+  color: #93c5fd;
+}
+
+body.dark .lab-history-dg-comment {
+  color: #9ca3af;
+}
+
+body.dark .lab-history-value {
+  color: #93c5fd;
+}
+
+body.dark .lab-history-comment {
+  color: #9ca3af;
+}
+
+body.dark .lab-status-badge.st-normal {
+  background: #14532d;
+  color: #86efac;
+}
+
+body.dark .lab-status-badge.st-deviation {
+  background: #78350f;
+  color: #fcd34d;
+}
+
+body.dark .lab-status-badge.st-severe {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+
+body.dark .result-header--clickable:hover {
+  background-color: #374151;
+}
+
+body.dark .result-expand-icon {
+  color: #9ca3af;
+}
+
+body.dark .result-expand-icon.expanded {
+  color: #60a5fa;
+}
+
+body.dark .result-header-info h4 {
+  color: #f1f5f9;
+}
+
+body.dark .result-header-info .result-date {
+  color: #9ca3af;
+}
+
+body.dark .lab-templates-toggle {
+  background: #1f2937;
+  border-color: #374151 !important;
+  color: #d1d5db;
+}
+
+body.dark .lab-templates-toggle:hover {
+  background: #374151;
+  border-color: #4b5563 !important;
+}
+
+body.dark .lab-expand-icon {
+  color: #9ca3af;
+}
+
+body.dark .lab-expand-icon.expanded {
+  color: #60a5fa;
+}
+
+body.dark .lab-templates-section h4 {
+  color: #d1d5db;
+}
+
+body.dark .lab-template-card {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .lab-template-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.dark .lab-template-header h5 {
+  color: #f1f5f9;
+}
+
+body.dark .lab-template-info {
+  color: #9ca3af;
+}
+
+body.dark .lab-autocomplete-input {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f1f5f9;
+}
+
+body.dark .lab-autocomplete-dropdown {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .lab-autocomplete-item {
+  color: #d1d5db;
+  border-color: #374151;
+}
+
+body.dark .lab-autocomplete-item:hover {
+  background-color: #374151;
+  color: #60a5fa;
+}
+
+body.dark .lab-autocomplete-item.selected {
+  background-color: #312e81;
+  color: #a5b4fc;
+}
+
+body.dark .lab-grid-badge {
+  background: #374151;
+  color: #9ca3af;
+}
+
+body.dark .fields-template-builder {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .fields-template-builder h4 {
+  color: #d1d5db;
+}
+
+body.dark .field-template-row {
+  background: #374151;
+}
+
+body.dark .field-template-row input,
+body.dark .field-template-row select {
+  background: #1f2937;
+  border-color: #4b5563;
+  color: #f1f5f9;
+}
+
+body.dark .field-template-row .checkbox-label {
+  color: #d1d5db;
+}
