@@ -1,0 +1,415 @@
+/* ChatRoom — full screen, no BottomNav */
+
+.chat-room-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Header */
+.chat-room-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+  z-index: 10;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  border-radius: 0px 0px 20px 20px;
+}
+
+.chat-room-header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+button.chat-room-header-info {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.chat-room-video-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.2s;
+  flex-shrink: 0;
+}
+
+.chat-room-video-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+
+.chat-room-video-btn:active {
+  transform: scale(0.95);
+}
+
+.chat-room-video-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.chat-room-doctor- name {
+  font- weight: 600;
+  font- size: 1rem;
+  color: #1f2937;
+  white- space: nowrap;
+  overflow: hidden;
+  text- overflow: ellipsis;
+}
+
+.chat- room- doctor- spec {
+  font- size: 0.8rem;
+  color: #6b7280;
+}
+
+/* Main chat area — fills all remaining space */
+.chat- room- container {
+  flex: 1;
+  display: flex;
+  flex- direction: column;
+  min- height: 0;
+  background: #f0f2f5;
+}
+
+/* Messages scroll area */
+.chat- room- messages {
+  flex: 1;
+  padding: 16px 20px 16px;
+  overflow- y: auto;
+  display: flex;
+  flex- direction: column;
+  gap: 12px;
+}
+
+@media (min- width: 768px) {
+  .chat- room- messages {
+    padding- left: 24px;
+    padding- right: 24px;
+  }
+}
+
+@media (min- width: 1 200px) {
+  .chat- room- messages {
+    padding- left: 32px;
+    padding- right: 32px;
+  }
+}
+
+. no- messages {
+  text- align: center;
+  color: #9ca3af;
+  margin- top: 40vh;
+  font- size: 0.95rem;
+  line- height: 1.6;
+}
+
+/* Input area — fixed at bottom, full width */
+.chat- room- input- area {
+  flex- shrink: 0;
+  width: 100%;
+  padding: 12px 16px;
+  padding- bottom: max(12px, env(safe- area- inset- bottom));
+  background: #ffffff;
+  border- top: 1px solid #e5e7eb;
+  display: flex;
+  align- items: center;
+  gap: 10px;
+  border- radius: 20px 20px 0 0;
+}
+
+.chat- room- input- area input {
+  flex: 1;
+  padding: 12px 18px;
+  border: 1px solid #e5e7eb;
+  border- radius: 24px;
+  font- size: 16px;
+  outline: none;
+  background: #f9fafb;
+  transition: border- color 0.2s, background 0.2s;
+}
+
+.chat- room- input- area input: focus {
+  border- color: #4f46e5;
+  background: #ffffff;
+}
+
+.chat- room- send- btn {
+  width: 48px;
+  height: 48px;
+  border: none;
+  background: linear- gradient(135deg, #4f46e5, #7c3aed);
+  color: white;
+  border- radius: 50%;
+  display: flex;
+  align- items: center;
+  justify- content: center;
+  cursor: pointer;
+  transition: transform 0.15s, box- shadow 0.2s;
+  flex- shrink: 0;
+}
+
+.chat- room- attach- btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #4b5563;
+  border- radius: 50%;
+  display: flex;
+  align- items: center;
+  justify- content: center;
+  cursor: pointer;
+  flex- shrink: 0;
+}
+
+.chat- room- send- btn: hover {
+  transform: scale(1.05);
+  box- shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+
+.chat- room- send- btn: active {
+  transform: scale(0.95);
+}
+
+/* === Message bubbles === */
+
+.message- wrapper {
+  display: flex;
+  align- items: flex- end;
+  gap: 8px;
+  max- width: 82%;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message- wrapper. user {
+  align- self: flex- end;
+  flex- direction: row- reverse;
+}
+
+.message- wrapper. doctor {
+  align- self: flex- start;
+}
+
+.message- bubble {
+  padding: 10px 16px;
+  border- radius: 20px;
+  font- size: 15px;
+  line- height: 1.45;
+  max- width: 100%;
+  word- wrap: break- word;
+}
+
+.message- wrapper. user . message- bubble {
+  background: linear- gradient(135deg, #4f46e5, #6366f1);
+  color: white;
+  border- bottom- right- radius: 6px;
+  box- shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+}
+
+.message- wrapper. doctor . message- bubble {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border- bottom- left- radius: 6px;
+  box- shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.message- time {
+  font- size: 11px;
+  color: #9ca3af;
+  margin- top: 4px;
+  padding: 0 4px;
+}
+
+.chat- media- preview {
+  max- width: 220px;
+  max- height: 220px;
+  border- radius: 12px;
+  display: block;
+  margin- bottom: 8px;
+}
+
+.chat- room- profile- modal- overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align- items: center;
+  justify- content: center;
+  z- index: 1 000;
+  padding: 16px;
+}
+
+.chat- room- profile- modal- overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align- items: center;
+  justify- content: center;
+  z- index: 1 000;
+  padding: 16px;
+}
+
+.chat- room- profile- modal {
+  width: min(420px, 100%);
+  background: #fff;
+  border- radius: 16px;
+  box- shadow: 0 20px 60px rgba(2, 6, 23, 0.25);
+  padding: 20px;
+}
+
+.chat- room- profile- modal h3 {
+  margin: 0 0 12px;
+}
+
+.chat- room- profile- modal p {
+  margin: 0 0 8px;
+}
+
+.message- wrapper. user . message- time {
+  text- align: right;
+}
+
+/* === Dark mode === */
+
+body. dark . chat- room- header {
+  background: #1f2937;
+  border- color: #374151;
+}
+
+body. dark . chat- room- doctor- name {
+  color: #f9fafb;
+}
+
+body. dark . chat- room- doctor- spec {
+  color: #9ca3af;
+}
+
+body. dark . chat- room- container {
+  background: #11 18 27;
+}
+
+body. dark . no- messages {
+  color: #6b7280;
+}
+
+body. dark . chat- room- input- area {
+  background: #1f2937;
+  border- color: #374151;
+}
+
+body. dark . chat- room- input- area input {
+  background: #374151;
+  border- color: #4b5563;
+  color: #f9fafb;
+}
+
+body. dark . chat- room- attach- btn {
+  background: #374151;
+  border- color: #4b5563;
+  color: #f9fafb;
+}
+
+body. dark . message- wrapper. doctor . message- bubble {
+  background: #374151;
+  border- color: #4b5563;
+  color: #f9fafb;
+}
+
+body. dark . chat- room- profile- modal {
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+body. dark . chat- room- video- btn {
+  background: linear- gradient(135deg, #6366f1, #8b5cf6);
+}
+
+body. dark . chat- room- video- btn: hover {
+  box- shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+body. dark . chat- room- page {
+  background: #0b12 20;
+}
+
+body. dark . message- time {
+  color: #6b7280;
+}
+
+body. dark . chat- room- profile- modal h3 {
+  color: #f9fafb;
+}
+
+body. dark . chat- room- profile- modal p {
+  color: #9ca3af;
+}
+
+/* =========================================================
+   Desktop: ChatRoom inside doctor panel layout
+   ========================================================= */
+@media (min- width: 10 24px) {
+  . chat- room- page. doctor- panel- page {
+    margin- left: 260px;
+    width: calc(100% - 260px);
+    height: 100vh;
+    flex- direction: column;
+  }
+
+  . chat- room- page. doctor- panel- page . chat- room- header {
+    width: 100%;
+    max- width: none;
+    border- radius: 0;
+    padding: 16px 32px;
+  }
+
+  . chat- room- page. doctor- panel- page . chat- room- container,
+  . chat- room- page. doctor- panel- page . chat- room- container. page- shell {
+    min- height: 94%;
+    max- width: none;
+    margin: 0;
+  }
+
+  . chat- room- page. doctor- panel- page . chat- room- container. page- shell-- no- bottom- nav {
+    padding: 0;
+  }
+
+  . chat- room- page. doctor- panel- page . chat- room- input- area {
+    width: 100%;
+    max- width: none;
+    border- radius: 0;
+    padding: 16px 32px;
+  }
+
+  . chat- room- page. doctor- panel- page . chat- room- messages {
+    max- width: none;
+    width: 100%;
+    padding: 24px 32px;
+  }
+}

@@ -53,6 +53,8 @@ export const routes = {
   ],
   doctorOnly: [
     { path: '/doctor/:tab?', element: <DoctorPanel /> },
+    { path: '/doctor/chats/:chatId?', element: <Chats inDoctorPanel={true} /> },
+    { path: '/doctor/profile', element: <Profile /> },
     { path: '/doctor/patient/:patientId/laboratory', element: <LaboratoryResearch /> },
     { path: '/doctor/patient/:patientId/instrumental', element: <InstrumentalResearch /> }
   ]

@@ -1,20 +1,13 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { doctorPanelApi } from '@services/doctorPanelApi';
-import { appointmentApi } from '@services/appointmentApi';
 import { useAuth } from '@hooks/useAuth';
 import { AppHeader, BottomNav } from '@components/layout';
-
-import {
-  useDoctorPanelData,
-  useMedicalRecordModal,
-  useConsultations,
-  useCommentModal,
-  useAppointments
-} from '@hooks/doctorPanel';
+import { useDoctorPanelData } from '@hooks/doctorPanel';
+import { useMedicalRecordModal } from './hooks/useMedicalRecordModal';
 import { useToast } from '@contexts/ToastProvider/useToast';
-
-// Components
+import Chats from '../chat/Chats/Chats';
+import Profile from '../profile/Profile/Profile';
 import {
   ProfileHeader,
   DoctorPanelStats,
@@ -25,139 +18,47 @@ import {
   PatientsTab
 } from './components';
 import DoctorSidebar from './components/DoctorSidebar/DoctorSidebar';
-import ChatsPage from '../chat/Chats/Chats';
-
+import { SkeletonStats, SkeletonConsultationList, SkeletonAppointmentsList, SkeletonCircle, SkeletonBlock } from '@components/ui/SkeletonLoader/SkeletonLoader';
 import './DoctorPanel.css';
 
-/** Маппинг URL-segment → внутреннее имя таба */
 const TAB_MAP = {
   permit: 'requests',
   schedule: 'upcoming',
   appointments: 'appointments',
   chats: 'chats',
+  profile: 'profile',
   patients: 'patients',
 };
-
 const VALID_TABS = Object.keys(TAB_MAP);
 
-export default function DoctorPanel() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { tab: urlTab } = useParams();
-  const { user } = useAuth();
-  const { showToast } = useToast();
-
-  // Data management hooks
-  const panelData = useDoctorPanelData();
-  const medicalRecord = useMedicalRecordModal();
-  const { openMedicalRecord } = medicalRecord;
-  const consultations = useConsultations();
-  const commentModal = useCommentModal();
-  const appointments = useAppointments();
-
-  const {
-    loadData,
-    refreshAppointments,
-    pendingConsultations,
-    setPendingConsultations,
-    appointments: panelAppointments,
-    setAppointments,
-    patients,
-    workingHours: panelWorkingHours,
-    setWorkingHours,
-    workingDays: panelWorkingDays,
-    setWorkingDays,
-    loading,
-    profile,
-    setProfile,
-  } = panelData;
-
-  // Определяем активный таб из URL; невалидный → редирект
-  const activeTab = TAB_MAP[urlTab] || null;
-
-  // Local state
-  const [selectedPatient, setSelectedPatient] = React.useState(null);
-  const [prescriptionPatient, setPrescriptionPatient] = React.useState(null);
-
-  // Редирект невалидного или пустого tab → /doctor/permit
-  useEffect(() => {
-    if (!urlTab || !VALID_TABS.includes(urlTab)) {
-      navigate('/doctor/permit', { replace: true });
-    }
-  }, [urlTab, navigate]);
-
-  // Initialize data on mount (одноразово)
-  useEffect(() => {
-    if (user?.role !== 'doctor') {
-      navigate('/home');
-      return;
-    }
-    loadData();
-  }, [user?.role, navigate, loadData]);
-
-  // Memoized values
-  const patientById = useMemo(() => {
-    const map = new Map();
-    patients.forEach((patient) => {
-      map.set(String(patient.id), patient);
-    });
-    return map;
-  }, [patients]);
-
-  // Автооткрытие медкарты при возврате из lab/instrumental
-  const lastAutoOpenedPatientIdRef = React.useRef(null);
-  useEffect(() => {
-    const targetId = location.state?.openMedicalRecordForPatientId;
-
-    if (!targetId) {
-      lastAutoOpenedPatientIdRef.current = null;
-      return;
-    }
-
-    if (loading) return;
-
-    const normalizedId = String(targetId);
-    if (lastAutoOpenedPatientIdRef.current === normalizedId) return;
-
-    const patient = patientById.get(normalizedId);
-    if (!patient) return;
-
-    lastAutoOpenedPatientIdRef.current = normalizedId;
-    openMedicalRecord(patient);
-    navigate('/doctor/permit', { replace: true, state: {} });
-  }, [location.state?.openMedicalRecordForPatientId, loading, patientById, openMedicalRecord, navigate]);
-
-  // Вычисляемые данные (только когда нужны)
-  const activeAppointmentsCount = useMemo(
-    () => panelAppointments?.filter((a) => a.status === 'scheduled' || a.status === 'confirmed').length ?? 0,
-    [panelAppointments]
-  );
-
-  const upcomingSchedule = useMemo(() => {
-    if (!panelAppointments?.length) return [];
-    const now = new Date();
-    return panelAppointments
-      .filter((item) => item.status === 'scheduled' || item.status === 'confirmed')
-      .map((item) => {
-        const dateTime = new Date(`${item.date}T${item.time}:00`);
-        return { ...item, dateTime };
-      })
-      .filter((item) => !Number.isNaN(item.dateTime.getTime()) && item.dateTime >= now)
-      .sort((a, b) => a.dateTime - b.dateTime);
-  }, [panelAppointments]);
-
-  // Мобильные табы (memoized)
-  const mobileTabs = useMemo(() => [
-    { id: 'requests', label: 'Заявки', path: 'permit', badge: pendingConsultations?.length ?? 0 },
-    { id: 'upcoming', label: 'Расписание', path: 'schedule', badge: upcomingSchedule.length },
-    { id: 'appointments', label: 'Записи', path: 'appointments', badge: activeAppointmentsCount },
-    { id: 'chats', label: 'Чаты', path: 'chats', badge: null },
-    { id: 'patients', label: 'Пациенты', path: 'patients', badge: null },
-  ], [pendingConsultations, upcomingSchedule.length, activeAppointmentsCount]);
+const DoctorContent = ({ activeTab, profile, onOpenPatientProfile, panelData, toast }) => {
+  if (activeTab === 'chats') {
+    return <Chats inDoctorPanel={true} />;
+  }
+  if (activeTab === 'profile') {
+    return <Profile />;
+  }
+  if (panelData.loading) {
+    return (
+      <div className="page-shell page-shell--flex-grow">
+        <div className="profile-header">
+          <SkeletonCircle size="70px" />
+          <div style={{ flex: 1, marginLeft: '16px' }}>
+            <SkeletonBlock width="200px" height="22px" radius="10px" />
+            <SkeletonBlock width="140px" height="16px" radius="8px" />
+          </div>
+          <SkeletonBlock width="110px" height="40px" radius="12px" />
+        </div>
+        <SkeletonStats />
+        <SkeletonConsultationList count={2} />
+        <SkeletonAppointmentsList count={2} />
+      </div>
+    );
+  }
 
   const mergeAppointment = useCallback((appointment) => {
     if (!appointment?._id) return;
-    setAppointments((prev) => {
+    panelData.setAppointments((prev) => {
       const exists = prev.some((item) => item._id === appointment._id);
       const next = exists
         ? prev.map((item) => (item._id === appointment._id ? appointment : item))
@@ -168,66 +69,140 @@ export default function DoctorPanel() {
         return ad - bd;
       });
     });
-  }, [setAppointments]);
+  }, [panelData]);
 
   const removeAppointment = useCallback((appointmentId) => {
-    setAppointments((prev) => prev.filter((item) => item._id !== appointmentId));
-  }, [setAppointments]);
+    panelData.setAppointments((prev) => prev.filter((item) => item._id !== appointmentId));
+  }, [panelData]);
 
-  // Handlers
   const handleToggleOnline = async () => {
     try {
       await doctorPanelApi.toggleOnline(!profile?.isOnline);
       const next = !profile?.isOnline;
-      setProfile({ ...profile, isOnline: next });
-      showToast(next ? 'Вы в сети — пациенты видят вас онлайн' : 'Вы офлайн', 'success');
+      toast(next ? 'Вы в сети — пациенты видят вас онлайн' : 'Вы офлайн', 'success');
     } catch (err) {
-      showToast(err.message || 'Не удалось изменить статус', 'error');
+      toast(err.message || 'Не удалось изменить статус', 'error');
     }
   };
 
-  const handleOpenPatientProfile = (patientId, fallbackName) => {
-    const patient = patientById.get(String(patientId));
-    setSelectedPatient(patient || {
-      id: patientId,
-      name: fallbackName || 'Пациент',
-      phone: '—',
-      birthDate: '',
-      consultationCount: 0
-    });
-  };
+  return (
+    <div className="page-shell page-shell--flex-grow">
+      <ProfileHeader profile={profile} isOnline={profile?.isOnline} onToggleOnline={handleToggleOnline} />
+      <DoctorPanelStats
+        pendingConsultationsCount={panelData.pendingConsultations?.length ?? 0}
+        upcomingScheduleCount={panelData.upcomingSchedule?.length ?? 0}
+        activeAppointmentsCount={panelData.activeAppointmentsCount}
+      />
 
-  const handleOpenPatientMedicalRecord = (patient) => {
-    if (patient && (patient.id || patient._id)) {
-      openMedicalRecord(patient);
+      {activeTab === 'requests' && (
+        <RequestsTab
+          consultations={panelData.pendingConsultations}
+          onAccept={(id) => panelData.handleAcceptConsultation?.(id)}
+          onReject={(id) => panelData.handleRejectConsultation?.(id)}
+        />
+      )}
+
+      {activeTab === 'upcoming' && (
+        <UpcomingTab
+          schedule={panelData.upcomingSchedule}
+          onSelectPatient={(patientId, fallbackName) => {
+            const pat = panelData.patientById?.get(String(patientId));
+            onOpenPatientProfile(patientId, fallbackName || (pat ? pat.name : 'Пациент'));
+          }}
+        />
+      )}
+
+      {activeTab === 'appointments' && (
+        <AppointmentsTab
+          appointmentForm={panelData.appointmentForm || {}}
+          patients={panelData.patients}
+          workingHours={panelData.workingHours}
+          workingDays={panelData.workingDays}
+          appointments={panelData.appointments}
+          onFormChange={panelData.handleFormChange || (() => {})}
+          onAssign={(e) => panelData.handleAssignAppointment?.(e)}
+          onSaveWorkingHours={panelData.handleSaveWorkingHours}
+          onToggleDay={(day) => panelData.setWorkingDays?.((prev) =>
+            prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+          )}
+          onSetWorkingHours={panelData.setWorkingHours}
+          onCancelAppointment={(id) => removeAppointment(id)}
+          onOpenCommentModal={panelData.openCommentModal || (() => {})}
+        />
+      )}
+
+       {activeTab === 'patients' && (
+         <PatientsTab
+           patients={panelData.patients}
+           onSelectPatient={onOpenPatientProfile}
+         />
+       )}
+    </div>
+  );
+};
+
+export default function DoctorPanel() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { tab: urlTab } = useParams();
+  const { user } = useAuth();
+  const { showToast } = useToast();
+  const panelData = useDoctorPanelData();
+  const medicalRecordModal = useMedicalRecordModal();
+
+  const [selectedPatient, setSelectedPatient] = React.useState(null);
+  const [prescriptionPatient, setPrescriptionPatient] = React.useState(null);
+  const profile = panelData.profile;
+
+  const currentTab = useMemo(() => {
+    const path = location.pathname;
+    if (path.startsWith('/doctor/chats')) return 'chats';
+    if (path.startsWith('/doctor/profile')) return 'profile';
+    if (urlTab && VALID_TABS.includes(urlTab)) return TAB_MAP[urlTab];
+    return 'requests';
+  }, [urlTab, location.pathname]);
+
+  useEffect(() => {
+    if (urlTab && !VALID_TABS.includes(urlTab) && location.pathname.startsWith('/doctor/')) {
+      navigate('/doctor/permit', { replace: true });
     }
-  };
+  }, [urlTab, navigate, location.pathname]);
 
-  const handleSaveWorkingHours = async () => {
-    try {
-      await appointmentApi.updateWorkingHours({
-        workingHours: panelWorkingHours,
-        workingDays: panelWorkingDays,
-      });
-      return { success: true, message: 'Рабочее время сохранено' };
-    } catch (err) {
-      return {
-        success: false,
-        message: err.response?.data?.message || 'Ошибка сохранения',
-      };
+  useEffect(() => {
+    if (user?.role !== 'doctor') {
+      navigate('/home');
+      return;
     }
-  };
+    if (!panelData.profile && !panelData.hasLoaded) {
+      panelData.loadData();
+    }
+  }, [user?.role, navigate, panelData]);
 
-  if (loading) {
-    return (
-      <div className="doctor-panel-page">
-        <DoctorSidebar profile={profile} />
-        <div className="page-shell page-shell--flex-grow">
-          <div className="loading-spinner">Загрузка...</div>
-        </div>
-        <BottomNav />
-      </div>
-    );
+   const handleOpenPatientProfile = (patientId, fallbackName) => {
+     let patient = panelData.patientById?.get(String(patientId));
+     if (!patient) {
+       patient = panelData.patients.find(p => String(p.id) === String(patientId));
+     }
+     if (!patient) {
+       patient = {
+         id: patientId,
+         name: fallbackName || 'Пациент',
+         phone: '—',
+         birthDate: '',
+         consultationCount: 0
+       };
+     }
+     setSelectedPatient(patient);
+   };
+
+    const handleOpenPatientMedicalRecord = (patient) => {
+      if (patient) {
+        medicalRecordModal.openMedicalRecord(patient);
+      }
+    };
+
+  if (user?.role !== 'doctor') {
+    return null;
   }
 
   return (
@@ -235,140 +210,85 @@ export default function DoctorPanel() {
       <DoctorSidebar profile={profile} />
       <AppHeader title="Кабинет врача" />
       <div className="page-shell page-shell--flex-grow">
-        {/* Profile Header */}
-        <ProfileHeader
-          profile={profile}
-          isOnline={profile?.isOnline}
-          onToggleOnline={handleToggleOnline}
-        />
-
-        {/* Stats Cards */}
-        <DoctorPanelStats
-          pendingConsultationsCount={pendingConsultations?.length ?? 0}
-          upcomingScheduleCount={upcomingSchedule.length}
-          activeAppointmentsCount={activeAppointmentsCount}
-        />
-
-        {/* Mobile Tabs Navigation */}
         <div className="doctor-tabs">
-          {mobileTabs.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              className={`d-tab ${activeTab === t.id ? 'active' : ''}`}
-              onClick={() => navigate(`/doctor/${t.path}`)}
-            >
-              {t.label}
-              {t.badge > 0 && <span className="badge">{t.badge}</span>}
-            </button>
-          ))}
+          <button
+            type="button"
+            className={`d-tab ${currentTab === 'requests' ? 'active' : ''}`}
+            onClick={() => navigate('/doctor/permit')}
+          >
+            Заявки
+            {(panelData.pendingConsultations?.length ?? 0) > 0 && (
+              <span className="badge">{panelData.pendingConsultations?.length}</span>
+            )}
+          </button>
+          <button
+            type="button"
+            className={`d-tab ${currentTab === 'upcoming' ? 'active' : ''}`}
+            onClick={() => navigate('/doctor/schedule')}
+          >
+            Расписание
+            {panelData.upcomingSchedule?.length > 0 && (
+              <span className="badge">{panelData.upcomingSchedule.length}</span>
+            )}
+          </button>
+          <button
+            type="button"
+            className={`d-tab ${currentTab === 'appointments' ? 'active' : ''}`}
+            onClick={() => navigate('/doctor/appointments')}
+          >
+            Записи
+            {panelData.activeAppointmentsCount > 0 && (
+              <span className="badge">{panelData.activeAppointmentsCount}</span>
+            )}
+          </button>
+          <button
+            type="button"
+            className={`d-tab ${currentTab === 'patients' ? 'active' : ''}`}
+            onClick={() => navigate('/doctor/patients')}
+          >
+            Пациенты
+          </button>
         </div>
 
-        {/* Content by route */}
-        {activeTab === 'requests' && (
-          <RequestsTab
-            consultations={pendingConsultations}
-            onAccept={(id) => consultations.handleAccept(id, () => {
-              setPendingConsultations((prev) => prev.filter((item) => item._id !== id));
-            })}
-            onReject={(id) => consultations.handleReject(id, () => {
-              setPendingConsultations((prev) => prev.filter((item) => item._id !== id));
-            })}
-          />
-        )}
+        <DoctorContent
+          activeTab={currentTab}
+          profile={profile}
+          onOpenPatientProfile={handleOpenPatientProfile}
+          panelData={panelData}
+          toast={showToast}
+        />
 
-        {activeTab === 'upcoming' && (
-          <UpcomingTab
-            schedule={upcomingSchedule}
-            onSelectPatient={handleOpenPatientProfile}
-          />
-        )}
+        <BottomNav />
 
-        {activeTab === 'appointments' && (
-          <AppointmentsTab
-            appointmentForm={appointments.appointmentForm}
-            patients={patients}
-            workingHours={panelWorkingHours}
-            workingDays={panelWorkingDays}
-            appointments={panelAppointments}
-            onFormChange={appointments.handleFormChange}
-            onAssign={(e) => appointments.handleAssign(e, (payload) => {
-              const createdAppointment = payload?.appointment || payload?.data || payload;
-              if (createdAppointment?._id) {
-                mergeAppointment(createdAppointment);
-                return;
-              }
-              refreshAppointments();
-            })}
-            onSaveWorkingHours={handleSaveWorkingHours}
-            onToggleDay={(day) => {
-              setWorkingDays((prev) => (
-                prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-              ));
-            }}
-            onSetWorkingHours={setWorkingHours}
-
-            onCancelAppointment={(id) => appointments.handleCancel(id, removeAppointment)}
-            onOpenCommentModal={commentModal.openModal}
-          />
-        )}
-
-        {activeTab === 'patients' && (
-          <PatientsTab
-            patients={patients}
-            onSelectPatient={handleOpenPatientMedicalRecord}
-          />
-        )}
-
-        {activeTab === 'chats' && (
-          <ChatsPage inDoctorPanel={true} />
-        )}
+        <DoctorPanelModals
+          commentModal={panelData.commentModal?.modal || {}}
+          appointments={panelData.appointments || []}
+          setAppointments={panelData.setAppointments}
+          onCloseCommentModal={panelData.commentModal?.closeModal || (() => {})}
+          onSaveComment={panelData.commentModal?.save || (() => {})}
+          selectedPatient={selectedPatient}
+          onClosePatientProfile={() => setSelectedPatient(null)}
+          onOpenMedicalRecord={handleOpenPatientMedicalRecord}
+          prescriptionPatient={prescriptionPatient}
+          onClosePrescription={() => setPrescriptionPatient(null)}
+          onPrescriptionSaved={panelData.refreshAppointments}
+           medicalRecordModal={medicalRecordModal}
+           user={user}
+           onCloseMedicalRecord={medicalRecordModal.closeMedicalRecord}
+           onSetTab={medicalRecordModal.setTab}
+           onToggleSection={medicalRecordModal.setExpandedSection}
+           onFieldChange={medicalRecordModal.updateMedicalField}
+           onSaveSection={medicalRecordModal.saveSection}
+           onAddSickLeaveDraft={medicalRecordModal.addSickLeaveDraft}
+           onSickLeaveFieldChange={medicalRecordModal.updateSickLeaveField}
+           onSaveSickLeave={medicalRecordModal.saveSickLeave}
+            onToggleHistory={medicalRecordModal.toggleHistory}
+            onToggleSickLeaveHistory={medicalRecordModal.toggleSickLeaveHistory}
+            getSickLeaveWithChanges={medicalRecordModal.getSickLeaveWithChanges}
+            hasUnsavedChanges={medicalRecordModal.hasUnsavedChanges}
+           onOpenPrescription={setPrescriptionPatient}
+        />
       </div>
-
-      <BottomNav />
-
-      {/* Modals */}
-      <DoctorPanelModals
-        // CommentModal
-        commentModal={commentModal.modal}
-        appointments={panelAppointments}
-        setAppointments={setAppointments}
-        onCloseCommentModal={commentModal.closeModal}
-        onSaveComment={commentModal.save}
-
-
-        // PatientProfileModal
-        selectedPatient={selectedPatient}
-        onClosePatientProfile={() => setSelectedPatient(null)}
-        onOpenMedicalRecord={handleOpenPatientMedicalRecord}
-
-        // PrescriptionModal
-        prescriptionPatient={prescriptionPatient}
-        onClosePrescription={() => setPrescriptionPatient(null)}
-        onPrescriptionSaved={refreshAppointments}
-
-
-        // MedicalRecordModal
-        medicalRecordModal={{
-          ...medicalRecord.modal,
-          tab: medicalRecord.tab,
-          expandedSection: medicalRecord.expandedSection,
-          historyOpen: medicalRecord.historyOpen,
-          showSickLeaveHistory: medicalRecord.showSickLeaveHistory
-        }}
-        user={user}
-        onCloseMedicalRecord={medicalRecord.closeMedicalRecord}
-        onSetTab={medicalRecord.setTab}
-        onToggleSection={medicalRecord.setExpandedSection}
-        onFieldChange={medicalRecord.updateMedicalField}
-        onSaveSection={medicalRecord.saveSection}
-        onAddSickLeaveDraft={medicalRecord.addSickLeaveDraft}
-        onSickLeaveFieldChange={medicalRecord.updateSickLeaveField}
-        onSaveSickLeave={medicalRecord.saveSickLeave}
-        onToggleHistory={(isOpen) => medicalRecord.setHistoryOpen(isOpen)}
-        onToggleSickLeaveHistory={() => medicalRecord.setShowSickLeaveHistory(!medicalRecord.showSickLeaveHistory)}
-        onOpenPrescription={setPrescriptionPatient}
-      />
     </div>
   );
 }

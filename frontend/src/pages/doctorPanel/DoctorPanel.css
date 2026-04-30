@@ -385,12 +385,23 @@
 
 .sick-leave-card {
   margin-top: 12px;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.sick-leave-card.unsaved-changes {
+  border-color: #f59e0b !important;
+  background-color: #fef3c7 !important;
 }
 
 .medical-section-meta {
   margin: 0 0 10px;
   color: #6b7280;
   font-size: 0.85rem;
+}
+
+.unsaved-indicator {
+  color: #f59e0b;
+  font-weight: 600;
 }
 
 .medical-log-list {
@@ -848,21 +859,39 @@
   .doctor-panel-page .doctor-tabs {
     display: none;
   }
+  /* Ensure modal tabs are visible on desktop */
+  .doctor-panel-page .modal-content .tabs-list {
+    display: flex;
+  }
 
   /* Main content area - takes remaining space next to sidebar */
   .doctor-panel-page .page-shell {
-    flex: 1;
+    flex: 0 0 auto;
     max-width: none;
-    padding: 28px 32px !important;
+    padding: 24px 32px 24px !important;
     margin: 0;
     width: 100%;
     overflow: visible;
+    min-height: 0;
   }
 
-  /* Chats & Profile pages: override their column flex to row */
+  /* Chats & Profile pages: keep column layout so content flows correctly */
   .doctor-panel-page.chats-page,
   .doctor-panel-page.profile-page {
-    flex-direction: row;
+    flex-direction: column;
+  }
+
+  /* Remove mobile bottom padding on chats/profile page shells when in desktop doctor panel */
+  .doctor-panel-page.chats-page .page-shell,
+  .doctor-panel-page.profile-page .page-shell {
+    padding-bottom: 24px !important;
+  }
+
+  /* Tighten section title spacing on desktop chats page */
+  .doctor-panel-page.chats-page .chats-content .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 24px;
+    padding: 0;
   }
 }
 

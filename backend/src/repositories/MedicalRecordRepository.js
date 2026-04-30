@@ -4,26 +4,28 @@ const { ResearchResult } = require('../models/Research');
 
 class MedicalRecordRepository {
   async findByPatientId(patientId) {
+    // Поскольку patientId теперь Mixed тип, ищем напрямую по значению
     const doc = await MedicalRecord.findOne({ patientId });
     if (!doc) return null;
     return this._syncSystems(doc);
   }
 
   async findOrCreateByPatientId(patientId) {
-    let doc = await MedicalRecord.findOneAndUpdate(
-      { patientId },
-      {
-        $setOnInsert: {
-          patientId,
-          systems: MEDICAL_SYSTEMS.map((section) => ({ ...section })),
-          changeLogs: [],
-          sickLeaves: []
-        }
-      },
-      { returnDocument: 'after', upsert: true }
-    );
-    doc = await this._syncSystems(doc);
-    return doc;
+    // Проверяем, существует ли запись
+    let doc = await MedicalRecord.findOne({ patientId });
+
+    if (!doc) {
+      // Создаем новую запись
+      doc = new MedicalRecord({
+        patientId,
+        systems: MEDICAL_SYSTEMS.map((section) => ({ ...section })),
+        changeLogs: [],
+        sickLeaves: []
+      });
+      doc = await doc.save();
+    }
+
+    return this._syncSystems(doc);
   }
 
   _syncSystems(doc) {

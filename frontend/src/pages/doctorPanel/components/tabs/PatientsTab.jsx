@@ -18,7 +18,7 @@ export default function PatientsTab({ patients, onSelectPatient }) {
                 <button
                   type="button"
                   className="patient-link"
-                  onClick={() => onSelectPatient(p)}
+                  onClick={() => onSelectPatient(p.id, p.name)}
                 >
                   {p.name}
                 </button>
@@ -27,11 +27,11 @@ export default function PatientsTab({ patients, onSelectPatient }) {
             </div>
             <div className="patient-card-actions">
               <span className="consult-count">{p.consultationCount} консульт.</span>
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() => onSelectPatient(p)}
-              >
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => onSelectPatient(p.id, p.name)}
+                >
                 Карточка пациента
               </button>
             </div>

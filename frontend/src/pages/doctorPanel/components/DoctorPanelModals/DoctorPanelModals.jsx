@@ -37,6 +37,8 @@ export default function DoctorPanelModals({
   onToggleHistory,
   onToggleSickLeaveHistory,
   onOpenPrescription,
+  getSickLeaveWithChanges,
+  hasUnsavedChanges,
 }) {
   return (
     <>
@@ -62,18 +64,18 @@ export default function DoctorPanelModals({
       />
 
       <MedicalRecordModal
-        open={medicalRecordModal.open}
-        patient={medicalRecordModal.patient}
-        record={medicalRecordModal.record}
-        laboratoryResults={medicalRecordModal.laboratoryResults}
-        instrumentalResults={medicalRecordModal.instrumentalResults}
-        loading={medicalRecordModal.loading}
-        error={medicalRecordModal.error}
+        open={medicalRecordModal.modal.open}
+        patient={medicalRecordModal.modal.patient}
+        record={medicalRecordModal.modal.record}
+        laboratoryResults={medicalRecordModal.modal.laboratoryResults}
+        instrumentalResults={medicalRecordModal.modal.instrumentalResults}
+        loading={medicalRecordModal.modal.loading}
+        error={medicalRecordModal.modal.error}
         tab={medicalRecordModal.tab}
         expandedSection={medicalRecordModal.expandedSection}
         historyOpen={medicalRecordModal.historyOpen}
         showSickLeaveHistory={medicalRecordModal.showSickLeaveHistory}
-        savingSectionKey={medicalRecordModal.savingSectionKey}
+        savingSectionKey={medicalRecordModal.modal.savingSectionKey}
         onSetTab={onSetTab}
         onToggleSection={(key) => onToggleSection(medicalRecordModal.expandedSection === key ? '' : key)}
         onFieldChange={onFieldChange}
@@ -84,6 +86,8 @@ export default function DoctorPanelModals({
         onToggleHistory={onToggleHistory}
         onToggleSickLeaveHistory={onToggleSickLeaveHistory}
         onPrescription={onOpenPrescription}
+        getSickLeaveWithChanges={getSickLeaveWithChanges}
+        hasUnsavedChanges={hasUnsavedChanges}
         onClose={onCloseMedicalRecord}
       />
     </>

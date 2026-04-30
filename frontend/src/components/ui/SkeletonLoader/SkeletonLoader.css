@@ -1,0 +1,128 @@
+.skeleton-block,
+.skeleton-circle {
+  background: linear-gradient(90deg, #e8edf5 25%, #f0f4f9 50%, #e8edf5 75%);
+  background-size: 200% 100%;
+  animation: skeleton-wave 1.4s ease-in-out infinite;
+}
+
+.skeleton-block {
+  min-width: 20px;
+  min-height: 10px;
+}
+
+/* Stats cards skeleton */
+.skeleton-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 4px 0;
+}
+
+.skeleton-card-w {
+  background: #fff;
+  border: 1px solid #eef2ff;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* List items skeleton */
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.skeleton-list-item {
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.skeleton-list-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.skeleton-list-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Table skeleton */
+.skeleton-table-wrap {
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.skeleton-table-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.skeleton-table-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+/* Dark mode */
+body.dark .skeleton-block,
+body.dark .skeleton-circle {
+  background: linear-gradient(90deg, #2a3241 25%, #334155 50%, #2a3241 75%);
+}
+
+body.dark .skeleton-card-w {
+  background: #1f2937;
+  border-color: #2d3a4f;
+}
+
+body.dark .skeleton-list-item {
+  background: #1f2937;
+  border-color: #2d3a4f;
+}
+
+body.dark .skeleton-table-wrap {
+  background: #1f2937;
+  border-color: #2d3a4f;
+}
+
+@keyframes skeleton-wave {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (max-width: 600px) {
+  .skeleton-list-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .skeleton-list-actions {
+    width: 100%;
+  }
+  .skeleton-list-actions > * {
+    flex: 1;
+  }
+}
+
+@media (max-width: 400px) {
+  .skeleton-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

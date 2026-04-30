@@ -6,12 +6,11 @@ const sidebarNav = [
   { id: 'requests', label: 'Заявки', icon: 'inbox', path: '/doctor/permit' },
   { id: 'schedule', label: 'Расписание', icon: 'calendar_today', path: '/doctor/schedule' },
   { id: 'appointments', label: 'Записи', icon: 'event_note', path: '/doctor/appointments' },
-  { id: 'chats', label: 'Чаты', icon: 'chat', path: '/doctor/chats' },
   { id: 'patients', label: 'Пациенты', icon: 'people', path: '/doctor/patients' },
 ];
 
 const sidebarLinks = [
-  { to: '/chats', label: 'Чаты', icon: 'chat' },
+  { to: '/doctor/chats', label: 'Чаты', icon: 'chat' },
 ];
 
 export default function DoctorSidebar({ profile }) {
@@ -57,8 +56,8 @@ export default function DoctorSidebar({ profile }) {
       <div className="sidebar-footer">
         <button
           type="button"
-          className={`sidebar-profile ${location.pathname === '/profile' ? 'active' : ''}`}
-          onClick={() => navigate('/profile')}
+          className={`sidebar-profile ${location.pathname === '/doctor/profile' ? 'active' : ''}`}
+          onClick={() => navigate('/doctor/profile')}
         >
           <Avatar
             name={`${p.firstName} ${p.lastName}`}

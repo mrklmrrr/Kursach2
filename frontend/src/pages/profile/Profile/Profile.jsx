@@ -53,7 +53,7 @@ export default function Profile() {
   const isDoctor = user?.role === 'doctor';
 
   return (
-    <div className={`profile-page ${isDoctor ? 'doctor-panel-layout' : ''}`}>
+    <div className={`profile-page ${isDoctor ? 'doctor-panel-page' : ''}`}>
       {isDoctor && <DoctorSidebar profile={user} />}
       <AppHeader />
       <div className="profile-content page-shell page-shell--flex-grow">

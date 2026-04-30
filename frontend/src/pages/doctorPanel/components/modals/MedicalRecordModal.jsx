@@ -29,7 +29,9 @@ export default function MedicalRecordModal({
   onToggleHistory,
   onClose,
   onToggleSickLeaveHistory,
-  onPrescription
+  onPrescription,
+  getSickLeaveWithChanges,
+  hasUnsavedChanges
 }) {
   const navigate = useNavigate();
 
@@ -100,6 +102,8 @@ export default function MedicalRecordModal({
                     onFieldChange={onSickLeaveFieldChange}
                     onSave={onSaveSickLeave}
                     savingSectionKey={savingSectionKey}
+                    getSickLeaveWithChanges={getSickLeaveWithChanges}
+                    hasUnsavedChanges={hasUnsavedChanges}
                   />
                 </Tabs.Content>
 

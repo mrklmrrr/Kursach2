@@ -52,7 +52,7 @@ const sickLeaveSchema = new mongoose.Schema({
 }, { _id: true });
 
 const medicalRecordSchema = new mongoose.Schema({
-  patientId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+  patientId: { type: mongoose.Schema.Types.Mixed, required: true, unique: true },
   systems: { type: [systemSectionSchema], default: () => MEDICAL_SYSTEMS.map((section) => ({ ...section })) },
   changeLogs: { type: [changeLogSchema], default: [] },
   sickLeaves: { type: [sickLeaveSchema], default: [] },
@@ -60,6 +60,7 @@ const medicalRecordSchema = new mongoose.Schema({
   instrumentalResearch: [{ type: mongoose.Schema.Types.ObjectId, ref: 'ResearchResult' }]
 }, { timestamps: true });
 
+// Индекс для patientId - теперь Mixed тип
 medicalRecordSchema.index({ patientId: 1 }, { unique: true, name: 'medical_record_patient_idx' });
 
 module.exports = {

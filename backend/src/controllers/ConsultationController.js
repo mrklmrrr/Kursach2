@@ -114,12 +114,25 @@ const ConsultationController = class {
     if (!(await this._hasChatAccess(consultation, req.userId, req.userRole))) {
       throw ApiError.forbidden('Нет доступа к этому чату');
     }
-    res.json({
+
+    const response = {
       consultationId: consultation._id,
       doctorName: consultation.doctorName,
       specialty: consultation.specialty,
       messages: consultation.messages || []
-    });
+    };
+
+    // Include patient info and avatar for doctors
+    if (req.userRole === 'doctor') {
+      const patient = await this.userRepository.findById(consultation.patientId);
+      if (patient) {
+        response.patientId = consultation.patientId;
+        response.patientName = consultation.patientName;
+        response.patientAvatarUrl = resolveAvatarUrl(patient.avatarUrl || '');
+      }
+    }
+
+    res.json(response);
   }
 
   async sendMessage(req, res) {

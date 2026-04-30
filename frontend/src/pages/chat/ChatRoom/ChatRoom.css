@@ -18,7 +18,8 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   flex-shrink: 0;
   z-index: 10;
-  width: 720px;
+  width: 100%;
+  max-width: 720px;
   margin: 0 auto;
   border-radius: 0px 0px 20px 20px;
 }
@@ -123,9 +124,10 @@ button.chat-room-header-info {
   line-height: 1.6;
 }
 
-/* Input area — fixed at bottom */
+/* Input area — fixed at bottom, full width */
 .chat-room-input-area {
   flex-shrink: 0;
+  width: 100%;
   padding: 12px 16px;
   padding-bottom: max(12px, env(safe-area-inset-bottom));
   background: #ffffff;
@@ -263,6 +265,17 @@ button.chat-room-header-info {
   padding: 16px;
 }
 
+.chat-room-profile-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
 .chat-room-profile-modal {
   width: min(420px, 100%);
   background: #fff;
@@ -356,4 +369,47 @@ body.dark .chat-room-profile-modal h3 {
 
 body.dark .chat-room-profile-modal p {
   color: #9ca3af;
+}
+
+/* =========================================================
+   Desktop: ChatRoom inside doctor panel layout
+   ========================================================= */
+@media (min-width: 1024px) {
+  /* When chat room is rendered for doctors inside doctor panel layout,
+     sidebar takes 260px, chat content takes remaining width. */
+  .chat-room-page.doctor-panel-page {
+    margin-left: 260px;
+    width: calc(100% - 260px);
+    height: 100vh;
+    flex-direction: column;
+  }
+
+  .chat-room-page.doctor-panel-page .chat-room-header {
+    width: 100%;
+    max-width: none;
+    border-radius: 0;
+    padding: 16px 32px;
+  }
+
+  .chat-room-page.doctor-panel-page .chat-room-container {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding: 0 !important;
+    background: transparent;
+    min-height: 92%;
+  }
+
+.chat-room-page.doctor-panel-page .chat-room-input-area {
+    width: 100%;
+    max-width: none;
+    border-radius: 0;
+    padding: 16px 32px;
+  }
+
+  .chat-room-page.doctor-panel-page .chat-room-messages {
+    max-width: none;
+    width: 100%;
+    padding: 24px 32px;
+  }
 }

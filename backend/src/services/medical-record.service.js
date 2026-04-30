@@ -69,9 +69,6 @@ class MedicalRecordService {
     const diagnosis = String(payload.diagnosis || '').trim();
     const recommendations = String(payload.recommendations || '').trim();
 
-    if (!disease || !diagnosis || !recommendations) {
-      throw ApiError.badRequest('Все поля обязательны: заболевание, диагноз, рекомендации');
-    }
 
     // Check for duplicate sick leaves within the last 30 seconds (more lenient)
     const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);

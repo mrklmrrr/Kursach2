@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AppHeader, BottomNav } from '../../../components/layout';
-import { ChatItem } from '../../../components/features';
-import { EmptyState } from '../../../components/ui';
-import { chatApi } from '../../../services/chatApi';
-import { apiCache } from '../../../services/cache';
-import { useAuth } from '../../../hooks/useAuth';
+import { AppHeader, BottomNav } from '@components/layout';
+import { ChatItem } from '@components/features';
+import { EmptyState } from '@components/ui';
+import { chatApi } from '@services/chatApi';
+import { apiCache } from '@services/cache';
+import { useAuth } from '@hooks/useAuth';
 import DoctorSidebar from '../../doctorPanel/components/DoctorSidebar/DoctorSidebar';
 import './Chats.css';
 
@@ -82,17 +82,13 @@ export default function Chats({ inDoctorPanel = false }) {
   }, [user?.role]);
 
   const loadChatsWithCacheCheck = useCallback(async () => {
-    // Check cache first to avoid unnecessary loading state
     const cached = apiCache.get(CHATS_CACHE_KEY);
     if (cached && cached.length > 0) {
-      // Have fresh cached data, use it immediately without loading state
       const isDoctor = user?.role === 'doctor';
       setChats(normalizeChats(cached, isDoctor));
       setLoading(false);
       return;
     }
-
-    // No cache or empty cache, need to fetch from server
     await loadChats();
   }, [loadChats, user?.role]);
 
@@ -102,10 +98,18 @@ export default function Chats({ inDoctorPanel = false }) {
 
   const isDoctor = user?.role === 'doctor';
 
+  useEffect(() => {
+    // Redirect doctors from /chats to /doctor/chats
+    if (isDoctor && !inDoctorPanel) {
+      navigate('/doctor/chats', { replace: true });
+      return;
+    }
+  }, [isDoctor, inDoctorPanel, navigate]);
+
   return (
-    <div className={`chats-page ${isDoctor && !inDoctorPanel ? 'doctor-panel-layout' : ''}`}>
-      {isDoctor && !inDoctorPanel && <DoctorSidebar profile={user} />}
-      {!inDoctorPanel && <AppHeader />}
+    <div className={`chats-page ${isDoctor ? 'doctor-panel-page' : ''}`}>
+      {isDoctor && <DoctorSidebar profile={user} />}
+      <AppHeader />
       <div className="chats-content page-shell page-shell--flex-grow">
         <div className="section-title">
           {isDoctor ? 'Мои чаты с пациентами' : 'Мои чаты с врачами'}

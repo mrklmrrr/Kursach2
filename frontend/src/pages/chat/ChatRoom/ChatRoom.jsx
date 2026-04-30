@@ -4,6 +4,7 @@ import { Avatar, Modal } from '../../../components/ui';
 import { chatApi } from '../../../services/chatApi';
 import { videoRoomApi } from '../../../services/videoRoomApi';
 import { useAuth } from '../../../hooks/useAuth';
+import DoctorSidebar from '../../doctorPanel/components/DoctorSidebar/DoctorSidebar';
 import './ChatRoom.css';
 
 export default function ChatRoom() {
@@ -51,18 +52,18 @@ export default function ChatRoom() {
     const loadMessages = async () => {
       try {
         const { data: messagesData } = await chatApi.getMessages(id);
-        
+
         // Extract chat metadata from messages response
         const currentChatMeta = {
           _id: messagesData.consultationId || id,
           doctorName: messagesData.doctorName,
           specialty: messagesData.specialty,
-          // These will be filled later if needed from socket or user context
-          patientId: null,
-          patientName: null,
+          patientId: messagesData.patientId || null,
+          patientName: messagesData.patientName || null,
+          patientAvatarUrl: messagesData.patientAvatarUrl || null,
           doctorId: null
         };
-        
+
         setChatMeta(currentChatMeta);
         setMessages(Array.isArray(messagesData.messages) ? messagesData.messages : []);
       } catch (err) {
@@ -77,22 +78,6 @@ export default function ChatRoom() {
         setLoading(false);
       }
     };
-
-    const token = localStorage.getItem('token');
-    if (token) {
-      const socket = chatApi.connectSocket(token);
-      socketRef.current = socket;
-
-      socket.on('connect', () => {
-        socket.emit('join-chat', id);
-      });
-
-      socket.on('new-message', (message) => {
-        setMessages((prev) => [...prev, message]);
-        // Invalidate chats cache to ensure list is updated
-        chatApi.invalidateChatsCache();
-      });
-    }
 
     loadMessages();
 
@@ -188,9 +173,10 @@ export default function ChatRoom() {
   };
 
   return (
-    <div className="chat-room-page">
+    <div className={`chat-room-page ${isDoctor ? 'doctor-panel-page' : ''}`}>
+      {isDoctor && <DoctorSidebar profile={user} />}
       <header className="chat-room-header">
-        <button className="back-btn" onClick={() => navigate('/chats')}>
+        <button className="back-btn" onClick={() => navigate(isDoctor ? '/doctor/chats' : '/chats')}>
           <span className="material-icons">arrow_back</span>
         </button>
         <button
@@ -203,7 +189,7 @@ export default function ChatRoom() {
             <div className="chat-room-doctor-name">{chatCompanion.name}</div>
             <div className="chat-room-doctor-spec">
               {chatCompanion.specialty}
-              {isDoctor ? '' : ' • Открыть профиль'}
+              {!isDoctor ? ' • Открыть профиль' : ''}
             </div>
           </div>
         </button>
@@ -253,9 +239,9 @@ export default function ChatRoom() {
               );
             })
           )}
-          <div ref={messagesEndRef} />
+           <div ref={messagesEndRef} />
         </div>
-
+ 
         <div className="chat-room-input-area">
           <button className="chat-room-attach-btn" onClick={handlePickFile} disabled={uploading}>
             <span className="material-icons">{uploading ? 'hourglass_top' : 'attach_file'}</span>
@@ -278,21 +264,20 @@ export default function ChatRoom() {
             <span className="material-icons">send</span>
           </button>
         </div>
-      </div>
-
-      {isDoctor && (
+ 
+        {isDoctor && (
         <Modal open={showPatientProfile} onClose={() => setShowPatientProfile(false)}>
           <Modal.Overlay>
             <Modal.Content>
               <Modal.Header>
                 <h3>Профиль пациента</h3>
               </Modal.Header>
-
+ 
               <Modal.Body>
                 <p><strong>Имя:</strong> {chatMeta?.patientName || 'Пациент'}</p>
                 <p><strong>ID:</strong> {chatMeta?.patientId || '—'}</p>
               </Modal.Body>
-
+ 
               <Modal.Footer>
                 <button type="button" className="btn btn-primary" onClick={() => setShowPatientProfile(false)}>
                   Закрыть
@@ -301,7 +286,8 @@ export default function ChatRoom() {
             </Modal.Content>
           </Modal.Overlay>
         </Modal>
-      )}
+        )}
+      </div>
     </div>
   );
 }
