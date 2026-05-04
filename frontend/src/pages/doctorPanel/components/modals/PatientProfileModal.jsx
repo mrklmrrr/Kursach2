@@ -21,7 +21,7 @@ export default function PatientProfileModal({ patient, onOpenMedicalRecord, onCl
           <Modal.Footer>
             <button
               type="button"
-              className="btn btn-outline"
+              className="btn btn-primary"
               onClick={() => {
                 onOpenMedicalRecord(patient);
                 onClose();
@@ -29,7 +29,7 @@ export default function PatientProfileModal({ patient, onOpenMedicalRecord, onCl
             >
               Карточка пациента
             </button>
-            <button type="button" className="btn btn-primary" onClick={onClose}>
+            <button type="button" className="btn btn-outline" onClick={onClose}>
               Закрыть
             </button>
           </Modal.Footer>

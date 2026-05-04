@@ -57,12 +57,6 @@ export default function DoctorPanelModals({
         onClose={onClosePatientProfile}
       />
 
-      <PrescriptionModal
-        patient={prescriptionPatient}
-        onClose={onClosePrescription}
-        onSaved={onPrescriptionSaved}
-      />
-
       <MedicalRecordModal
         open={medicalRecordModal.modal.open}
         patient={medicalRecordModal.modal.patient}
@@ -89,6 +83,12 @@ export default function DoctorPanelModals({
         getSickLeaveWithChanges={getSickLeaveWithChanges}
         hasUnsavedChanges={hasUnsavedChanges}
         onClose={onCloseMedicalRecord}
+      />
+
+      <PrescriptionModal
+        patient={prescriptionPatient}
+        onClose={onClosePrescription}
+        onSaved={onPrescriptionSaved}
       />
     </>
   );

@@ -52,4 +52,4 @@ class Cache {
   }
 }
 
-export const apiCache = new Cache(30000); // 30 seconds default TTL
+export const apiCache = new Cache(300000); // 5 minutes default TTL

@@ -10,6 +10,15 @@
   animation: modalOverlayIn 0.2s ease;
 }
 
+/* Medical record modal - higher z-index to be above standard modals */
+.modal-content--wide {
+  z-index: 1001;
+}
+
+.modal-overlay + .modal-overlay {
+  z-index: 1002;
+}
+
 @keyframes modalOverlayIn {
   from {
     opacity: 0;

@@ -52,20 +52,36 @@ export default function MedicalRecordModal({
             {!loading && error && <p className="medical-record-error">{error}</p>}
 
             {!loading && (
-              <Tabs value={tab} onValueChange={onSetTab}>
-                <Tabs.List className="medical-record-tabs">
-                  <Tabs.Trigger value="systems" className="profile-tab-btn">
+              <>
+                <div className="medical-record-tabs">
+                  <button
+                    type="button"
+                    className={`profile-tab-btn ${tab === 'systems' ? 'active' : ''}`}
+                    onClick={() => onSetTab('systems')}
+                  >
                     Медицинская карта
-                  </Tabs.Trigger>
-                  <Tabs.Trigger value="sickLeave" className="profile-tab-btn">
+                  </button>
+                  <button
+                    type="button"
+                    className={`profile-tab-btn ${tab === 'sickLeave' ? 'active' : ''}`}
+                    onClick={() => onSetTab('sickLeave')}
+                  >
                     Лист нетрудоспособности
-                  </Tabs.Trigger>
-                  <Tabs.Trigger value="laboratory" className="profile-tab-btn">
+                  </button>
+                  <button
+                    type="button"
+                    className={`profile-tab-btn ${tab === 'laboratory' ? 'active' : ''}`}
+                    onClick={() => onSetTab('laboratory')}
+                  >
                     Лабораторные исследования
-                  </Tabs.Trigger>
-                  <Tabs.Trigger value="instrumental" className="profile-tab-btn">
+                  </button>
+                  <button
+                    type="button"
+                    className={`profile-tab-btn ${tab === 'instrumental' ? 'active' : ''}`}
+                    onClick={() => onSetTab('instrumental')}
+                  >
                     Инструментальные исследования
-                  </Tabs.Trigger>
+                  </button>
                   {onPrescription && (
                     <button
                       type="button"
@@ -75,25 +91,27 @@ export default function MedicalRecordModal({
                       E-назначение
                     </button>
                   )}
-                </Tabs.List>
+                </div>
 
-                <Tabs.Content value="systems">
-                  <MedicalSystemSection
-                    systems={record?.systems || []}
-                    expandedSection={expandedSection}
-                    onToggleSection={onToggleSection}
-                    onFieldChange={onFieldChange}
-                    onSaveSection={onSaveSection}
-                    savingSectionKey={savingSectionKey}
-                  />
-                  <MedicalHistory
-                    logs={record?.changeLogs || []}
-                    historyOpen={historyOpen}
-                    onToggle={onToggleHistory}
-                  />
-                </Tabs.Content>
+                {tab === 'systems' && (
+                  <>
+                    <MedicalSystemSection
+                      systems={record?.systems || []}
+                      expandedSection={expandedSection}
+                      onToggleSection={onToggleSection}
+                      onFieldChange={onFieldChange}
+                      onSaveSection={onSaveSection}
+                      savingSectionKey={savingSectionKey}
+                    />
+                    <MedicalHistory
+                      logs={record?.changeLogs || []}
+                      historyOpen={historyOpen}
+                      onToggle={onToggleHistory}
+                    />
+                  </>
+                )}
 
-                <Tabs.Content value="sickLeave">
+                {tab === 'sickLeave' && (
                   <SickLeaveSection
                     sickLeaves={record?.sickLeaves || []}
                     showHistory={showSickLeaveHistory}
@@ -105,30 +123,34 @@ export default function MedicalRecordModal({
                     getSickLeaveWithChanges={getSickLeaveWithChanges}
                     hasUnsavedChanges={hasUnsavedChanges}
                   />
-                </Tabs.Content>
+                )}
 
-                <Tabs.Content value="laboratory">
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={() => navigate(`/doctor/patient/${patient?.id}/laboratory`)}
-                  >
-                    Добавить лаб анализы
-                  </button>
-                  <PatientLaboratorySection results={laboratoryResults} loading={loading} />
-                </Tabs.Content>
+                {tab === 'laboratory' && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => navigate(`/doctor/patient/${patient?.id}/laboratory`)}
+                    >
+                      Добавить лаб анализы
+                    </button>
+                    <PatientLaboratorySection results={laboratoryResults} loading={loading} />
+                  </>
+                )}
 
-                <Tabs.Content value="instrumental">
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={() => navigate(`/doctor/patient/${patient?.id}/instrumental`)}
-                  >
-                    Добавить инструментальные исследования
-                  </button>
-                  <InstrumentalInvestigationsSection results={instrumentalResults} loading={loading} />
-                </Tabs.Content>
-              </Tabs>
+                {tab === 'instrumental' && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => navigate(`/doctor/patient/${patient?.id}/instrumental`)}
+                    >
+                      Добавить инструментальные исследования
+                    </button>
+                    <InstrumentalInvestigationsSection results={instrumentalResults} loading={loading} />
+                  </>
+                )}
+              </>
             )}
           </Modal.Body>
 

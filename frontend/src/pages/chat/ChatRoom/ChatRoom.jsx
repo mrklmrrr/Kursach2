@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Avatar, Modal } from '../../../components/ui';
 import { chatApi } from '../../../services/chatApi';
@@ -6,6 +6,59 @@ import { videoRoomApi } from '../../../services/videoRoomApi';
 import { useAuth } from '../../../hooks/useAuth';
 import DoctorSidebar from '../../doctorPanel/components/DoctorSidebar/DoctorSidebar';
 import './ChatRoom.css';
+
+// Global socket instance to avoid reconnecting on every navigation
+let globalSocket = null;
+let globalSocketRef = { current: null };
+
+// Message time cache
+const messageTimeCache = new Map();
+function formatMessageTime(timestamp) {
+  if (messageTimeCache.has(timestamp)) {
+    return messageTimeCache.get(timestamp);
+  }
+  
+  const formatted = new Date(timestamp).toLocaleTimeString('ru-RU', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  
+  messageTimeCache.set(timestamp, formatted);
+  
+  // Clean up old entries
+  if (messageTimeCache.size > 500) {
+    const keys = Array.from(messageTimeCache.keys());
+    for (let i = 0; i < 100; i++) {
+      messageTimeCache.delete(keys[i]);
+    }
+  }
+  
+  return formatted;
+}
+
+// Message component for memoization
+const MessageBubble = memo(function MessageBubble({ msg, isOwn, chatCompanion, resolveFileUrl }) {
+  return (
+    <div
+      key={msg._id || msg.id || `${msg.timestamp}-${msg.message || 'media'}`}
+      className={`message-wrapper ${isOwn ? 'user' : 'doctor'}`}
+    >
+      {!isOwn && <Avatar name={chatCompanion.name} src={chatCompanion.avatarUrl || undefined} size="small" />}
+      <div>
+        <div className="message-bubble">
+          {msg.fileUrl && msg.messageType === 'image' && (
+            <img className="chat-media-preview" src={resolveFileUrl(msg.fileUrl)} alt={msg.fileName || 'Изображение'} />
+          )}
+          {msg.fileUrl && msg.messageType === 'video' && (
+            <video className="chat-media-preview" src={resolveFileUrl(msg.fileUrl)} controls />
+          )}
+          {msg.message ? <div>{msg.message}</div> : null}
+        </div>
+        <div className="message-time">{formatMessageTime(msg.timestamp)}</div>
+      </div>
+    </div>
+  );
+});
 
 export default function ChatRoom() {
   const { id } = useParams();
@@ -33,7 +86,7 @@ export default function ChatRoom() {
   };
 
   const isDoctor = user?.role === 'doctor';
-  const chatCompanion = isDoctor
+  const chatCompanion = useMemo(() => isDoctor
     ? {
         id: chatMeta?.patientId,
         name: chatMeta?.patientName || 'Пациент',
@@ -45,19 +98,23 @@ export default function ChatRoom() {
         name: doctor.name || chatMeta?.doctorName || 'Врач',
         specialty: doctor.specialty || chatMeta?.specialty || 'Специалист',
         avatarUrl: doctor.avatarUrl || doctor.avatar || chatMeta?.doctorAvatarUrl || chatMeta?.doctorAvatar || ''
-      };
+      },
+  [isDoctor, chatMeta, doctor]);
 
+  // Smooth scroll only when new messages arrive (not on every render)
+  const lastMessageCountRef = useRef(messages.length);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length > lastMessageCountRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    lastMessageCountRef.current = messages.length;
   }, [messages]);
 
   useEffect(() => {
+    console.time('[ChatRoom] loadMessages');
     const loadMessages = async () => {
-      console.log('[ChatRoom] Loading messages for chat:', id);
       try {
         const { data: messagesData } = await chatApi.getMessages(id);
-
-        console.log('[ChatRoom] Messages loaded:', messagesData);
 
         // Extract chat metadata from messages response
         const currentChatMeta = {
@@ -73,7 +130,6 @@ export default function ChatRoom() {
 
         setChatMeta(currentChatMeta);
         const messagesArray = Array.isArray(messagesData.messages) ? messagesData.messages : [];
-        console.log('[ChatRoom] Messages array:', messagesArray);
         setMessages(messagesArray);
       } catch (err) {
         console.error('[ChatRoom] Failed to load messages:', err);
@@ -85,15 +141,18 @@ export default function ChatRoom() {
         }
       } finally {
         setLoading(false);
+        console.timeEnd('[ChatRoom] loadMessages');
       }
     };
 
     loadMessages();
 
-    // Connect to socket for real-time messages
-    if (token) {
-      console.log('[ChatRoom] Connecting to socket...');
+    // Reuse global socket if available
+    if (!globalSocket && token) {
+      console.log('[ChatRoom] Creating new socket connection');
       const socket = chatApi.connectSocket(token);
+      globalSocket = socket;
+      globalSocketRef.current = socket;
       socketRef.current = socket;
 
       socket.on('connect', () => {
@@ -106,45 +165,39 @@ export default function ChatRoom() {
         setSocketConnected(false);
       });
 
-      // Join the chat room
-      console.log('[ChatRoom] Joining chat room:', id);
-      socket.emit('join-chat', id);
-
-      // Listen for new messages
-      socket.on('new-message', (newMessage) => {
-        console.log('[ChatRoom] New message received:', newMessage);
-        setMessages((prev) => {
-          // Avoid duplicates
-          if (prev.some((m) => m._id === newMessage._id || m.id === newMessage.id)) {
-            console.log('[ChatRoom] Message already exists, skipping');
-            return prev;
-          }
-          console.log('[ChatRoom] Adding new message to list');
-          return [...prev, newMessage];
-        });
-      });
-
-      // Handle socket errors
       socket.on('chat-error', (error) => {
         console.error('[ChatRoom] Socket error:', error);
       });
-
-      return () => {
-        console.log('[ChatRoom] Cleaning up socket');
-        socket.off('new-message');
-        socket.off('chat-error');
-        socket.off('connect');
-        socket.off('disconnect');
-        socket.disconnect();
-      };
-    } else {
-      console.warn('[ChatRoom] No token available, socket will not connect');
+    } else if (token) {
+      console.log('[ChatRoom] Reusing existing socket');
+      socketRef.current = globalSocket;
     }
+
+    // Join the chat room
+    if (socketRef.current) {
+      socketRef.current.emit('join-chat', id);
+    }
+
+    // Listen for new messages
+    const handleMessage = (newMessage) => {
+      setMessages((prev) => {
+        if (prev.some((m) => m._id === newMessage._id || m.id === newMessage.id)) {
+          return prev;
+        }
+        return [...prev, newMessage];
+      });
+    };
+
+    socketRef.current?.on('new-message', handleMessage);
 
     return () => {
       if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
+        socketRef.current.off('new-message', handleMessage);
+        // Don't disconnect global socket
+        if (socketRef.current === globalSocket) {
+          // Keep socket alive for other chats
+          socketRef.current = null;
+        }
       }
     };
   }, [id, token]);
@@ -173,12 +226,8 @@ export default function ChatRoom() {
     } else {
       // Fallback to HTTP API if socket not connected
       chatApi.sendMessage(id, messageText)
-        .then(() => {
-          console.log('Message sent via HTTP');
-        })
         .catch((err) => {
           console.error('Failed to send message:', err);
-          // Remove temp message on error
           setMessages((prev) => prev.filter(m => m._id !== tempMessage._id));
           alert('Не удалось отправить сообщение');
         });
@@ -209,10 +258,7 @@ export default function ChatRoom() {
   };
 
   const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString('ru-RU', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return formatMessageTime(timestamp);
   };
 
   const isOwnMessage = useCallback((msg) => {
@@ -221,26 +267,19 @@ export default function ChatRoom() {
     const currentUserId = user?.id != null ? String(user.id) : '';
     const messageSenderId = msg.senderId != null ? String(msg.senderId) : '';
 
-    console.log('[ChatRoom] isOwnMessage check:', { currentUserId, messageSenderId, sender: msg.sender });
-
-    // First try to match by senderId
     if (currentUserId && messageSenderId) {
-      const isOwn = currentUserId === messageSenderId;
-      console.log('[ChatRoom] Matched by senderId:', isOwn);
-      return isOwn;
+      return currentUserId === messageSenderId;
     }
 
-    // Fallback to sender field for backwards compatibility
-    const isOwn = isDoctor ? msg.sender === 'doctor' : msg.sender === 'user';
-    console.log('[ChatRoom] Matched by sender:', isOwn);
-    return isOwn;
+    if (isDoctor) return msg.sender === 'doctor';
+    return msg.sender === 'user';
   }, [isDoctor, user?.id]);
 
-  const resolveFileUrl = (url) => {
+  const resolveFileUrl = useCallback((url) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
     return `${chatApi.getBackendOrigin()}${url}`;
-  };
+  }, []);
 
   const handleHeaderProfileClick = () => {
     if (isDoctor) {
@@ -313,29 +352,15 @@ export default function ChatRoom() {
               Напишите первое сообщение врачу
             </div>
           ) : (
-            messages.map((msg) => {
-              const own = isOwnMessage(msg);
-              return (
-              <div
+            messages.map((msg) => (
+              <MessageBubble
                 key={msg._id || msg.id || `${msg.timestamp}-${msg.message || 'media'}`}
-                className={`message-wrapper ${own ? 'user' : 'doctor'}`}
-              >
-                {!own && <Avatar name={chatCompanion.name} src={chatCompanion.avatarUrl || undefined} size="small" />}
-                <div>
-                  <div className="message-bubble">
-                    {msg.fileUrl && msg.messageType === 'image' && (
-                      <img className="chat-media-preview" src={resolveFileUrl(msg.fileUrl)} alt={msg.fileName || 'Изображение'} />
-                    )}
-                    {msg.fileUrl && msg.messageType === 'video' && (
-                      <video className="chat-media-preview" src={resolveFileUrl(msg.fileUrl)} controls />
-                    )}
-                    {msg.message ? <div>{msg.message}</div> : null}
-                  </div>
-                  <div className="message-time">{formatTime(msg.timestamp)}</div>
-                </div>
-              </div>
-              );
-            })
+                msg={msg}
+                isOwn={isOwnMessage(msg)}
+                chatCompanion={chatCompanion}
+                resolveFileUrl={resolveFileUrl}
+              />
+            ))
           )}
            <div ref={messagesEndRef} />
         </div>

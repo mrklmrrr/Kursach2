@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppHeader, BottomNav } from '@components/layout';
 import { ChatItem } from '@components/features';
@@ -10,16 +10,47 @@ import DoctorSidebar from '../../doctorPanel/components/DoctorSidebar/DoctorSide
 import './Chats.css';
 
 const CHATS_CACHE_KEY = 'chats_list';
+const CHATS_CACHE_TTL = 300000; // 5 minutes
 
+// Memoized time formatting with cache
+const timeCache = new Map();
 function formatChatTime(value) {
   if (!value) return '';
+  
+  if (timeCache.has(value)) {
+    return timeCache.get(value);
+  }
+  
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  
+  const formatted = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  timeCache.set(value, formatted);
+  
+  // Clear old entries periodically
+  if (timeCache.size > 100) {
+    const now = Date.now();
+    for (const [key] of timeCache) {
+      if (now - Number(key) > 3600000) { // 1 hour
+        timeCache.delete(key);
+      }
+    }
+  }
+  
+  return formatted;
 }
 
+// Memoized chat normalization
+const normalizeCache = new Map();
 function normalizeChats(data, isDoctor) {
-  return data.map((chat) => ({
+  const cacheKey = `${isDoctor ? 'doctor' : 'patient'}_${data.length}_${data.map(d => d._id).join(',')}`;
+  const cached = normalizeCache.get(cacheKey);
+  
+  if (cached) {
+    return cached;
+  }
+  
+  const normalized = data.map((chat) => ({
     id: chat._id,
     doctorId: chat.doctorId,
     doctorName: chat.doctorName || 'Врач',
@@ -49,6 +80,16 @@ function normalizeChats(data, isDoctor) {
       : (chat.doctorAvatarUrl || chat.doctorAvatar || ''),
     isOnline: false
   }));
+  
+  normalizeCache.set(cacheKey, normalized);
+  
+  // Clear old cache entries
+  if (normalizeCache.size > 20) {
+    const keys = Array.from(normalizeCache.keys());
+    normalizeCache.delete(keys[0]);
+  }
+  
+  return normalized;
 }
 
 /**
@@ -63,6 +104,7 @@ export default function Chats({ inDoctorPanel = false }) {
   const [error, setError] = useState(null);
 
   const loadChats = useCallback(async () => {
+    console.time('[Chats] loadChats');
     setLoading(true);
     setError(null);
     try {
@@ -70,26 +112,32 @@ export default function Chats({ inDoctorPanel = false }) {
       const isDoctor = user?.role === 'doctor';
       const normalized = normalizeChats(data, isDoctor);
       setChats(normalized);
+      console.log('[Chats] Loaded', normalized.length, 'chats');
     } catch (err) {
-      console.error('Не удалось загрузить чаты', err);
+      console.error('[Chats] Failed to load chats:', err);
       setError(err.response?.status === 429 
         ? 'Слишком много запросов. Пожалуйста, подождите немного.'
         : 'Не удалось загрузить чаты. Проверьте подключение к интернету.');
       setChats([]);
     } finally {
       setLoading(false);
+      console.timeEnd('[Chats] loadChats');
     }
   }, [user?.role]);
 
   const loadChatsWithCacheCheck = useCallback(async () => {
+    console.time('[Chats] loadChatsWithCacheCheck');
     const cached = apiCache.get(CHATS_CACHE_KEY);
     if (cached && cached.length > 0) {
+      console.log('[Chats] Using cached chats');
       const isDoctor = user?.role === 'doctor';
       setChats(normalizeChats(cached, isDoctor));
       setLoading(false);
+      console.timeEnd('[Chats] loadChatsWithCacheCheck');
       return;
     }
     await loadChats();
+    console.timeEnd('[Chats] loadChatsWithCacheCheck');
   }, [loadChats, user?.role]);
 
   useEffect(() => {

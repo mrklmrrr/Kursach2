@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.45);
-  z-index: 1200;
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -19,6 +19,7 @@
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
 }
 
 body.dark .rx-modal {

@@ -1,7 +1,8 @@
+import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Avatar from '../../ui/Avatar/Avatar';
 
-export default function ChatItem({ chat }) {
+function ChatItem({ chat }) {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -34,3 +35,11 @@ export default function ChatItem({ chat }) {
     </div>
   );
 }
+
+export default memo(ChatItem, (prev, next) => {
+  // Shallow comparison of chat object
+  return prev.chat.id === next.chat.id && 
+         prev.chat.displayName === next.chat.displayName &&
+         prev.chat.lastMessage === next.chat.lastMessage &&
+         prev.chat.time === next.chat.time;
+});

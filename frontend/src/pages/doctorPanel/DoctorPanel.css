@@ -844,7 +844,7 @@
     overflow-x: hidden;
   }
 
-  /* Hide mobile header & bottom nav inside doctor panel */
+  /* Hide mobile header & bottom nav inside doctor panel on desktop */
   .doctor-panel-page .app-header,
   .doctor-panel-page .bottom-nav {
     display: none !important;
@@ -857,7 +857,7 @@
   /* Hide inner tab list on desktop — tabs controlled by sidebar */
   .doctor-panel-page .tabs-list,
   .doctor-panel-page .doctor-tabs {
-    display: none;
+    display: none !important;
   }
   /* Ensure modal tabs are visible on desktop */
   .doctor-panel-page .modal-content .tabs-list {

@@ -31,7 +31,7 @@ const TAB_MAP = {
 };
 const VALID_TABS = Object.keys(TAB_MAP);
 
-const DoctorContent = ({ activeTab, profile, onOpenPatientProfile, panelData, toast }) => {
+const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, panelData, toast, navigate }) => {
   if (activeTab === 'chats') {
     return <Chats inDoctorPanel={true} />;
   }
@@ -76,11 +76,15 @@ const DoctorContent = ({ activeTab, profile, onOpenPatientProfile, panelData, to
   }, [panelData]);
 
   const handleToggleOnline = async () => {
+    const next = !profile?.isOnline;
     try {
-      await doctorPanelApi.toggleOnline(!profile?.isOnline);
-      const next = !profile?.isOnline;
+      // Оптимистичное обновление UI
+      panelData.setProfile((prev) => ({ ...prev, isOnline: next }));
+      await doctorPanelApi.toggleOnline(next);
       toast(next ? 'Вы в сети — пациенты видят вас онлайн' : 'Вы офлайн', 'success');
     } catch (err) {
+      // Откат при ошибке
+      panelData.setProfile((prev) => ({ ...prev, isOnline: !next }));
       toast(err.message || 'Не удалось изменить статус', 'error');
     }
   };
@@ -93,6 +97,45 @@ const DoctorContent = ({ activeTab, profile, onOpenPatientProfile, panelData, to
         upcomingScheduleCount={panelData.upcomingSchedule?.length ?? 0}
         activeAppointmentsCount={panelData.activeAppointmentsCount}
       />
+      <div className="doctor-tabs">
+        <button
+          type="button"
+          className={`d-tab ${currentTab === 'requests' ? 'active' : ''}`}
+          onClick={() => navigate('/doctor/permit')}
+        >
+          Заявки
+          {(panelData.pendingConsultations?.length ?? 0) > 0 && (
+            <span className="badge">{panelData.pendingConsultations?.length}</span>
+          )}
+        </button>
+        <button
+          type="button"
+          className={`d-tab ${currentTab === 'upcoming' ? 'active' : ''}`}
+          onClick={() => navigate('/doctor/schedule')}
+        >
+          Расписание
+          {panelData.upcomingSchedule?.length > 0 && (
+            <span className="badge">{panelData.upcomingSchedule.length}</span>
+          )}
+        </button>
+        <button
+          type="button"
+          className={`d-tab ${currentTab === 'appointments' ? 'active' : ''}`}
+          onClick={() => navigate('/doctor/appointments')}
+        >
+          Записи
+          {panelData.activeAppointmentsCount > 0 && (
+            <span className="badge">{panelData.activeAppointmentsCount}</span>
+          )}
+        </button>
+        <button
+          type="button"
+          className={`d-tab ${currentTab === 'patients' ? 'active' : ''}`}
+          onClick={() => navigate('/doctor/patients')}
+        >
+          Пациенты
+        </button>
+      </div>
 
       {activeTab === 'requests' && (
         <RequestsTab
@@ -178,6 +221,23 @@ export default function DoctorPanel() {
     }
   }, [user?.role, navigate, panelData]);
 
+  // Открыть медицинскую карту пациента при возвращении с /laboratory или /instrumental
+  useEffect(() => {
+    const state = location.state;
+    if (state?.openMedicalRecordForPatientId) {
+      const patientId = state.openMedicalRecordForPatientId;
+      let patient = panelData.patientById?.get(String(patientId));
+      if (!patient) {
+        patient = panelData.patients.find(p => String(p.id) === String(patientId));
+      }
+      if (patient) {
+        medicalRecordModal.openMedicalRecord(patient);
+      }
+      // Очистить state после обработки
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, panelData.patients, panelData.patientById, navigate, location.pathname]);
+
    const handleOpenPatientProfile = (patientId, fallbackName) => {
      let patient = panelData.patientById?.get(String(patientId));
      if (!patient) {
@@ -209,58 +269,19 @@ export default function DoctorPanel() {
     <div className="doctor-panel-page">
       <DoctorSidebar profile={profile} />
       <AppHeader title="Кабинет врача" />
-      <div className="page-shell page-shell--flex-grow">
-        <div className="doctor-tabs">
-          <button
-            type="button"
-            className={`d-tab ${currentTab === 'requests' ? 'active' : ''}`}
-            onClick={() => navigate('/doctor/permit')}
-          >
-            Заявки
-            {(panelData.pendingConsultations?.length ?? 0) > 0 && (
-              <span className="badge">{panelData.pendingConsultations?.length}</span>
-            )}
-          </button>
-          <button
-            type="button"
-            className={`d-tab ${currentTab === 'upcoming' ? 'active' : ''}`}
-            onClick={() => navigate('/doctor/schedule')}
-          >
-            Расписание
-            {panelData.upcomingSchedule?.length > 0 && (
-              <span className="badge">{panelData.upcomingSchedule.length}</span>
-            )}
-          </button>
-          <button
-            type="button"
-            className={`d-tab ${currentTab === 'appointments' ? 'active' : ''}`}
-            onClick={() => navigate('/doctor/appointments')}
-          >
-            Записи
-            {panelData.activeAppointmentsCount > 0 && (
-              <span className="badge">{panelData.activeAppointmentsCount}</span>
-            )}
-          </button>
-          <button
-            type="button"
-            className={`d-tab ${currentTab === 'patients' ? 'active' : ''}`}
-            onClick={() => navigate('/doctor/patients')}
-          >
-            Пациенты
-          </button>
-        </div>
+      <DoctorContent
+        currentTab={currentTab}
+        activeTab={currentTab}
+        profile={profile}
+        onOpenPatientProfile={handleOpenPatientProfile}
+        panelData={panelData}
+        toast={showToast}
+        navigate={navigate}
+      />
 
-        <DoctorContent
-          activeTab={currentTab}
-          profile={profile}
-          onOpenPatientProfile={handleOpenPatientProfile}
-          panelData={panelData}
-          toast={showToast}
-        />
+      <BottomNav />
 
-        <BottomNav />
-
-        <DoctorPanelModals
+      <DoctorPanelModals
           commentModal={panelData.commentModal?.modal || {}}
           appointments={panelData.appointments || []}
           setAppointments={panelData.setAppointments}
@@ -286,9 +307,8 @@ export default function DoctorPanel() {
             onToggleSickLeaveHistory={medicalRecordModal.toggleSickLeaveHistory}
             getSickLeaveWithChanges={medicalRecordModal.getSickLeaveWithChanges}
             hasUnsavedChanges={medicalRecordModal.hasUnsavedChanges}
-           onOpenPrescription={setPrescriptionPatient}
-        />
+           onOpenPrescription={setPrescriptionPatient}>
+        </DoctorPanelModals>
       </div>
-    </div>
   );
 }

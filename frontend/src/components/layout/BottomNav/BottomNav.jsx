@@ -3,7 +3,7 @@ import './BottomNav.css';
 
 const navItems = [
   { to: '/home', icon: 'home', label: 'Главная' },
-  { to: '/doctors', icon: 'local_hospital', label: 'Врачи' },
+  { to: '/doctor/patients', icon: 'local_hospital', label: 'Пациенты' },
   { to: '/chats', icon: 'chat', label: 'Чаты' },
   { to: '/profile', icon: 'person', label: 'Профиль' },
 ];
