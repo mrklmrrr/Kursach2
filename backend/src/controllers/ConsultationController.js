@@ -130,6 +130,13 @@ const ConsultationController = class {
         response.patientName = consultation.patientName;
         response.patientAvatarUrl = resolveAvatarUrl(patient.avatarUrl || '');
       }
+    } else {
+      // Include doctor info and avatar for patients
+      const doctor = await this.doctorRepository.findById(consultation.doctorId);
+      if (doctor) {
+        response.doctorId = consultation.doctorId;
+        response.doctorAvatarUrl = resolveAvatarUrl(doctor.avatarUrl || '');
+      }
     }
 
     res.json(response);

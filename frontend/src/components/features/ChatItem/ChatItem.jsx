@@ -11,7 +11,8 @@ export default function ChatItem({ chat }) {
           id: chat.doctorId,
           name: chat.doctorName,
           specialty: chat.specialty,
-          avatar: chat.avatar,
+          avatar: chat.avatarUrl,
+          avatarUrl: chat.avatarUrl,
         },
       },
     });

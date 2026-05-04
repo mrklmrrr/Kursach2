@@ -11,7 +11,7 @@ export default function ChatRoom() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState('');
   const [loading, setLoading] = useState(true);
@@ -19,6 +19,7 @@ export default function ChatRoom() {
   const [chatMeta, setChatMeta] = useState(null);
   const [showPatientProfile, setShowPatientProfile] = useState(false);
   const [startingVideo, setStartingVideo] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false);
   const messagesEndRef = useRef(null);
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -27,6 +28,8 @@ export default function ChatRoom() {
     id,
     name: 'Врач',
     specialty: 'Специалист',
+    avatar: '',
+    avatarUrl: ''
   };
 
   const isDoctor = user?.role === 'doctor';
@@ -50,8 +53,11 @@ export default function ChatRoom() {
 
   useEffect(() => {
     const loadMessages = async () => {
+      console.log('[ChatRoom] Loading messages for chat:', id);
       try {
         const { data: messagesData } = await chatApi.getMessages(id);
+
+        console.log('[ChatRoom] Messages loaded:', messagesData);
 
         // Extract chat metadata from messages response
         const currentChatMeta = {
@@ -61,13 +67,16 @@ export default function ChatRoom() {
           patientId: messagesData.patientId || null,
           patientName: messagesData.patientName || null,
           patientAvatarUrl: messagesData.patientAvatarUrl || null,
-          doctorId: null
+          doctorId: null,
+          doctorAvatarUrl: messagesData.doctorAvatarUrl || ''
         };
 
         setChatMeta(currentChatMeta);
-        setMessages(Array.isArray(messagesData.messages) ? messagesData.messages : []);
+        const messagesArray = Array.isArray(messagesData.messages) ? messagesData.messages : [];
+        console.log('[ChatRoom] Messages array:', messagesArray);
+        setMessages(messagesArray);
       } catch (err) {
-        console.error('Не удалось загрузить сообщения', err);
+        console.error('[ChatRoom] Failed to load messages:', err);
         if (err.response?.status === 404) {
           setMessages([]);
           alert('Чат не найден или у вас нет доступа к этому чату');
@@ -81,19 +90,100 @@ export default function ChatRoom() {
 
     loadMessages();
 
+    // Connect to socket for real-time messages
+    if (token) {
+      console.log('[ChatRoom] Connecting to socket...');
+      const socket = chatApi.connectSocket(token);
+      socketRef.current = socket;
+
+      socket.on('connect', () => {
+        console.log('[ChatRoom] Socket connected');
+        setSocketConnected(true);
+      });
+
+      socket.on('disconnect', () => {
+        console.log('[ChatRoom] Socket disconnected');
+        setSocketConnected(false);
+      });
+
+      // Join the chat room
+      console.log('[ChatRoom] Joining chat room:', id);
+      socket.emit('join-chat', id);
+
+      // Listen for new messages
+      socket.on('new-message', (newMessage) => {
+        console.log('[ChatRoom] New message received:', newMessage);
+        setMessages((prev) => {
+          // Avoid duplicates
+          if (prev.some((m) => m._id === newMessage._id || m.id === newMessage.id)) {
+            console.log('[ChatRoom] Message already exists, skipping');
+            return prev;
+          }
+          console.log('[ChatRoom] Adding new message to list');
+          return [...prev, newMessage];
+        });
+      });
+
+      // Handle socket errors
+      socket.on('chat-error', (error) => {
+        console.error('[ChatRoom] Socket error:', error);
+      });
+
+      return () => {
+        console.log('[ChatRoom] Cleaning up socket');
+        socket.off('new-message');
+        socket.off('chat-error');
+        socket.off('connect');
+        socket.off('disconnect');
+        socket.disconnect();
+      };
+    } else {
+      console.warn('[ChatRoom] No token available, socket will not connect');
+    }
+
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
       }
     };
-  }, [id]);
+  }, [id, token]);
 
   const handleSend = useCallback(() => {
     if (!inputMsg.trim()) return;
-    socketRef.current?.emit('send-message', { chatId: id, message: inputMsg.trim() });
+    
+    const messageText = inputMsg.trim();
+    
+    // Optimistically add message to UI
+    const tempMessage = {
+      _id: `temp-${Date.now()}`,
+      message: messageText,
+      sender: isDoctor ? 'doctor' : 'user',
+      senderId: user?.id ? String(user.id) : '',
+      timestamp: new Date().toISOString(),
+      messageType: 'text'
+    };
+    
+    setMessages((prev) => [...prev, tempMessage]);
     setInputMsg('');
-  }, [id, inputMsg]);
+    
+    // Send via socket
+    if (socketRef.current) {
+      socketRef.current.emit('send-message', { chatId: id, message: messageText });
+    } else {
+      // Fallback to HTTP API if socket not connected
+      chatApi.sendMessage(id, messageText)
+        .then(() => {
+          console.log('Message sent via HTTP');
+        })
+        .catch((err) => {
+          console.error('Failed to send message:', err);
+          // Remove temp message on error
+          setMessages((prev) => prev.filter(m => m._id !== tempMessage._id));
+          alert('Не удалось отправить сообщение');
+        });
+    }
+  }, [id, inputMsg, isDoctor, user?.id]);
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') handleSend();
@@ -131,12 +221,19 @@ export default function ChatRoom() {
     const currentUserId = user?.id != null ? String(user.id) : '';
     const messageSenderId = msg.senderId != null ? String(msg.senderId) : '';
 
+    console.log('[ChatRoom] isOwnMessage check:', { currentUserId, messageSenderId, sender: msg.sender });
+
+    // First try to match by senderId
     if (currentUserId && messageSenderId) {
-      return currentUserId === messageSenderId;
+      const isOwn = currentUserId === messageSenderId;
+      console.log('[ChatRoom] Matched by senderId:', isOwn);
+      return isOwn;
     }
 
-    if (isDoctor) return msg.sender === 'doctor';
-    return msg.sender === 'user';
+    // Fallback to sender field for backwards compatibility
+    const isOwn = isDoctor ? msg.sender === 'doctor' : msg.sender === 'user';
+    console.log('[ChatRoom] Matched by sender:', isOwn);
+    return isOwn;
   }, [isDoctor, user?.id]);
 
   const resolveFileUrl = (url) => {
@@ -190,6 +287,7 @@ export default function ChatRoom() {
             <div className="chat-room-doctor-spec">
               {chatCompanion.specialty}
               {!isDoctor ? ' • Открыть профиль' : ''}
+              {!socketConnected && !loading && ' • Оффлайн'}
             </div>
           </div>
         </button>
@@ -276,6 +374,19 @@ export default function ChatRoom() {
               <Modal.Body>
                 <p><strong>Имя:</strong> {chatMeta?.patientName || 'Пациент'}</p>
                 <p><strong>ID:</strong> {chatMeta?.patientId || '—'}</p>
+                {chatMeta?.patientAvatarUrl && (
+                  <img 
+                    src={chatMeta.patientAvatarUrl} 
+                    alt="Аватар пациента" 
+                    style={{ 
+                      width: '80px', 
+                      height: '80px', 
+                      borderRadius: '50%', 
+                      objectFit: 'cover',
+                      marginTop: '12px'
+                    }} 
+                  />
+                )}
               </Modal.Body>
  
               <Modal.Footer>

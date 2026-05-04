@@ -22,6 +22,7 @@ function setUserCache(user) {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const checkAuthDone = useRef(false);
 
@@ -31,8 +32,9 @@ export function AuthProvider({ children }) {
     checkAuthDone.current = true;
 
     const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        setToken(storedToken);
         // Try cache first
         const cached = getCachedUser();
         if (cached) {
@@ -47,6 +49,7 @@ export function AuthProvider({ children }) {
           setUser(res.data);
         } catch {
           localStorage.removeItem('token');
+          setToken(null);
           setUser(null);
         }
       }
@@ -66,21 +69,27 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (phone, password) => {
     const res = await authApi.login(phone, password);
-    localStorage.setItem('token', res.data.token);
+    const token = res.data.token;
+    localStorage.setItem('token', token);
+    setToken(token);
     setUser(res.data.user);
     return res.data.user;
   }, []);
 
   const loginAdmin = useCallback(async (email, password) => {
     const res = await adminApi.login(email, password);
-    localStorage.setItem('token', res.data.token);
+    const token = res.data.token;
+    localStorage.setItem('token', token);
+    setToken(token);
     setUser(res.data.user);
     return res.data.user;
   }, []);
 
   const register = useCallback(async (userData) => {
     const res = await authApi.register(userData);
-    localStorage.setItem('token', res.data.token);
+    const token = res.data.token;
+    localStorage.setItem('token', token);
+    setToken(token);
     setUser(res.data.user);
     return res.data.user;
   }, []);
@@ -101,13 +110,14 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     localStorage.removeItem('token');
+    setToken(null);
     userCache = null;
     cacheTimestamp = 0;
     setUser(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, loginAdmin, register, updateUser, refreshUser, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, loginAdmin, register, updateUser, refreshUser, logout }}>
       {children}
     </AuthContext.Provider>
   );
