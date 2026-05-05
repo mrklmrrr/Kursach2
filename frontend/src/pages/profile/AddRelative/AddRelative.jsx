@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dependentApi } from '../../../services/dependentApi';
-import { AppHeader, BottomNav } from '../../../components/layout';
+import { AppHeader, BottomNav, UserSidebar } from '../../../components/layout';
 import { Button, Input } from '../../../components/ui';
 import { RELATION_TYPES, GENDER_TYPES } from '../../../constants';
 import './AddRelative.css';
@@ -78,7 +78,8 @@ export default function AddRelative() {
   };
 
   return (
-    <div className="add-relative-page">
+    <div className="add-relative-page user-panel-page">
+      <UserSidebar />
       <AppHeader showBack backTo="/profile" />
       <div className="add-relative-inner page-shell page-shell--flex-grow">
         <h1 className="add-relative-title lux-heading">Родственники</h1>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doctorApi } from '../../../services/doctorApi';
-import { AppHeader, BottomNav } from '../../../components/layout';
+import { AppHeader, BottomNav, UserSidebar } from '../../../components/layout';
 import { DoctorCard } from '../../../components/features';
 import { Input } from '../../../components/ui';
 import { EmptyState } from '../../../components/ui';
@@ -60,7 +60,8 @@ export default function Doctors() {
   }, [doctors, searchTerm, filter]);
 
   return (
-    <div className="doctors-page">
+    <div className="doctors-page user-panel-page">
+      <UserSidebar />
       <AppHeader showBack backTo="/home" />
       <div className="doctors-page-content page-shell page-shell--flex-grow">
         <div className="search-bar">

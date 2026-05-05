@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Avatar, Modal } from '../../../components/ui';
+import { Avatar } from '../../../components/ui';
 import { chatApi } from '../../../services/chatApi';
 import { videoRoomApi } from '../../../services/videoRoomApi';
+import { doctorPanelApi } from '../../../services/doctorPanelApi';
 import { useAuth } from '../../../hooks/useAuth';
+import { UserSidebar } from '../../../components/layout';
 import DoctorSidebar from '../../doctorPanel/components/DoctorSidebar/DoctorSidebar';
+import PatientProfileModal from '../../doctorPanel/components/modals/PatientProfileModal';
 import './ChatRoom.css';
 
 // Global socket instance to avoid reconnecting on every navigation
@@ -70,7 +73,7 @@ export default function ChatRoom() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [chatMeta, setChatMeta] = useState(null);
-  const [showPatientProfile, setShowPatientProfile] = useState(false);
+  const [selectedPatientProfile, setSelectedPatientProfile] = useState(null);
   const [startingVideo, setStartingVideo] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
   const messagesEndRef = useRef(null);
@@ -84,14 +87,15 @@ export default function ChatRoom() {
     avatar: '',
     avatarUrl: ''
   };
+  const patientFromState = location.state?.patient || null;
 
   const isDoctor = user?.role === 'doctor';
   const chatCompanion = useMemo(() => isDoctor
     ? {
-        id: chatMeta?.patientId,
-        name: chatMeta?.patientName || 'Пациент',
+        id: chatMeta?.patientId || patientFromState?.id,
+        name: chatMeta?.patientName || patientFromState?.name || 'Пациент',
         specialty: 'Пациент',
-        avatarUrl: chatMeta?.patientAvatarUrl || chatMeta?.patientAvatar || ''
+        avatarUrl: chatMeta?.patientAvatarUrl || chatMeta?.patientAvatar || patientFromState?.avatarUrl || patientFromState?.avatar || ''
       }
     : {
         id: doctor.id || chatMeta?.doctorId,
@@ -99,7 +103,7 @@ export default function ChatRoom() {
         specialty: doctor.specialty || chatMeta?.specialty || 'Специалист',
         avatarUrl: doctor.avatarUrl || doctor.avatar || chatMeta?.doctorAvatarUrl || chatMeta?.doctorAvatar || ''
       },
-  [isDoctor, chatMeta, doctor]);
+  [isDoctor, chatMeta, doctor, patientFromState]);
 
   // Smooth scroll only when new messages arrive (not on every render)
   const lastMessageCountRef = useRef(messages.length);
@@ -121,10 +125,10 @@ export default function ChatRoom() {
           _id: messagesData.consultationId || id,
           doctorName: messagesData.doctorName,
           specialty: messagesData.specialty,
-          patientId: messagesData.patientId || null,
-          patientName: messagesData.patientName || null,
-          patientAvatarUrl: messagesData.patientAvatarUrl || null,
-          doctorId: null,
+          patientId: messagesData.patientId || patientFromState?.id || null,
+          patientName: messagesData.patientName || patientFromState?.name || null,
+          patientAvatarUrl: messagesData.patientAvatarUrl || patientFromState?.avatarUrl || patientFromState?.avatar || null,
+          doctorId: messagesData.doctorId || doctor.id || null,
           doctorAvatarUrl: messagesData.doctorAvatarUrl || ''
         };
 
@@ -200,7 +204,7 @@ export default function ChatRoom() {
         }
       }
     };
-  }, [id, token]);
+  }, [id, token, patientFromState, doctor.id]);
 
   const handleSend = useCallback(() => {
     if (!inputMsg.trim()) return;
@@ -283,7 +287,34 @@ export default function ChatRoom() {
 
   const handleHeaderProfileClick = () => {
     if (isDoctor) {
-      setShowPatientProfile(true);
+      const patientId = chatCompanion.id || chatMeta?.patientId;
+      if (!patientId) return;
+
+      const fallbackPatient = {
+        id: patientId,
+        name: chatCompanion.name || chatMeta?.patientName || 'Пациент',
+        phone: '—',
+        birthDate: '',
+        consultationCount: 0
+      };
+      setSelectedPatientProfile(fallbackPatient);
+
+      doctorPanelApi.getPatients()
+        .then(({ data }) => {
+          const patientIdStr = String(patientId);
+          const matched = (Array.isArray(data) ? data : []).find((p) =>
+            String(p.id) === patientIdStr || String(p._id) === patientIdStr || String(p.legacyId) === patientIdStr
+          );
+          if (matched) {
+            setSelectedPatientProfile({
+              ...matched,
+              id: matched.id || matched._id || patientId
+            });
+          }
+        })
+        .catch(() => {
+          // Keep fallback profile if patients list is temporarily unavailable.
+        });
       return;
     }
     const doctorId = chatCompanion.id;
@@ -308,9 +339,21 @@ export default function ChatRoom() {
     }
   };
 
+  const handleOpenMedicalRecordFromChat = (patient) => {
+    const patientId = patient?.id || patient?._id || chatMeta?.patientId || chatCompanion.id;
+    if (!patientId) return;
+    navigate('/doctor/permit', {
+      state: {
+        openMedicalRecordForPatientId: patientId,
+        openMedicalRecordTab: 'systems'
+      }
+    });
+  };
+
   return (
-    <div className={`chat-room-page ${isDoctor ? 'doctor-panel-page' : ''}`}>
+    <div className={`chat-room-page ${isDoctor ? 'doctor-panel-page' : 'user-panel-page'}`}>
       {isDoctor && <DoctorSidebar profile={user} />}
+      {!isDoctor && <UserSidebar />}
       <header className="chat-room-header">
         <button className="back-btn" onClick={() => navigate(isDoctor ? '/doctor/chats' : '/chats')}>
           <span className="material-icons">arrow_back</span>
@@ -389,39 +432,11 @@ export default function ChatRoom() {
         </div>
  
         {isDoctor && (
-        <Modal open={showPatientProfile} onClose={() => setShowPatientProfile(false)}>
-          <Modal.Overlay>
-            <Modal.Content>
-              <Modal.Header>
-                <h3>Профиль пациента</h3>
-              </Modal.Header>
- 
-              <Modal.Body>
-                <p><strong>Имя:</strong> {chatMeta?.patientName || 'Пациент'}</p>
-                <p><strong>ID:</strong> {chatMeta?.patientId || '—'}</p>
-                {chatMeta?.patientAvatarUrl && (
-                  <img 
-                    src={chatMeta.patientAvatarUrl} 
-                    alt="Аватар пациента" 
-                    style={{ 
-                      width: '80px', 
-                      height: '80px', 
-                      borderRadius: '50%', 
-                      objectFit: 'cover',
-                      marginTop: '12px'
-                    }} 
-                  />
-                )}
-              </Modal.Body>
- 
-              <Modal.Footer>
-                <button type="button" className="btn btn-primary" onClick={() => setShowPatientProfile(false)}>
-                  Закрыть
-                </button>
-              </Modal.Footer>
-            </Modal.Content>
-          </Modal.Overlay>
-        </Modal>
+          <PatientProfileModal
+            patient={selectedPatientProfile}
+            onOpenMedicalRecord={handleOpenMedicalRecordFromChat}
+            onClose={() => setSelectedPatientProfile(null)}
+          />
         )}
       </div>
     </div>

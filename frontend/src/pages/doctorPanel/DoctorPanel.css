@@ -440,6 +440,96 @@
   margin: 8px 0;
 }
 
+.patient-profile-modal {
+  width: min(100%, 520px);
+  border-radius: 18px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 20px 52px rgba(15, 23, 42, 0.14);
+}
+
+.patient-profile-modal__title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.patient-profile-modal__subtitle {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.88rem;
+}
+
+.patient-profile-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.patient-profile-modal__hero {
+  padding: 14px;
+  border-radius: 14px;
+  background: linear-gradient(160deg, #eef2ff 0%, #f8fafc 100%);
+  border: 1px solid #dbeafe;
+}
+
+.patient-profile-modal__name {
+  margin: 0;
+  color: #111827;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.patient-profile-modal__badges {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.patient-profile-modal__badge {
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.patient-profile-modal__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.patient-profile-modal__field {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.patient-profile-modal__label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+.patient-profile-modal__value {
+  font-size: 0.95rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.patient-profile-modal__footer .btn {
+  min-height: 46px;
+}
+
 /* =========================================================
    Desktop sidebar layout
    ========================================================= */
@@ -823,6 +913,14 @@
   .doctor-insights {
     grid-template-columns: 1fr;
   }
+
+  .patient-profile-modal__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .patient-profile-modal__footer {
+    flex-direction: column-reverse;
+  }
 }
 
 /* Desktop overrides */
@@ -944,6 +1042,40 @@ body.dark .status-badge.payment-unpaid {
 body.dark .patient-modal {
   background: #1f2937;
   color: #f3f4f6;
+}
+
+body.dark .patient-profile-modal {
+  border-color: #374151;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+}
+
+body.dark .patient-profile-modal__subtitle {
+  color: #9ca3af;
+}
+
+body.dark .patient-profile-modal__hero {
+  background: linear-gradient(160deg, rgba(79, 70, 229, 0.24) 0%, #1f2937 100%);
+  border-color: #374151;
+}
+
+body.dark .patient-profile-modal__name,
+body.dark .patient-profile-modal__value {
+  color: #f3f4f6;
+}
+
+body.dark .patient-profile-modal__badge {
+  background: #111827;
+  border-color: #374151;
+  color: #d1d5db;
+}
+
+body.dark .patient-profile-modal__field {
+  background: #111827;
+  border-color: #374151;
+}
+
+body.dark .patient-profile-modal__label {
+  color: #9ca3af;
 }
 
 body.dark .medical-section-card {

@@ -4,7 +4,7 @@ import { doctorApi } from '../../../services/doctorApi';
 import { appointmentApi } from '../../../services/appointmentApi';
 import { consultationApi } from '../../../services/consultationApi';
 import { chatApi } from '../../../services/chatApi';
-import { AppHeader, BottomNav } from '../../../components/layout';
+import { AppHeader, BottomNav, UserSidebar } from '../../../components/layout';
 import { Avatar, AlertBanner } from '../../../components/ui';
 import { Button } from '../../../components/ui';
 import { Loader } from '../../../components/ui';
@@ -215,7 +215,8 @@ export default function DoctorProfile() {
   };
 
   return (
-    <div className="doctor-profile-page">
+    <div className="doctor-profile-page user-panel-page">
+      <UserSidebar />
       <AppHeader showBack backTo={ROUTES.DOCTORS} />
       <div className="doctor-profile-content page-shell page-shell--flex-grow">
         <div className="doctor-hero">

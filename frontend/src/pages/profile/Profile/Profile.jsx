@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
-import { AppHeader, BottomNav } from '@components/layout';
+import { AppHeader, BottomNav, UserSidebar } from '@components/layout';
 import { Card } from '@components/ui';
 import DoctorSidebar from '@pages/doctorPanel/components/DoctorSidebar/DoctorSidebar';
 import { useConsultationHistory, useMedicalRecord } from '@hooks/profile';
@@ -54,8 +54,9 @@ export default function Profile() {
   const isDoctor = user?.role === 'doctor';
 
   return (
-    <div className={`profile-page ${isDoctor ? 'doctor-panel-page' : ''}`}>
+    <div className={`profile-page ${isDoctor ? 'doctor-panel-page' : 'user-panel-page'}`}>
       {isDoctor && <DoctorSidebar profile={user} />}
+      {!isDoctor && <UserSidebar />}
       <AppHeader />
       <div className="profile-content page-shell page-shell--flex-grow">
         <ProfileHeader user={user} />
@@ -72,8 +73,9 @@ export default function Profile() {
                 ) : dependents.length > 0 ? (
                   <ul className="profile-simple-list">
                     {dependents.map((item) => (
-                      <li key={item.id || item._id}>
-                        {item.fullName || item.name} {item.relation ? `(${item.relation})` : ''}
+                      <li key={item.id || item._id} className="profile-relative-item">
+                        <span className="profile-relative-name">{item.fullName || item.name}</span>
+                        {item.relation ? <span className="profile-relative-relation">{item.relation}</span> : null}
                       </li>
                     ))}
                   </ul>
@@ -82,7 +84,11 @@ export default function Profile() {
                 )}
               </Card.Body>
               <Card.Footer>
-                <button type="button" className="btn btn-outline btn-small" onClick={() => navigate('/profile/add-relative')}>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-small add-relative-btn"
+                  onClick={() => navigate('/profile/add-relative')}
+                >
                   Добавить родственника
                 </button>
               </Card.Footer>

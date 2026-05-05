@@ -67,6 +67,7 @@ function LaboratoryResearch() {
   const visibleLabTypes = useMemo(() => researchTypes.filter((t) => nameMatchesSearch(t.name)), [researchTypes, nameMatchesSearch]);
   const visibleGridTemplates = useMemo(() => templates.filter((t) => nameMatchesSearch(t.name)), [templates, nameMatchesSearch]);
   const visibleResults = useMemo(() => results.filter((r) => nameMatchesSearch(r.researchTypeId?.name)), [results, nameMatchesSearch]);
+  const selectedTypeName = selectedType?.name || 'Не выбран';
 
   const formatDateTime = (value) => {
     if (!value) return '—';
@@ -121,11 +122,25 @@ function LaboratoryResearch() {
         <div className="research-management lab-research-premium">
         <div className="research-header">
           <div className="research-header-top">
-            <button className="btn-back-compact" onClick={() => navigate('/doctor/permit', { state: { openMedicalRecordForPatientId: patientId } })}>
+            <button className="btn-back-compact" onClick={() => navigate('/doctor/permit', { state: { openMedicalRecordForPatientId: patientId, openMedicalRecordTab: 'laboratory' } })}>
               <span className="material-icons">arrow_back</span>
               <span>К пациенту</span>
             </button>
             <h2>Лабораторные исследования — {patient?.name || 'Пациент'}</h2>
+          </div>
+          <div className="research-meta-cards">
+            <div className="research-meta-card">
+              <span className="research-meta-label">Выбранный анализ</span>
+              <strong>{selectedTypeName}</strong>
+            </div>
+            <div className="research-meta-card">
+              <span className="research-meta-label">Доступно шаблонов</span>
+              <strong>{templates.length}</strong>
+            </div>
+            <div className="research-meta-card">
+              <span className="research-meta-label">Записей в истории</span>
+              <strong>{results.length}</strong>
+            </div>
           </div>
           <div className="research-header-actions">
             <button
@@ -148,6 +163,9 @@ function LaboratoryResearch() {
         {panelMode === 'study' && (
           <form className="research-form lab-add-study" onSubmit={handleSaveStudy}>
             <h3>Новое лабораторное исследование</h3>
+            <p className="research-form-hint">
+              Выберите анализ из справочника, заполните показатели и добавьте клиническое заключение.
+            </p>
             <div className="form-group">
               <label>Анализ по названию</label>
               <div className="lab-autocomplete-container" ref={autocompleteRef}>

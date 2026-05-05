@@ -12,6 +12,33 @@
   border-bottom: 1px solid #e0e0e0;
 }
 
+.research-meta-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.research-meta-card {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.research-meta-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.research-meta-card strong {
+  font-size: 14px;
+  color: #1e293b;
+}
+
 .research-header-top {
   display: flex;
   justify-content: space-between;
@@ -87,6 +114,13 @@
   margin-top: 0;
   margin-bottom: 20px;
   color: #495057;
+}
+
+.research-form-hint {
+  margin-top: -8px;
+  margin-bottom: 16px;
+  color: #64748b;
+  font-size: 13px;
 }
 
 .form-group {
@@ -297,7 +331,10 @@
 .research-header-actions {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .lab-analysis-search {
@@ -1230,6 +1267,7 @@
 /* Переключатель режимов в шапке */
 .research-header-actions .btn {
   min-width: 200px;
+  flex: 0 0 auto;
   justify-content: center;
 }
 
@@ -1311,6 +1349,19 @@ body.dark .research-header h2 {
   color: #f1f5f9;
 }
 
+body.dark .research-meta-card {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .research-meta-label {
+  color: #9ca3af;
+}
+
+body.dark .research-meta-card strong {
+  color: #f1f5f9;
+}
+
 body.dark .btn-back-compact {
   background: #1f2937;
   border-color: #374151;
@@ -1342,6 +1393,10 @@ body.dark .research-form {
 
 body.dark .research-form h3 {
   color: #f1f5f9;
+}
+
+body.dark .research-form-hint {
+  color: #9ca3af;
 }
 
 body.dark .form-group label {

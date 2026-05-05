@@ -16,6 +16,52 @@
   padding: 0 4px;
 }
 
+.chats-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.chat-search-input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+  color: #111827;
+  background: #fff;
+}
+
+.chat-search-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.chat-role-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chat-role-filter {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #f3f4f6;
+  color: #4b5563;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.chat-role-filter.active {
+  background: #4f46e5;
+  color: #fff;
+}
+
 .chat-list {
   display: flex;
   flex-direction: column;
@@ -130,4 +176,41 @@ body.dark .chats-page {
 
 body.dark .chat-time {
   color: #6b7280;
+}
+
+body.dark .chat-search-input {
+  background: #1f2937;
+  border-color: #374151;
+  color: #f3f4f6;
+}
+
+body.dark .chat-search-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+body.dark .chat-role-filter {
+  background: #374151;
+  color: #d1d5db;
+}
+
+body.dark .chat-role-filter.active {
+  background: #4f46e5;
+  color: #fff;
+}
+
+@media (min-width: 1024px) {
+  .user-panel-page.chats-page {
+    flex-direction: column;
+  }
+
+  .user-panel-page.chats-page .page-shell {
+    padding-bottom: 24px !important;
+  }
+
+  .user-panel-page.chats-page .chats-content .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 24px;
+    padding: 0;
+  }
 }

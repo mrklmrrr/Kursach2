@@ -128,6 +128,7 @@ class DoctorPanelController {
 
       patients.push({
         id: objectId || id,
+        legacyId: legacyId || null,
         name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         phone: user.phone || '',
         birthDate: user.birthDate || '',

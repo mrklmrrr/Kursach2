@@ -209,13 +209,24 @@ export default function DoctorPanel() {
   useEffect(() => {
     const state = location.state;
     if (state?.openMedicalRecordForPatientId) {
-      const patientId = state.openMedicalRecordForPatientId;
-      let patient = panelData.patientById?.get(String(patientId));
+      const patientId = String(state.openMedicalRecordForPatientId);
+      const tabFromState = state.openMedicalRecordTab;
+      let patient = panelData.patientById?.get(patientId);
       if (!patient) {
-        patient = panelData.patients.find(p => String(p.id) === String(patientId));
+        patient = panelData.patients.find((p) =>
+          String(p.id) === patientId || String(p._id) === patientId
+        );
+      }
+      if (!patient) {
+        patient = { id: patientId, name: 'Пациент' };
+      } else if (!patient.id && patient._id) {
+        patient = { ...patient, id: patient._id };
       }
       if (patient) {
         medicalRecordModal.openMedicalRecord(patient);
+        if (tabFromState === 'laboratory' || tabFromState === 'instrumental' || tabFromState === 'systems' || tabFromState === 'sickLeave') {
+          medicalRecordModal.setTab(tabFromState);
+        }
       }
       // Очистить state после обработки
       navigate(location.pathname, { replace: true, state: {} });

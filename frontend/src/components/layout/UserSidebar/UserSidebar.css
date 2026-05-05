@@ -1,0 +1,209 @@
+.user-sidebar {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .user-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 260px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-right: 1px solid rgba(148, 163, 184, 0.25);
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    padding: 24px 16px;
+    z-index: 60;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  .user-sidebar-header {
+    margin-bottom: 24px;
+    padding: 0 8px;
+  }
+
+  .user-sidebar-brand {
+    font-family: var(--font-display, 'Inter', sans-serif);
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    background: linear-gradient(120deg, #4f46e5, #7c3aed, #0d9488);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .user-sidebar-subtitle {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .user-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .user-sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .user-sidebar-link:hover {
+    background: rgba(79, 70, 229, 0.08);
+    color: #4f46e5;
+  }
+
+  .user-sidebar-link.active {
+    background: #4f46e5;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  }
+
+  .user-sidebar-link .material-icons {
+    font-size: 1.3rem;
+  }
+
+  .user-sidebar-footer {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .user-sidebar-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    color: inherit;
+  }
+
+  .user-sidebar-profile:hover {
+    background: rgba(79, 70, 229, 0.08);
+  }
+
+  .user-sidebar-profile.active {
+    background: #4f46e5;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  }
+
+  .user-sidebar-profile-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .user-sidebar-profile-status {
+    font-size: 0.78rem;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 170px;
+  }
+
+  .user-sidebar-profile.active .user-sidebar-profile-name {
+    color: #ffffff;
+  }
+
+  .user-sidebar-profile.active .user-sidebar-profile-status {
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .user-panel-page {
+    min-height: 100vh;
+    width: calc(100% - 260px);
+    margin-left: 260px;
+    overflow-x: hidden;
+  }
+
+  .user-panel-page .app-header,
+  .user-panel-page .bottom-nav,
+  .user-panel-page .bottom-nav-shell {
+    display: none !important;
+  }
+
+  .user-panel-page .page-shell {
+    max-width: none;
+    padding: 24px 32px !important;
+  }
+}
+
+body.dark .user-sidebar {
+  background: rgba(15, 23, 42, 0.98);
+  border-color: rgba(71, 85, 105, 0.4);
+}
+
+body.dark .user-sidebar-subtitle {
+  color: #64748b;
+}
+
+body.dark .user-sidebar-link {
+  color: #94a3b8;
+}
+
+body.dark .user-sidebar-link:hover {
+  background: rgba(99, 102, 241, 0.1);
+  color: #a5b4fc;
+}
+
+body.dark .user-sidebar-link.active {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+body.dark .user-sidebar-footer {
+  border-color: #334155;
+}
+
+body.dark .user-sidebar-profile:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+body.dark .user-sidebar-profile-name {
+  color: #f1f5f9;
+}
+
+body.dark .user-sidebar-profile-status {
+  color: #94a3b8;
+}
+
+body.dark .user-sidebar-profile.active {
+  background: #4f46e5;
+}
+
+body.dark .user-sidebar-profile.active .user-sidebar-profile-name {
+  color: #ffffff;
+}
+
+body.dark .user-sidebar-profile.active .user-sidebar-profile-status {
+  color: rgba(255, 255, 255, 0.75);
+}

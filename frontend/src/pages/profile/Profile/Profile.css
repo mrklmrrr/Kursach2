@@ -313,6 +313,41 @@ body.dark .prescription-date {
 
 .add-relative-btn {
   width: 100%;
+  min-height: 44px;
+}
+
+.profile-simple-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-relative-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 10px 12px;
+}
+
+.profile-relative-name {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.profile-relative-relation {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+  background: #e2e8f0;
+  border-radius: 999px;
+  padding: 4px 10px;
 }
 
 .empty-info {
@@ -888,6 +923,20 @@ body.dark .section-card {
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
 }
 
+body.dark .profile-relative-item {
+  background: #111827;
+  border-color: #374151;
+}
+
+body.dark .profile-relative-name {
+  color: #f3f4f6;
+}
+
+body.dark .profile-relative-relation {
+  background: #374151;
+  color: #d1d5db;
+}
+
 body.dark .section-card h3 {
   color: #f9fafb;
 }
@@ -1159,4 +1208,54 @@ body.dark .prescription-item {
 
 body.dark .prescription-item ul {
   color: #d1d5db;
+}
+
+@media (min-width: 1024px) {
+  .profile-page:not(.doctor-panel-page) .bottom-nav,
+  .profile-page:not(.doctor-panel-page) .bottom-nav-shell {
+    display: none !important;
+  }
+
+  .profile-page:not(.doctor-panel-page) .profile-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 28px 28px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 16px;
+  }
+
+  .profile-page:not(.doctor-panel-page) .profile-content > .profile-header,
+  .profile-page:not(.doctor-panel-page) .profile-content > .section-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .profile-page:not(.doctor-panel-page) .profile-content > .section-card,
+  .profile-page:not(.doctor-panel-page) .profile-content > .card {
+    margin-bottom: 0;
+  }
+
+  .profile-page:not(.doctor-panel-page) .profile-header {
+    margin-bottom: 0;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .profile-page:not(.doctor-panel-page) .profile-header h1 {
+    margin: 0 0 6px;
+  }
+
+  .profile-page:not(.doctor-panel-page) .profile-avatar-btn {
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-relative-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

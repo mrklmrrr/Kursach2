@@ -12,8 +12,15 @@ function ChatItem({ chat }) {
           id: chat.doctorId,
           name: chat.doctorName,
           specialty: chat.specialty,
-          avatar: chat.avatarUrl,
-          avatarUrl: chat.avatarUrl,
+          avatar: chat.doctorAvatarUrl || '',
+          avatarUrl: chat.doctorAvatarUrl || '',
+        },
+        patient: {
+          id: chat.patientId,
+          name: chat.patientName,
+          specialty: 'Пациент',
+          avatar: chat.patientAvatarUrl || '',
+          avatarUrl: chat.patientAvatarUrl || '',
         },
       },
     });

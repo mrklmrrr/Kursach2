@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { doctorApi } from '../../../services/doctorApi';
 import { appointmentApi } from '../../../services/appointmentApi';
-import { AppHeader, BottomNav } from '../../../components/layout';
+import { AppHeader, BottomNav, UserSidebar } from '../../../components/layout';
 import { DoctorCard } from '../../../components/features';
 import { EmptyState, ConfirmModal, Modal } from '../../../components/ui';
 import './Home.css';
@@ -158,7 +158,8 @@ export default function Home() {
   const detailsType = selectedAppointment?.type === 'online' ? 'Онлайн консультация' : 'Офлайн прием';
 
   return (
-    <div className="home-page">
+    <div className="home-page user-panel-page">
+      <UserSidebar />
       <AppHeader />
       <div className="home-container page-shell page-shell--flex-grow">
         <section className="greeting-section">

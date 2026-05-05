@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { AppHeader, BottomNav } from '../../../components/layout';
+import { AppHeader, BottomNav, UserSidebar } from '../../../components/layout';
 import { ROUTES } from '../../../constants';
 import './Emergency.css';
 
@@ -11,7 +11,8 @@ export default function Emergency() {
   };
 
   return (
-    <div className="emergency-page">
+    <div className="emergency-page user-panel-page">
+      <UserSidebar />
       <AppHeader />
       <div className="page-shell page-shell--flex-grow">
       <div className="emergency-hero">
