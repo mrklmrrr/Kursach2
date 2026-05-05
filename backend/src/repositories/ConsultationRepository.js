@@ -159,6 +159,26 @@ class ConsultationRepository {
     );
     return consultation ? consultation.toObject() : null;
   }
+
+  async syncDoctorSnapshot(doctorId, snapshot) {
+    const resolved = resolveId(doctorId);
+    if (!resolved?.byObjectId) return 0;
+
+    const update = {};
+    if (typeof snapshot?.doctorName === 'string' && snapshot.doctorName.trim()) {
+      update.doctorName = snapshot.doctorName.trim();
+    }
+    if (typeof snapshot?.specialty === 'string' && snapshot.specialty.trim()) {
+      update.specialty = snapshot.specialty.trim();
+    }
+    if (Object.keys(update).length === 0) return 0;
+
+    const result = await Consultation.updateMany(
+      { doctorId: resolved.byObjectId },
+      { $set: update }
+    );
+    return result?.modifiedCount || 0;
+  }
 }
 
 module.exports = ConsultationRepository;

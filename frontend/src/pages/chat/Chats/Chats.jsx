@@ -1,16 +1,12 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppHeader, BottomNav, UserSidebar } from '@components/layout';
 import { ChatItem } from '@components/features';
-import { EmptyState } from '@components/ui';
+import { Avatar, EmptyState } from '@components/ui';
 import { chatApi } from '@services/chatApi';
-import { apiCache } from '@services/cache';
 import { useAuth } from '@hooks/useAuth';
 import DoctorSidebar from '../../doctorPanel/components/DoctorSidebar/DoctorSidebar';
 import './Chats.css';
-
-const CHATS_CACHE_KEY = 'chats_list';
-const CHATS_CACHE_TTL = 300000; // 5 minutes
 
 // Memoized time formatting with cache
 const timeCache = new Map();
@@ -43,7 +39,9 @@ function formatChatTime(value) {
 // Memoized chat normalization
 const normalizeCache = new Map();
 function normalizeChats(data, isDoctor) {
-  const cacheKey = `${isDoctor ? 'doctor' : 'patient'}_${data.length}_${data.map(d => d._id).join(',')}`;
+  const cacheKey = `${isDoctor ? 'doctor' : 'patient'}_${data.length}_${data
+    .map((d) => `${d._id}:${d.updatedAt || ''}:${d.doctorName || ''}:${d.patientName || ''}:${d.specialty || ''}`)
+    .join('|')}`;
   const cached = normalizeCache.get(cacheKey);
   
   if (cached) {
@@ -65,6 +63,10 @@ function normalizeChats(data, isDoctor) {
       if (!last) return 'Нет сообщений';
 
       const sender = String(last.sender || '').toLowerCase();
+      if (sender === 'system' || last.messageType === 'system') {
+        return last.message || 'Системное сообщение';
+      }
+
       const senderLabel = sender === 'doctor'
         ? (isDoctor ? 'Вы' : 'Врач')
         : sender === 'user'
@@ -102,15 +104,22 @@ function normalizeChats(data, isDoctor) {
  */
 export default function Chats({ inDoctorPanel = false }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [participantFilter, setParticipantFilter] = useState('all');
+  const [incomingCall, setIncomingCall] = useState(null);
+  const incomingCallSocketRef = useRef(null);
+  const chatsRef = useRef([]);
+
+  useEffect(() => {
+    chatsRef.current = chats;
+  }, [chats]);
 
   const loadChats = useCallback(async () => {
-    console.time('[Chats] loadChats');
+    const loadStart = performance.now();
     setLoading(true);
     setError(null);
     try {
@@ -127,23 +136,14 @@ export default function Chats({ inDoctorPanel = false }) {
       setChats([]);
     } finally {
       setLoading(false);
-      console.timeEnd('[Chats] loadChats');
+      console.log('[Chats] loadChats:', performance.now() - loadStart, 'ms');
     }
   }, [user?.role]);
 
   const loadChatsWithCacheCheck = useCallback(async () => {
-    console.time('[Chats] loadChatsWithCacheCheck');
-    const cached = apiCache.get(CHATS_CACHE_KEY);
-    if (cached && cached.length > 0) {
-      console.log('[Chats] Using cached chats');
-      const isDoctor = user?.role === 'doctor';
-      setChats(normalizeChats(cached, isDoctor));
-      setLoading(false);
-      console.timeEnd('[Chats] loadChatsWithCacheCheck');
-      return;
-    }
+    const loadWithCacheStart = performance.now();
     await loadChats();
-    console.timeEnd('[Chats] loadChatsWithCacheCheck');
+    console.log('[Chats] loadChatsWithCacheCheck:', performance.now() - loadWithCacheStart, 'ms');
   }, [loadChats, user?.role]);
 
   useEffect(() => {
@@ -203,6 +203,45 @@ export default function Chats({ inDoctorPanel = false }) {
       setParticipantFilter('all');
     }
   }, [isDoctor]);
+
+  useEffect(() => {
+    if (!token || isDoctor) return undefined;
+    const socket = chatApi.connectSocket(token);
+    incomingCallSocketRef.current = socket;
+
+    const handleIncomingCall = (callData) => {
+      if (!callData?.chatId || !callData?.roomId) return;
+      const chat = chatsRef.current.find((item) => String(item.id) === String(callData.chatId));
+      setIncomingCall({
+        ...callData,
+        doctorName: callData.doctorName || chat?.doctorName || 'Врач',
+        doctorSpecialty: callData.doctorSpecialty || chat?.specialty || 'Специалист',
+        doctorAvatarUrl: chat?.avatarUrl || ''
+      });
+    };
+
+    socket.on('video-call-incoming', handleIncomingCall);
+    return () => {
+      socket.off('video-call-incoming', handleIncomingCall);
+      socket.disconnect();
+      incomingCallSocketRef.current = null;
+    };
+  }, [token, isDoctor, navigate]);
+
+  const handleAcceptIncomingCall = () => {
+    if (!incomingCall) return;
+    incomingCallSocketRef.current?.emit('video-call-response', { chatId: incomingCall.chatId, accepted: true });
+    navigate(`/video-room/${incomingCall.roomId}`, {
+      state: { consultationId: incomingCall.chatId }
+    });
+    setIncomingCall(null);
+  };
+
+  const handleRejectIncomingCall = () => {
+    if (!incomingCall) return;
+    incomingCallSocketRef.current?.emit('video-call-response', { chatId: incomingCall.chatId, accepted: false });
+    setIncomingCall(null);
+  };
 
   return (
     <div className={`chats-page ${isDoctor ? 'doctor-panel-page' : 'user-panel-page'}`}>
@@ -296,6 +335,33 @@ export default function Chats({ inDoctorPanel = false }) {
         )}
       </div>
       <BottomNav />
+      {incomingCall && (
+        <div className="chats-call-overlay">
+          <div className="chats-call-modal">
+            <div className="chats-call-doctor">
+              <Avatar
+                name={incomingCall.doctorName}
+                src={incomingCall.doctorAvatarUrl || undefined}
+                size="medium"
+              />
+              <div>
+                <h3>Входящий видеозвонок</h3>
+                <p className="chats-call-doctor-name">{incomingCall.doctorName}</p>
+                <p className="chats-call-doctor-spec">{incomingCall.doctorSpecialty}</p>
+              </div>
+            </div>
+            <p className="chats-call-text">Врач приглашает вас к видеоконсультации.</p>
+            <div className="chats-call-actions">
+              <button type="button" className="btn btn-secondary" onClick={handleRejectIncomingCall}>
+                Отклонить
+              </button>
+              <button type="button" className="btn btn-primary" onClick={handleAcceptIncomingCall}>
+                Присоединиться
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

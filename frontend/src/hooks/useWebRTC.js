@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import io from 'socket.io-client';
+import { chatApi } from '../services/chatApi';
 
-const API_BASE = 'http://localhost:5000';
 const DEFAULT_ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' }
 ];
 
-export function useWebRTC(roomId, userRole, token) {
+export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded = null) {
   const [isConnected, setIsConnected] = useState(false);
   const [remoteStream, setRemoteStream] = useState(null);
   const [roomStatus, setRoomStatus] = useState(null);
@@ -15,6 +15,8 @@ export function useWebRTC(roomId, userRole, token) {
   const socketRef = useRef();
   const peerConnectionRef = useRef();
   const localStreamRef = useRef();
+  const creatingOfferRef = useRef(false);
+  const endedRef = useRef(false);
 
   const initPeerConnection = useCallback((iceServersConfig) => {
     const pc = new RTCPeerConnection({
@@ -76,10 +78,25 @@ export function useWebRTC(roomId, userRole, token) {
     await peerConnectionRef.current.addIceCandidate(data.candidate);
   }, []);
 
+  const sendOffer = useCallback(async () => {
+    if (!peerConnectionRef.current || creatingOfferRef.current) return;
+    creatingOfferRef.current = true;
+    try {
+      const offer = await peerConnectionRef.current.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+      });
+      await peerConnectionRef.current.setLocalDescription(offer);
+      socketRef.current.emit('webrtc-offer', { roomId, offer });
+    } finally {
+      creatingOfferRef.current = false;
+    }
+  }, [roomId]);
+
   useEffect(() => {
     if (!roomId || !token) return;
 
-    socketRef.current = io(API_BASE, {
+    socketRef.current = io(chatApi.getBackendOrigin(), {
       auth: { token }
     });
 
@@ -88,11 +105,19 @@ export function useWebRTC(roomId, userRole, token) {
       socketRef.current.emit('join-video-room', roomId);
     });
 
-    socketRef.current.on('room-joined', (data) => {
+    socketRef.current.on('room-joined', async (data) => {
       setRoomStatus(data.status);
       setIsConnected(true);
       setError(null);
       initPeerConnection(data.iceServers || DEFAULT_ICE_SERVERS);
+
+      if (shouldCreateOffer) {
+        try {
+          await sendOffer();
+        } catch {
+          setError('Не удалось инициализировать звонок');
+        }
+      }
     });
 
     socketRef.current.on('webrtc-offer', handleOffer);
@@ -100,11 +125,27 @@ export function useWebRTC(roomId, userRole, token) {
     socketRef.current.on('webrtc-ice-candidate', handleCandidate);
     socketRef.current.on('participant-joined', ({ userId, role }) => {
       console.log('Participant joined:', userId, role);
+      if (shouldCreateOffer && peerConnectionRef.current && !peerConnectionRef.current.remoteDescription) {
+        sendOffer().catch(() => {
+          setError('Не удалось начать трансляцию');
+        });
+      }
     });
     socketRef.current.on('participant-left', ({ userId }) => {
       console.log('Participant left:', userId);
       if (peerConnectionRef.current) {
         peerConnectionRef.current.close();
+      }
+      setRemoteStream(null);
+      setIsConnected(false);
+    });
+    socketRef.current.on('video-call-ended', () => {
+      if (endedRef.current) return;
+      endedRef.current = true;
+      setRemoteStream(null);
+      setIsConnected(false);
+      if (typeof onCallEnded === 'function') {
+        onCallEnded();
       }
     });
     socketRef.current.on('video-error', (err) => {
@@ -122,7 +163,7 @@ export function useWebRTC(roomId, userRole, token) {
         localStreamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
-  }, [roomId, token, initPeerConnection, handleOffer, handleAnswer, handleCandidate]);
+  }, [roomId, token, shouldCreateOffer, onCallEnded, initPeerConnection, handleOffer, handleAnswer, handleCandidate, sendOffer]);
 
   const createOffer = useCallback(async () => {
     if (!peerConnectionRef.current) return;
@@ -139,8 +180,12 @@ export function useWebRTC(roomId, userRole, token) {
     });
   }, [roomId]);
 
-  const leaveRoom = useCallback(() => {
+  const leaveRoom = useCallback((endForAll = false) => {
     if (socketRef.current) {
+      if (endForAll) {
+        endedRef.current = true;
+        socketRef.current.emit('end-video-call', { roomId });
+      }
       socketRef.current.emit('leave-video-room', roomId);
     }
     // Close peer connection

@@ -8,6 +8,7 @@ export default function ResearchResultsList({
   formatDateTime,
   getGridTemplateForResult,
   onOpenTemplate,
+  onPreviewPhoto,
 }) {
   if (results.length === 0) {
     return (
@@ -123,6 +124,23 @@ export default function ResearchResultsList({
                   <div className="result-study-note">
                     <strong>Заключение врача:</strong>
                     <p>{result.studyNote}</p>
+                  </div>
+                )}
+                {Array.isArray(result.studyPhotos) && result.studyPhotos.length > 0 && (
+                  <div className="result-study-photos">
+                    <strong>Фото к заключению:</strong>
+                    <div className="lab-study-photos">
+                      {result.studyPhotos.map((photo, idx) => (
+                        <button
+                          type="button"
+                          key={`${result._id}-photo-${idx}`}
+                          className="lab-study-photo-thumb"
+                          onClick={() => onPreviewPhoto?.(photo.src || photo)}
+                        >
+                          <img src={photo.src || photo} alt={`Фото заключения ${idx + 1}`} />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
                 

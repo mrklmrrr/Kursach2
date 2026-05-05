@@ -4,6 +4,8 @@ const { ResearchResult, ResearchType } = require('../models/Research');
 
 const EDITABLE_FIELDS = ['notes', 'diagnosis', 'treatment', 'recommendations'];
 const SICK_LEAVE_FIELDS = ['disease', 'diagnosis', 'recommendations'];
+const MAX_STUDY_PHOTOS = 5;
+const MAX_STUDY_PHOTO_SRC_LENGTH = 3_000_000;
 
 class MedicalRecordService {
   constructor(medicalRecordRepository, userRepository) {
@@ -247,6 +249,15 @@ class MedicalRecordService {
       ? payload.overallStatus
       : 'normal';
     const studyNote = payload.studyNote != null ? String(payload.studyNote).slice(0, 8000) : '';
+    const studyPhotos = (Array.isArray(payload.studyPhotos) ? payload.studyPhotos : [])
+      .slice(0, MAX_STUDY_PHOTOS)
+      .map((photo) => {
+        if (typeof photo === 'string') return { src: photo };
+        if (photo && typeof photo.src === 'string') return { src: photo.src };
+        return null;
+      })
+      .filter((photo) => photo && typeof photo.src === 'string' && photo.src.startsWith('data:image/'))
+      .map((photo) => ({ src: photo.src.slice(0, MAX_STUDY_PHOTO_SRC_LENGTH) }));
 
     // Дата сохраняется как строка YYYY-MM-DD для избежания проблем с часовыми поясами
     let researchDate = '';
@@ -289,6 +300,7 @@ class MedicalRecordService {
         unit: cr.unit || ''
       })),
       studyNote,
+      studyPhotos,
       overallStatus
     });
 

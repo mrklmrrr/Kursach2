@@ -9,6 +9,7 @@ const AppointmentController = require('./AppointmentController');
 const MedicalRecordController = require('./MedicalRecordController');
 const PlatformController = require('./PlatformController');
 const PrescriptionController = require('./PrescriptionController');
+const VideoRoomController = require('./VideoRoomController');
 
 module.exports = {
   AuthController,
@@ -21,5 +22,6 @@ module.exports = {
   AppointmentController,
   MedicalRecordController,
   PlatformController,
-  PrescriptionController
+  PrescriptionController,
+  VideoRoomController
 };

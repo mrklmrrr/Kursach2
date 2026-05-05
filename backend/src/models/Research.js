@@ -73,6 +73,10 @@ const researchResultSchema = new mongoose.Schema({
   }],
   /** Свободный текст врача ко всему исследованию (заключение, примечание) */
   studyNote: { type: String, default: '' },
+  /** Фото/скриншоты к заключению (data URL) */
+  studyPhotos: [{
+    src: { type: String, default: '' }
+  }],
   /** Общая оценка всего анализа (дополнительно к оценкам по ячейкам сетки) */
   overallStatus: {
     type: String,

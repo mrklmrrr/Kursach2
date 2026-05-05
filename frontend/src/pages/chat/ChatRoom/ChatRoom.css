@@ -217,6 +217,29 @@ button.chat-room-header-info {
   align-self: flex-start;
 }
 
+.message-wrapper.message-system {
+  align-self: center;
+  max-width: 92%;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.message-bubble--system {
+  background: rgba(79, 70, 229, 0.08);
+  border: 1px solid rgba(79, 70, 229, 0.2);
+  color: #4338ca;
+  border-radius: 12px;
+  font-size: 13px;
+  padding: 8px 14px;
+  box-shadow: none;
+}
+
+.message-time--system {
+  text-align: center;
+  width: 100%;
+}
+
 .message-bubble {
   padding: 10px 16px;
   border-radius: 20px;
@@ -282,6 +305,63 @@ button.chat-room-header-info {
   margin: 0 0 8px;
 }
 
+.chat-room-call-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(2, 6, 23, 0.58);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.chat-room-call-modal {
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 22px 58px rgba(15, 23, 42, 0.3);
+}
+
+.chat-room-call-modal h3 {
+  margin: 0;
+}
+
+.chat-room-call-modal p {
+  margin: 0;
+  color: #4b5563;
+}
+
+.chat-room-call-doctor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chat-room-call-doctor-name {
+  margin-top: 4px !important;
+  color: #111827 !important;
+  font-weight: 600;
+}
+
+.chat-room-call-doctor-spec {
+  margin-top: 2px !important;
+  color: #6b7280 !important;
+  font-size: 0.9rem;
+}
+
+.chat-room-call-text {
+  margin-top: 14px !important;
+}
+
+.chat-room-call-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
 .message-wrapper.user .message-time {
   text-align: right;
 }
@@ -332,6 +412,12 @@ body.dark .message-wrapper.doctor .message-bubble {
   color: #f9fafb;
 }
 
+body.dark .message-bubble--system {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(129, 140, 248, 0.35);
+  color: #c7d2fe;
+}
+
 body.dark .chat-room-profile-modal {
   background: #1f2937;
   color: #f9fafb;
@@ -359,6 +445,19 @@ body.dark .chat-room-profile-modal h3 {
 
 body.dark .chat-room-profile-modal p {
   color: #9ca3af;
+}
+
+body.dark .chat-room-call-modal {
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+body.dark .chat-room-call-modal p {
+  color: #9ca3af;
+}
+
+body.dark .chat-room-call-doctor-name {
+  color: #f9fafb !important;
 }
 
 /* =========================================================

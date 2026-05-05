@@ -41,6 +41,21 @@ function formatMessageTime(timestamp) {
 
 // Message component for memoization
 const MessageBubble = memo(function MessageBubble({ msg, isOwn, chatCompanion, resolveFileUrl }) {
+  const isSystem = msg.messageType === 'system' || msg.sender === 'system';
+  if (isSystem) {
+    return (
+      <div
+        key={msg._id || msg.id || `${msg.timestamp}-${msg.message || 'system'}`}
+        className="message-wrapper message-system"
+      >
+        <div className="message-bubble message-bubble--system">
+          {msg.message ? <div>{msg.message}</div> : null}
+        </div>
+        <div className="message-time message-time--system">{formatMessageTime(msg.timestamp)}</div>
+      </div>
+    );
+  }
+
   return (
     <div
       key={msg._id || msg.id || `${msg.timestamp}-${msg.message || 'media'}`}
@@ -76,6 +91,8 @@ export default function ChatRoom() {
   const [selectedPatientProfile, setSelectedPatientProfile] = useState(null);
   const [startingVideo, setStartingVideo] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
+  const [incomingCall, setIncomingCall] = useState(null);
+  const [isRingingOut, setIsRingingOut] = useState(false);
   const messagesEndRef = useRef(null);
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -99,8 +116,9 @@ export default function ChatRoom() {
       }
     : {
         id: doctor.id || chatMeta?.doctorId,
-        name: doctor.name || chatMeta?.doctorName || 'Врач',
-        specialty: doctor.specialty || chatMeta?.specialty || 'Специалист',
+        // Prefer fresh API metadata over stale route state
+        name: chatMeta?.doctorName || doctor.name || 'Врач',
+        specialty: chatMeta?.specialty || doctor.specialty || 'Специалист',
         avatarUrl: doctor.avatarUrl || doctor.avatar || chatMeta?.doctorAvatarUrl || chatMeta?.doctorAvatar || ''
       },
   [isDoctor, chatMeta, doctor, patientFromState]);
@@ -115,7 +133,7 @@ export default function ChatRoom() {
   }, [messages]);
 
   useEffect(() => {
-    console.time('[ChatRoom] loadMessages');
+    const loadStart = performance.now();
     const loadMessages = async () => {
       try {
         const { data: messagesData } = await chatApi.getMessages(id);
@@ -145,7 +163,7 @@ export default function ChatRoom() {
         }
       } finally {
         setLoading(false);
-        console.timeEnd('[ChatRoom] loadMessages');
+        console.log('[ChatRoom] loadMessages:', performance.now() - loadStart, 'ms');
       }
     };
 
@@ -192,11 +210,32 @@ export default function ChatRoom() {
       });
     };
 
+    const handleIncomingCall = (callData) => {
+      if (isDoctor) return;
+      if (!callData?.chatId || String(callData.chatId) !== String(id)) return;
+      setIncomingCall(callData);
+    };
+    const handleCallAccepted = (callData) => {
+      if (String(callData?.chatId) !== String(id)) return;
+      setIsRingingOut(false);
+    };
+    const handleCallRejected = (callData) => {
+      if (String(callData?.chatId) !== String(id)) return;
+      setIsRingingOut(false);
+      alert('Звонок отклонен');
+    };
+
     socketRef.current?.on('new-message', handleMessage);
+    socketRef.current?.on('video-call-incoming', handleIncomingCall);
+    socketRef.current?.on('video-call-accepted', handleCallAccepted);
+    socketRef.current?.on('video-call-rejected', handleCallRejected);
 
     return () => {
       if (socketRef.current) {
         socketRef.current.off('new-message', handleMessage);
+        socketRef.current.off('video-call-incoming', handleIncomingCall);
+        socketRef.current.off('video-call-accepted', handleCallAccepted);
+        socketRef.current.off('video-call-rejected', handleCallRejected);
         // Don't disconnect global socket
         if (socketRef.current === globalSocket) {
           // Keep socket alive for other chats
@@ -204,7 +243,7 @@ export default function ChatRoom() {
         }
       }
     };
-  }, [id, token, patientFromState, doctor.id]);
+  }, [id, token, patientFromState, doctor.id, isDoctor]);
 
   const handleSend = useCallback(() => {
     if (!inputMsg.trim()) return;
@@ -261,12 +300,9 @@ export default function ChatRoom() {
     }
   };
 
-  const formatTime = (timestamp) => {
-    return formatMessageTime(timestamp);
-  };
-
   const isOwnMessage = useCallback((msg) => {
     if (!msg) return false;
+    if (msg.messageType === 'system' || msg.sender === 'system') return false;
 
     const currentUserId = user?.id != null ? String(user.id) : '';
     const messageSenderId = msg.senderId != null ? String(msg.senderId) : '';
@@ -326,18 +362,43 @@ export default function ChatRoom() {
   const handleStartVideoChat = async () => {
     try {
       setStartingVideo(true);
-      // Create video room using consultation ID (chatId)
-      const room = await videoRoomApi.createRoom(id);
-      navigate(`/video-room/${room._id || id}`, { 
-        state: { consultationId: id } 
+      const response = await videoRoomApi.createRoom(id);
+      const roomId = response?.data?.roomId || id;
+      if (!socketRef.current) {
+        throw new Error('Сокет не подключен');
+      }
+      socketRef.current.emit('video-call-invite', { chatId: id });
+      setIsRingingOut(true);
+      navigate(`/video-room/${roomId}`, {
+        state: { consultationId: id }
       });
     } catch (err) {
       console.error('Ошибка при создании видео комнаты:', err);
-      alert('Ошибка при создании видео комнаты: ' + (err.message || 'Неизвестная ошибка'));
+      const serverMessage = err?.response?.data?.message || err?.response?.data?.error;
+      alert('Ошибка при создании видео комнаты: ' + (serverMessage || err.message || 'Неизвестная ошибка'));
     } finally {
       setStartingVideo(false);
     }
   };
+
+  const handleAcceptCall = () => {
+    if (!incomingCall || !socketRef.current) return;
+    socketRef.current.emit('video-call-response', { chatId: incomingCall.chatId, accepted: true });
+    navigate(`/video-room/${incomingCall.roomId}`, {
+      state: { consultationId: incomingCall.chatId }
+    });
+    setIncomingCall(null);
+  };
+
+  const handleRejectCall = () => {
+    if (!incomingCall || !socketRef.current) return;
+    socketRef.current.emit('video-call-response', { chatId: incomingCall.chatId, accepted: false });
+    setIncomingCall(null);
+  };
+
+  const callDoctorName = incomingCall?.doctorName || chatCompanion.name || 'Врач';
+  const callDoctorSpecialty = incomingCall?.doctorSpecialty || chatCompanion.specialty || 'Специалист';
+  const callDoctorAvatar = chatCompanion.avatarUrl || '';
 
   const handleOpenMedicalRecordFromChat = (patient) => {
     const patientId = patient?.id || patient?._id || chatMeta?.patientId || chatCompanion.id;
@@ -377,10 +438,10 @@ export default function ChatRoom() {
           <button
             className="chat-room-video-btn"
             onClick={handleStartVideoChat}
-            disabled={startingVideo}
+            disabled={startingVideo || isRingingOut}
             title="Начать видеовызов с пациентом"
           >
-            <span className="material-icons">{startingVideo ? 'hourglass_top' : 'videocam'}</span>
+            <span className="material-icons">{(startingVideo || isRingingOut) ? 'hourglass_top' : 'videocam'}</span>
           </button>
         )}
       </header>
@@ -437,6 +498,30 @@ export default function ChatRoom() {
             onOpenMedicalRecord={handleOpenMedicalRecordFromChat}
             onClose={() => setSelectedPatientProfile(null)}
           />
+        )}
+
+        {incomingCall && (
+          <div className="chat-room-call-overlay">
+            <div className="chat-room-call-modal">
+              <div className="chat-room-call-doctor">
+                <Avatar name={callDoctorName} src={callDoctorAvatar || undefined} size="medium" />
+                <div>
+                  <h3>Входящий видеозвонок</h3>
+                  <p className="chat-room-call-doctor-name">{callDoctorName}</p>
+                  <p className="chat-room-call-doctor-spec">{callDoctorSpecialty}</p>
+                </div>
+              </div>
+              <p className="chat-room-call-text">Врач приглашает вас к видеоконсультации.</p>
+              <div className="chat-room-call-actions">
+                <button type="button" className="btn btn-secondary" onClick={handleRejectCall}>
+                  Отклонить
+                </button>
+                <button type="button" className="btn btn-primary" onClick={handleAcceptCall}>
+                  Присоединиться
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

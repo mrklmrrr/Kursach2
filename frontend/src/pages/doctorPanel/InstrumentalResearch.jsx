@@ -47,6 +47,79 @@ function InstrumentalResearch() {
   } = useTemplateBuilder('instrumental', loadData);
 
   const [expandedResults, setExpandedResults] = useState({});
+  const [previewPhoto, setPreviewPhoto] = useState('');
+  const [studyPhotos, setStudyPhotos] = useState([]);
+
+  const handlePhotoUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    const toDataUrl = (file) =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ''));
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    const compressImage = (file) =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            const maxSide = 1600;
+            const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
+            const width = Math.max(1, Math.round(img.width * ratio));
+            const height = Math.max(1, Math.round(img.height * ratio));
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return reject(new Error('Canvas context unavailable'));
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.75));
+          };
+          img.onerror = reject;
+          img.src = String(reader.result || '');
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+    try {
+      const imageFiles = files.filter((file) => file.type.startsWith('image/'));
+      const availableSlots = Math.max(0, 5 - studyPhotos.length);
+      if (availableSlots === 0) {
+        alert('Можно прикрепить не более 5 фото');
+        return;
+      }
+      const prepared = await Promise.all(
+        imageFiles.slice(0, availableSlots).map(async (file) => {
+          if (file.size > 1_200_000) {
+            return compressImage(file);
+          }
+          return toDataUrl(file);
+        })
+      );
+      const normalized = prepared
+        .filter(Boolean)
+        .map((src, idx) => ({
+          id: `${Date.now()}-${idx}`,
+          src
+        }));
+      if (normalized.length) {
+        setStudyPhotos((prev) => [...prev, ...normalized]);
+      }
+    } catch {
+      alert('Не удалось обработать выбранные изображения');
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  const handleRemovePhoto = (id) => {
+    setStudyPhotos((prev) => prev.filter((item) => item.id !== id));
+  };
 
   useEffect(() => {
     if (!showTemplateBuilder && panelMode === 'template') {
@@ -95,8 +168,12 @@ function InstrumentalResearch() {
 
   const handleSaveStudy = async (e) => {
     e.preventDefault();
-    const success = await saveStudy(patientId);
-    if (success) { setSelectedTypeId(''); setSearchQuery(''); }
+    const success = await saveStudy(patientId, { studyPhotos });
+    if (success) {
+      setSelectedTypeId('');
+      setSearchQuery('');
+      setStudyPhotos([]);
+    }
   };
 
   useEffect(() => {
@@ -193,6 +270,32 @@ function InstrumentalResearch() {
             <div className="lab-study-overall">
               <h4>Заключение</h4>
               <div className="form-group"><label>Текст врача</label><textarea className="lab-study-note" rows={3} value={studyNote} onChange={(e) => setStudyNote(e.target.value)} /></div>
+              <div className="form-group">
+                <label>Фото к заключению</label>
+                <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} />
+                {studyPhotos.length > 0 && (
+                  <div className="lab-study-photos">
+                    {studyPhotos.map((photo) => (
+                      <div className="lab-study-photo-item" key={photo.id}>
+                        <button
+                          type="button"
+                          className="lab-study-photo-thumb"
+                          onClick={() => setPreviewPhoto(photo.src)}
+                        >
+                          <img src={photo.src} alt="Фото заключения" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-small"
+                          onClick={() => handleRemovePhoto(photo.id)}
+                        >
+                          Удалить
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="form-group"><label>Оценка</label><select value={overallStatus} onChange={(e) => setOverallStatus(e.target.value)}>{STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
             </div>
             {selectedType && !isGridType && (selectedType.template || []).length > 0 && (
@@ -210,7 +313,7 @@ function InstrumentalResearch() {
             )}
             <div className="form-actions">
               <button type="submit" className="btn btn-primary">Сохранить</button>
-              <button type="button" className="btn btn-outline" onClick={() => { resetForm(); setSelectedTypeId(''); setSearchQuery(''); }}>Очистить</button>
+              <button type="button" className="btn btn-outline" onClick={() => { resetForm(); setSelectedTypeId(''); setSearchQuery(''); setStudyPhotos([]); }}>Очистить</button>
             </div>
           </form>
         )}
@@ -249,7 +352,17 @@ function InstrumentalResearch() {
           />
         )}
 
-        <ResearchResultsList results={visibleResults} expandedResults={expandedResults} onToggleExpanded={toggleResultExpanded} formatDateTime={formatDateTime} getGridTemplateForResult={getGridTemplateForResult} onOpenTemplate={() => {}}         />
+        <ResearchResultsList results={visibleResults} expandedResults={expandedResults} onToggleExpanded={toggleResultExpanded} formatDateTime={formatDateTime} getGridTemplateForResult={getGridTemplateForResult} onOpenTemplate={() => {}} onPreviewPhoto={setPreviewPhoto} />
+        {previewPhoto && (
+          <div className="lab-photo-preview-modal" role="dialog" aria-modal="true" onClick={() => setPreviewPhoto('')}>
+            <div className="lab-photo-preview-content" onClick={(e) => e.stopPropagation()}>
+              <button type="button" className="btn btn-outline btn-small" onClick={() => setPreviewPhoto('')}>
+                Закрыть
+              </button>
+              <img src={previewPhoto} alt="Предпросмотр фото заключения" />
+            </div>
+          </div>
+        )}
         </div>
       </PageLayout.Content>
     </PageLayout>

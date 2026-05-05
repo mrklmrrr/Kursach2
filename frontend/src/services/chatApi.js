@@ -16,7 +16,7 @@ function getSocketUrl() {
     return apiUrl.replace(/\/api\/?$/, '');
   }
 
-  return 'http://localhost:5001';
+  return import.meta.env.VITE_BACKEND_ORIGIN || 'http://localhost:5001';
 }
 
 function getBackendOrigin() {
@@ -29,15 +29,9 @@ function getBackendOrigin() {
 
 export const chatApi = {
   getChats: () => {
-    // Try to get from cache first
-    const cached = apiCache.get(CHATS_CACHE_KEY);
-    if (cached) {
-      return Promise.resolve({ data: cached });
-    }
-
-    // Make API request
+    // Always fetch fresh chats, because doctor profile data may change in admin panel.
     return api.get('/chats').then((response) => {
-      // Cache the result
+      // Keep cache for quick subsequent reads in the same session.
       apiCache.set(CHATS_CACHE_KEY, response.data, CHATS_CACHE_TTL);
       return response;
     });

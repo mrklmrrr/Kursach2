@@ -117,7 +117,7 @@ export function useResearchForm(selectedType, loadData) {
     setOverallStatus('normal');
   }, []);
 
-  const saveStudy = async (patientId) => {
+  const saveStudy = async (patientId, extraPayload = {}) => {
     if (!selectedType) {
       alert('Выберите тип исследования');
       return false;
@@ -151,7 +151,8 @@ export function useResearchForm(selectedType, loadData) {
           date: studyDate || undefined,
           gridResults,
           studyNote,
-          overallStatus
+          overallStatus,
+          ...extraPayload
         });
       } else {
         const payload = {
@@ -160,7 +161,8 @@ export function useResearchForm(selectedType, loadData) {
           results: fieldResults,
           customResults: customResults.filter((cr) => cr.name && cr.value !== undefined && cr.value !== ''),
           studyNote,
-          overallStatus
+          overallStatus,
+          ...extraPayload
         };
         await medicalRecordApi.createResearchResult(patientId, payload);
       }

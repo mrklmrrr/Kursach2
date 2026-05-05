@@ -70,7 +70,11 @@ const ConsultationController = class {
 
     const doctorMap = new Map();
     doctors.filter(Boolean).forEach((d) => {
-      doctorMap.set(String(d.id || d._id), resolveAvatarUrl(d.avatarUrl || ''));
+      doctorMap.set(String(d.id || d._id), {
+        avatarUrl: resolveAvatarUrl(d.avatarUrl || ''),
+        doctorName: d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim(),
+        specialty: d.specialty || ''
+      });
     });
 
     const patientMap = new Map();
@@ -89,16 +93,16 @@ const ConsultationController = class {
         _id: consultation._id,
         type: consultation.type,
         doctorId: consultation.doctorId,
-        doctorName: consultation.doctorName,
+        doctorName: doctorMap.get(String(consultation.doctorId))?.doctorName || consultation.doctorName,
         patientId: consultation.patientId,
         patientName: consultation.patientName,
-        specialty: consultation.specialty,
+        specialty: doctorMap.get(String(consultation.doctorId))?.specialty || consultation.specialty,
         status: consultation.status,
         createdAt: consultation.createdAt,
         updatedAt: consultation.updatedAt,
         lastMessage,
         messageCount: messages.length,
-        doctorAvatarUrl: doctorMap.get(String(consultation.doctorId)) || '',
+        doctorAvatarUrl: doctorMap.get(String(consultation.doctorId))?.avatarUrl || '',
         patientAvatarUrl: patientMap.get(String(consultation.patientId)) || ''
       };
     });
@@ -115,10 +119,11 @@ const ConsultationController = class {
       throw ApiError.forbidden('Нет доступа к этому чату');
     }
 
+    const doctor = await this.doctorRepository.findById(consultation.doctorId);
     const response = {
       consultationId: consultation._id,
-      doctorName: consultation.doctorName,
-      specialty: consultation.specialty,
+      doctorName: doctor?.name || consultation.doctorName,
+      specialty: doctor?.specialty || consultation.specialty,
       messages: consultation.messages || []
     };
 
@@ -132,7 +137,6 @@ const ConsultationController = class {
       }
     } else {
       // Include doctor info and avatar for patients
-      const doctor = await this.doctorRepository.findById(consultation.doctorId);
       if (doctor) {
         response.doctorId = consultation.doctorId;
         response.doctorAvatarUrl = resolveAvatarUrl(doctor.avatarUrl || '');

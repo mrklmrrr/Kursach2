@@ -1,26 +1,50 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useMediaStream } from '../../../hooks/useMediaStream';
+import { useWebRTC } from '../../../hooks/useWebRTC';
+import { useAuth } from '../../../hooks/useAuth';
 import './VideoCall.css';
 
-export default function VideoCall() {
+export default function VideoCall({ roomId, onEndCall }) {
+  const { token, user } = useAuth();
   const mediaOptions = useMemo(() => ({ video: true, audio: true }), []);
   const { stream, error, isCameraOn, isMicOn, toggleCamera, toggleMic } =
     useMediaStream(mediaOptions);
   const myVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
+  const isDoctor = user?.role === 'doctor';
+  const {
+    remoteStream,
+    isConnected,
+    error: rtcError,
+    leaveRoom,
+    setLocalStream
+  } = useWebRTC(roomId, token, isDoctor, onEndCall);
 
   useEffect(() => {
     if (stream && myVideoRef.current) {
       myVideoRef.current.srcObject = stream;
+      setLocalStream(stream);
     }
-  }, [stream]);
+  }, [stream, setLocalStream]);
+
+  useEffect(() => {
+    if (remoteStream && remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream]);
+
+  const handleEndCall = () => {
+    leaveRoom(true);
+    if (onEndCall) onEndCall();
+  };
 
   return (
     <div className="video-call-container">
       <video
+        ref={remoteVideoRef}
         autoPlay
         playsInline
         className="remote-video"
-        poster="https://via.placeholder.com/1280x720/1e2937/64748b?text=Врач+на+связи"
       />
 
       <video
@@ -31,9 +55,20 @@ export default function VideoCall() {
         className="self-video"
       />
 
-      {error && (
+      {!isConnected && (
+        <div className="status-bar">Подключение к звонку...</div>
+      )}
+
+      {!remoteStream && (
+        <div className="remote-placeholder">
+          <span className="material-icons">videocam_off</span>
+          <p>Ожидание подключения второго участника...</p>
+        </div>
+      )}
+
+      {(error || rtcError) && (
         <div className="video-error">
-          Нет доступа к камере/микрофону
+          {error || rtcError}
         </div>
       )}
 
@@ -41,14 +76,23 @@ export default function VideoCall() {
         <button
           className={`control-btn ${!isMicOn ? 'disabled' : ''}`}
           onClick={toggleMic}
+          title={isMicOn ? 'Выключить микрофон' : 'Включить микрофон'}
         >
-          {isMicOn ? '🎤' : '🎤❌'}
+          <span className="material-icons">{isMicOn ? 'mic' : 'mic_off'}</span>
         </button>
         <button
           className={`control-btn ${!isCameraOn ? 'disabled' : ''}`}
           onClick={toggleCamera}
+          title={isCameraOn ? 'Выключить камеру' : 'Включить камеру'}
         >
-          {isCameraOn ? '📷' : '📷❌'}
+          <span className="material-icons">{isCameraOn ? 'videocam' : 'videocam_off'}</span>
+        </button>
+        <button
+          className="control-btn end-call"
+          onClick={handleEndCall}
+          title="Завершить звонок"
+        >
+          <span className="material-icons">call_end</span>
         </button>
       </div>
     </div>

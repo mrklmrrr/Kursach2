@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { formatDateTime } from '../utils/profileUtils';
 
 const STATUS_LABELS = {
@@ -55,6 +56,33 @@ function formatWithUnit(value, unit) {
 export default function InstrumentalInvestigationsSection({ results, loading }) {
   const [expandedById, setExpandedById] = useState({});
   const [showAll, setShowAll] = useState(false);
+  const [previewPhotoSrc, setPreviewPhotoSrc] = useState('');
+  const [previewZoom, setPreviewZoom] = useState(1);
+  const [previewViewportMode, setPreviewViewportMode] = useState('desktop');
+
+  const openPreview = (src) => {
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+    setPreviewViewportMode(isMobile ? 'mobile' : 'desktop');
+    setPreviewPhotoSrc(src);
+    setPreviewZoom(1);
+  };
+
+  const closePreview = () => {
+    setPreviewPhotoSrc('');
+    setPreviewZoom(1);
+  };
+
+  const zoomIn = () => {
+    setPreviewZoom((prev) => Math.min(3, Number((prev + 0.2).toFixed(2))));
+  };
+
+  const zoomOut = () => {
+    setPreviewZoom((prev) => Math.max(0.4, Number((prev - 0.2).toFixed(2))));
+  };
+
+  const resetZoom = () => {
+    setPreviewZoom(1);
+  };
 
   const toggleExpanded = (resultId) => {
     const key = String(resultId);
@@ -79,6 +107,51 @@ export default function InstrumentalInvestigationsSection({ results, loading }) 
       </p>
     );
   }
+
+  const previewModal =
+    previewPhotoSrc && typeof document !== 'undefined'
+      ? createPortal(
+          <div
+            className={`patient-lab-photo-preview-modal${previewViewportMode === 'mobile' ? ' mobile' : ''}`}
+            role="dialog"
+            aria-modal="true"
+            onClick={closePreview}
+          >
+            <div className="patient-lab-photo-preview-content" onClick={(e) => e.stopPropagation()}>
+              <div className="patient-lab-photo-preview-toolbar">
+                <div className="patient-lab-photo-preview-zoom-controls">
+                  <button type="button" className="btn btn-outline btn-small" onClick={zoomOut}>
+                    -
+                  </button>
+                  <span className="patient-lab-photo-preview-zoom-label">{Math.round(previewZoom * 100)}%</span>
+                  <button type="button" className="btn btn-outline btn-small" onClick={zoomIn}>
+                    +
+                  </button>
+                  <button type="button" className="btn btn-outline btn-small" onClick={resetZoom}>
+                    100%
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="patient-lab-photo-preview-close"
+                  aria-label="Закрыть предпросмотр"
+                  onClick={closePreview}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="patient-lab-photo-preview-canvas">
+                <img
+                  src={previewPhotoSrc}
+                  alt="Предпросмотр фото исследования"
+                  style={{ transform: `scale(${previewZoom})` }}
+                />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
 
   return (
     <div className="patient-lab-section">
@@ -121,6 +194,27 @@ export default function InstrumentalInvestigationsSection({ results, loading }) 
                         Заключение: <strong>{STATUS_LABELS[result.overallStatus] || result.overallStatus}</strong>
                       </p>
                     ) : null}
+                  </div>
+                )}
+                {Array.isArray(result.studyPhotos) && result.studyPhotos.length > 0 && (
+                  <div className="patient-lab-photo-block">
+                    <p className="patient-lab-photo-title">Фото к заключению</p>
+                    <div className="patient-lab-photo-grid">
+                      {result.studyPhotos.map((photo, idx) => {
+                        const src = photo?.src || photo;
+                        if (!src) return null;
+                        return (
+                          <button
+                            key={`${id}-photo-${idx}`}
+                            type="button"
+                            className="patient-lab-photo-thumb"
+                            onClick={() => openPreview(src)}
+                          >
+                            <img src={src} alt={`Фото исследования ${idx + 1}`} />
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 
@@ -220,6 +314,7 @@ export default function InstrumentalInvestigationsSection({ results, loading }) 
           {showAll ? 'Показать меньше' : `Показать еще (${sorted.length - 4})`}
         </button>
       )}
+      {previewModal}
     </div>
   );
 }

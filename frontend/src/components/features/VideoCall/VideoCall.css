@@ -3,7 +3,9 @@
   width: 100%;
   height: 100%;
   background: #0f172a;
-  border-radius: 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 16px 40px rgba(2, 6, 23, 0.24);
   overflow: hidden;
 }
 
@@ -15,13 +17,13 @@
 
 .self-video {
   position: absolute;
-  bottom: 80px;
+  bottom: 94px;
   right: 16px;
-  width: 120px;
-  height: 160px;
-  border-radius: 12px;
+  width: 136px;
+  height: 184px;
+  border-radius: 14px;
   object-fit: cover;
-  border: 2px solid white;
+  border: 2px solid rgba(255, 255, 255, 0.88);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
@@ -31,26 +33,35 @@
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 16px;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.58);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  backdrop-filter: blur(8px);
 }
 
 .control-btn {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.17);
   color: white;
-  font-size: 1.5rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.control-btn .material-icons {
+  font-size: 1.25rem;
 }
 
 .control-btn:hover {
   background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
 }
 
 .control-btn.disabled {
@@ -70,10 +81,13 @@
   position: absolute;
   top: 12px;
   left: 12px;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 6px 12px;
+  background: rgba(15, 23, 42, 0.66);
+  color: #e5e7eb;
+  padding: 8px 12px;
   border-radius: 20px;
   z-index: 10;
+  font-size: 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
 }
 
 .reconnecting-banner {
@@ -86,4 +100,27 @@
   padding: 8px 16px;
   border-radius: 8px;
   font-size: 0.875rem;
+}
+
+.remote-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.16), rgba(15, 23, 42, 0.8));
+  color: #cbd5e1;
+  text-align: center;
+  padding: 16px;
+}
+
+.remote-placeholder .material-icons {
+  font-size: 2rem;
+}
+
+.remote-placeholder p {
+  margin: 0;
+  font-size: 0.92rem;
 }

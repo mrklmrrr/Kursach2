@@ -1,4 +1,4 @@
-.prescription-list {
+ .prescription-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -702,6 +702,129 @@ body.dark .prescription-date {
   line-height: 1.45;
 }
 
+.patient-lab-photo-block {
+  margin: 0 0 12px;
+}
+
+.patient-lab-photo-title {
+  margin: 0 0 8px;
+  font-size: 0.86rem;
+  color: #4b5563;
+}
+
+.patient-lab-photo-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.patient-lab-photo-thumb {
+  width: 92px;
+  height: 92px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  overflow: hidden;
+  background: #fff;
+  padding: 0;
+  cursor: pointer;
+}
+
+.patient-lab-photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.patient-lab-photo-preview-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.patient-lab-photo-preview-content {
+  width: min(1400px, calc(100vw - 24px));
+  height: min(94vh, calc(100vh - 24px));
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.patient-lab-photo-preview-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.patient-lab-photo-preview-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.patient-lab-photo-preview-zoom-label {
+  min-width: 48px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.patient-lab-photo-preview-close {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #d1d5db;
+  border-radius: 50%;
+  background: #fff;
+  color: #111827;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.patient-lab-photo-preview-canvas {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.patient-lab-photo-preview-canvas img {
+  max-width: 96%;
+  max-height: 96%;
+  object-fit: contain;
+  transform-origin: center center;
+  transition: transform 0.15s ease;
+}
+
+.patient-lab-photo-preview-modal.mobile {
+  padding: 10px;
+}
+
+.patient-lab-photo-preview-modal.mobile .patient-lab-photo-preview-content {
+  width: 100%;
+  height: calc(100vh - 20px);
+  border-radius: 10px;
+  padding: 8px 8px 6px;
+}
+
+.patient-lab-photo-preview-modal.mobile .patient-lab-photo-preview-canvas img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
 .patient-lab-overall-badge {
   margin: 0;
   font-size: 0.88rem;
@@ -1022,6 +1145,33 @@ body.dark .patient-lab-note,
 body.dark .patient-lab-insight-text,
 body.dark .patient-lab-list {
   color: #e5e7eb;
+}
+
+body.dark .patient-lab-photo-title {
+  color: #9ca3af;
+}
+
+body.dark .patient-lab-photo-thumb {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .patient-lab-photo-preview-content {
+  background: #111827;
+}
+
+body.dark .patient-lab-photo-preview-close {
+  background: #1f2937;
+  color: #f9fafb;
+  border-color: #374151;
+}
+
+body.dark .patient-lab-photo-preview-canvas {
+  background: #0b1220;
+}
+
+body.dark .patient-lab-photo-preview-zoom-label {
+  color: #d1d5db;
 }
 
 body.dark .patient-lab-overall-badge {

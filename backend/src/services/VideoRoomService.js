@@ -27,9 +27,10 @@ class VideoRoomService {
       throw new ApiError(400, `Video room can only be created for ${allowedStatuses.join('/')} consultations. Current status: ${consultation.status}`);
     }
     
-    // Don't create if video room is already active
-    if (consultation.videoRoom?.status === 'active') {
-      throw new ApiError(400, 'Video room already active');
+    // Idempotent behavior: if room is already active/waiting, reuse it
+    if (consultation.videoRoom?.status === 'active' || consultation.videoRoom?.status === 'waiting') {
+      logger.info(`Video room reused: ${consultation.videoRoom.roomId} for consultation ${consultationId} by ${userRole}`);
+      return consultation.videoRoom;
     }
 
     // Generate roomId = consultation._id for simplicity

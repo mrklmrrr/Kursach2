@@ -27,7 +27,8 @@ const {
   PaymentService,
   DependentService,
   AppointmentService,
-  MedicalRecordService
+  MedicalRecordService,
+  VideoRoomService
 } = require('./services');
 
 // Controllers
@@ -42,7 +43,8 @@ const {
   AppointmentController,
   MedicalRecordController,
   PlatformController,
-  PrescriptionController
+  PrescriptionController,
+  VideoRoomController
 } = require('./controllers');
 
 // Routes
@@ -58,7 +60,8 @@ const {
   medicalRecordRoutes,
   researchRoutes,
   platformRoutes,
-  prescriptionRoutes
+  prescriptionRoutes,
+  videoRoomRoutes
 } = require('./routes');
 
 // Socket
@@ -89,7 +92,8 @@ async function startApp() {
     standardHeaders: true,
     legacyHeaders: false
   }));
-  app.use(express.json());
+  app.use(express.json({ limit: '15mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '15mb' }));
   app.use('/api/auth/login', rateLimit({
     windowMs: 10 * 60 * 1000,
     max: 300,
@@ -132,12 +136,13 @@ async function startApp() {
   const medicalRecordRepository = new MedicalRecordRepository();
 
   const authService = new AuthService(userRepository);
-  const doctorService = new DoctorService(doctorRepository);
+  const doctorService = new DoctorService(doctorRepository, consultationRepository);
   const consultationService = new ConsultationService(consultationRepository);
   const paymentService = new PaymentService(consultationRepository);
   const dependentService = new DependentService(dependentRepository, userRepository);
   const appointmentService = new AppointmentService(appointmentRepository, userRepository);
   const medicalRecordService = new MedicalRecordService(medicalRecordRepository, userRepository);
+  const videoRoomService = new VideoRoomService(consultationRepository);
 
   const authController = new AuthController(authService);
   const doctorController = new DoctorController(doctorService);
@@ -150,6 +155,7 @@ async function startApp() {
   const medicalRecordController = new MedicalRecordController(medicalRecordService, userRepository);
   const platformController = new PlatformController();
   const prescriptionController = new PrescriptionController();
+  const videoRoomController = new VideoRoomController(videoRoomService);
 
   // Routes
   app.use(platformRoutes(platformController));
@@ -162,6 +168,7 @@ async function startApp() {
   app.use(appointmentRoutes(appointmentController));
   app.use(medicalRecordRoutes(medicalRecordController));
   app.use(researchRoutes());
+  app.use('/api/video-rooms', videoRoomRoutes(videoRoomController));
 
   // Админка и панель врача
   app.use(adminRoutes(adminController));
