@@ -205,7 +205,7 @@ export const MedicalCardSection = ({ medicalRecord, laboratoryResults = [], inst
                       <span className="prescription-head">
                         <strong>
                           {doc.doctorName || 'Врач'}
-                          {doc.doctorSpecialty ? ` (${doc.doctorSpecialty})` : ''}
+                          {doc.doctorSpecialty ? ` — ${doc.doctorSpecialty}` : ''}
                         </strong>
                         <span className="prescription-date">
                           {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('ru-RU') : ''}

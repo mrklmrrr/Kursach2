@@ -9,7 +9,6 @@ import { dependentApi } from '@services/dependentApi';
 import { ProfileHeader } from '../components/ProfileHeader';
 import { MedicalCardSection } from '../components/MedicalCardSection';
 import { ConsultationHistorySection } from '../components/ConsultationHistorySection';
-import { PasswordChangeSection } from '../components/PasswordChangeSection';
 import { SettingsSection } from '../components/SettingsSection';
 import ReminderSection from '../components/ReminderSection';
 import UsernameSection from '../components/UsernameSection';
@@ -109,8 +108,6 @@ export default function Profile() {
             <ReminderSection />
           </>
         )}
-
-        <PasswordChangeSection />
 
         <SettingsSection onLogout={handleLogout} />
       </div>

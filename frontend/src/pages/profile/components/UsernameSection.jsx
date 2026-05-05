@@ -63,7 +63,8 @@ export default function UsernameSection() {
     }
   };
 
-  if (user?.role !== 'patient') return null;
+  const hasUsername = Boolean(String(user?.username || '').trim());
+  if (user?.role !== 'patient' || hasUsername) return null;
 
   return (
     <section className="section-card section-card--lux username-section">

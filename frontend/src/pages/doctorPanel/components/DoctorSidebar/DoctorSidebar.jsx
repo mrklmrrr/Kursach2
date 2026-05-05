@@ -18,7 +18,9 @@ export default function DoctorSidebar({ profile }) {
   const location = useLocation();
   const { user } = useAuth();
 
-  const p = profile || user || {};
+  const p = { ...(user || {}), ...(profile || {}) };
+  const fullName = [p.firstName, p.lastName].filter(Boolean).join(' ').trim() || p.name || 'Врач';
+  const avatarSrc = p.avatarUrl || user?.avatarUrl || profile?.avatarUrl || undefined;
 
   return (
     <aside className="doctor-sidebar">
@@ -60,8 +62,8 @@ export default function DoctorSidebar({ profile }) {
           onClick={() => navigate('/doctor/profile')}
         >
           <Avatar
-            name={`${p.firstName} ${p.lastName}`}
-            src={p.avatarUrl || undefined}
+            name={fullName}
+            src={avatarSrc}
             size="small"
           />
           <div className="sidebar-profile-info">

@@ -76,10 +76,12 @@ export const authApi = {
   updateUser: (updates) => authApiInstance.put('/auth/user', updates),
   checkUsername: (username) => authApiInstance.get(`/auth/user/username/${username}`),
   setUsername: (username) => authApiInstance.put('/auth/user/username', { username }),
-  uploadAvatar: (file) => {
-    const formData = new FormData();
-    formData.append('avatar', file);
-    return authApiInstance.post('/auth/user/avatar', formData, {
+  uploadAvatar: (fileOrFormData) => {
+    const formData = fileOrFormData instanceof FormData ? fileOrFormData : new FormData();
+    if (!(fileOrFormData instanceof FormData)) {
+      formData.append('avatar', fileOrFormData);
+    }
+    return authApiInstance.post('/auth/avatar', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   },

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doctorApi } from '../../../services/doctorApi';
 import { appointmentApi } from '../../../services/appointmentApi';
@@ -53,6 +53,7 @@ export default function DoctorProfile() {
   const [startingChat, setStartingChat] = useState(false);
   const [bookingNotice, setBookingNotice] = useState({ type: '', text: '' });
   const [showCustomDate, setShowCustomDate] = useState(false);
+  const bookingSheetRef = useRef(null);
 
   const dateStrip = useMemo(() => buildDateStrip(14), []);
   const todayIso = useMemo(() => toYMD(new Date()), []);
@@ -65,6 +66,11 @@ export default function DoctorProfile() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    if (!bookingOpen) return;
+    bookingSheetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [bookingOpen]);
+
   if (loading) {
     return <Loader text="Загрузка информации о враче..." />;
   }
@@ -72,6 +78,9 @@ export default function DoctorProfile() {
   if (!doctor) {
     return <div className="not-found">Врач не найден</div>;
   }
+
+  const doctorRating = Number(doctor.rating) || 4.9;
+  const doctorPrice = Number(doctor.price) || 0;
 
   const handleBookAppointment = () => {
     if (bookingOpen) {
@@ -213,14 +222,30 @@ export default function DoctorProfile() {
           <div className="doctor-hero-avatar-wrap">
             <Avatar name={doctor.name} src={doctor.avatarUrl || doctor.avatar || undefined} size="xlarge" />
           </div>
-          <h1>{doctor.name}</h1>
-          <p className="doctor-specialty">{doctor.specialty}</p>
+          <div className="doctor-hero-text">
+            <h1>{doctor.name}</h1>
+            <p className="doctor-specialty">{doctor.specialty}</p>
+          </div>
           <div className="rating-online">
             <div className="rating">
-              ★★★★★ <span>{doctor.rating || '4.9'}</span>
+              <span className="rating-star">★</span> <span>{doctorRating.toFixed(1)}</span>
             </div>
             <div className={`online-status ${doctor.isOnline ? 'online' : 'offline'}`}>
               {doctor.isOnline ? '● Сейчас онлайн' : 'Офлайн'}
+            </div>
+          </div>
+          <div className="doctor-quick-stats">
+            <div className="doctor-stat-card">
+              <span className="doctor-stat-value">{doctorPrice} BYN</span>
+              <span className="doctor-stat-label">Стоимость</span>
+            </div>
+            <div className="doctor-stat-card">
+              <span className="doctor-stat-value">~30 мин</span>
+              <span className="doctor-stat-label">Средний приём</span>
+            </div>
+            <div className="doctor-stat-card">
+              <span className="doctor-stat-value">12 лет</span>
+              <span className="doctor-stat-label">Опыт</span>
             </div>
           </div>
         </div>
@@ -228,26 +253,34 @@ export default function DoctorProfile() {
         <div className="doctor-info-card">
           <h3>О враче</h3>
           <div className="info-list">
-            <p>
-              <strong>Стаж работы:</strong> 12 лет
-            </p>
-            <p>
-              <strong>Специализация:</strong> {doctor.specialty}
-            </p>
-            <p>
-              <strong>Принимает:</strong> Взрослых и детей
-            </p>
-            <p>
-              <strong>Языки:</strong> Русский, Беларуский, Английский
-            </p>
+            <div className="info-item">
+              <p>
+                <strong>Стаж работы:</strong> 12 лет
+              </p>
+            </div>
+            <div className="info-item">
+              <p>
+                <strong>Специализация:</strong> {doctor.specialty}
+              </p>
+            </div>
+            <div className="info-item">
+              <p>
+                <strong>Принимает:</strong> Взрослых и детей
+              </p>
+            </div>
+            <div className="info-item">
+              <p>
+                <strong>Языки:</strong> Русский, Беларусский, Английский
+              </p>
+            </div>
           </div>
         </div>
 
         <div className="action-buttons">
           <Button variant="primary" size="large" className="huge-btn" onClick={handleBookAppointment}>
-            Назначить запись — {doctor.price} BYN
+            Назначить запись — {doctorPrice} BYN
           </Button>
-          <Button variant="outline" size="medium" onClick={handleStartChat} disabled={startingChat}>
+          <Button variant="outline" size="large" onClick={handleStartChat} disabled={startingChat}>
             {startingChat ? 'Создание чата...' : 'Начать чат с врачом'}
           </Button>
         </div>
@@ -260,7 +293,7 @@ export default function DoctorProfile() {
         )}
 
         {bookingOpen && (
-          <div className="doctor-info-card booking-sheet">
+          <div ref={bookingSheetRef} className="doctor-info-card booking-sheet">
             <h3>Запись на приём</h3>
             <p className="booking-hint">Выберите день и удобное время — свободные окна подгружаются автоматически.</p>
 

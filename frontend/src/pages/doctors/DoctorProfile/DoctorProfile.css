@@ -11,11 +11,11 @@
 .doctor-hero {
   text-align: center;
   margin-bottom: 24px;
-  padding: 24px 16px 20px;
-  border-radius: 20px;
-  background: linear-gradient(160deg, #eef2ff 0%, #f8fafc 55%, #ffffff 100%);
+  padding: 26px 18px 18px;
+  border-radius: 24px;
+  background: linear-gradient(165deg, #eef2ff 0%, #f8fafc 46%, #ffffff 100%);
   border: 1px solid rgba(199, 210, 254, 0.6);
-  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 16px 44px rgba(15, 23, 42, 0.08);
 }
 
 .doctor-hero-avatar-wrap {
@@ -29,13 +29,17 @@
 .doctor-hero h1 {
   font-size: 1.5rem;
   color: #1f2937;
-  margin: 16px 0 8px;
+  margin: 0;
 }
 
 .doctor-specialty {
   color: #6b7280;
   font-size: 1rem;
-  margin-bottom: 16px;
+  margin: 6px 0 0;
+}
+
+.doctor-hero-text {
+  margin: 14px 0 18px;
 }
 
 .rating-online {
@@ -46,8 +50,17 @@
 }
 
 .rating {
+  color: #1f2937;
+  font-size: 1rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+.rating-star {
   color: #f59e0b;
-  font-size: 1.125rem;
 }
 
 .rating span {
@@ -56,8 +69,43 @@
 }
 
 .online-status {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 500;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #e5e7eb;
+}
+
+.doctor-quick-stats {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.doctor-stat-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.doctor-stat-value {
+  font-weight: 700;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.doctor-stat-label {
+  color: #6b7280;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .online-status.online {
@@ -70,10 +118,11 @@
 
 .doctor-info-card {
   background: white;
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 18px;
+  padding: 20px 18px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #eef2f7;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
 .doctor-info-card h3 {
@@ -82,7 +131,7 @@
 }
 
 .info-list p {
-  margin: 8px 0;
+  margin: 0;
   color: #6b7280;
 }
 
@@ -90,10 +139,32 @@
   color: #1f2937;
 }
 
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
 .action-buttons {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: stretch;
   gap: 12px;
+  margin-bottom: 12px;
+}
+
+.action-buttons > * {
+  flex: 1;
+}
+
+.action-buttons .btn {
+  min-height: 56px;
 }
 
 .not-found {
@@ -103,9 +174,10 @@
 }
 
 body.dark .doctor-hero h1,
-body.dark .rating span,
+body.dark .rating,
 body.dark .info-list strong,
-body.dark .doctor-info-card h3 {
+body.dark .doctor-info-card h3,
+body.dark .doctor-stat-value {
   color: #f9fafb;
 }
 
@@ -116,6 +188,7 @@ body.dark .info-list p {
 
 body.dark .doctor-info-card {
   background: #1f2937;
+  border-color: #374151;
 }
 
 body.dark .doctor-hero {
@@ -127,6 +200,21 @@ body.dark .doctor-hero {
 body.dark .doctor-hero-avatar-wrap {
   background: rgba(31, 41, 55, 0.9);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+body.dark .doctor-stat-card,
+body.dark .rating,
+body.dark .online-status {
+  background: #111827;
+  border-color: #374151;
+}
+
+body.dark .doctor-stat-label {
+  color: #9ca3af;
+}
+
+body.dark .info-item {
+  border-bottom-color: #2b3545;
 }
 
 .booking-sheet .booking-hint {
@@ -329,4 +417,19 @@ body.dark .booking-toggle-custom {
 
 body.dark .not-found {
   color: #9ca3af;
+}
+
+@media (max-width: 420px) {
+  .doctor-quick-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .rating-online {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
 }

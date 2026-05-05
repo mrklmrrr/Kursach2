@@ -24,9 +24,7 @@ export const ProfileHeader = ({ user }) => {
 
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append('avatar', file);
-      await authApi.uploadAvatar(fd);
+      await authApi.uploadAvatar(file);
       await refreshUser();
       showToast('Фото профиля обновлено', 'success');
     } catch (err) {
