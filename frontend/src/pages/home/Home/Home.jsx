@@ -9,7 +9,7 @@ import { EmptyState, ConfirmModal, Modal } from '../../../components/ui';
 import './Home.css';
 
 const formatDateTime = (date, time) => {
-  const [yyyy, mm, dd] = date.split('-');
+  const [, mm, dd] = date.split('-');
   return `${dd}.${mm} ${time}`;
 };
 
@@ -52,7 +52,7 @@ export default function Home() {
     if (user?.role === 'doctor') {
       navigate('/doctor/permit');
     }
-  }, [user]);
+  }, [user, navigate]);
 
   useEffect(() => {
     doctorApi.getAll()
@@ -115,10 +115,6 @@ export default function Home() {
       .finally(() => setLoadingAppointments(false));
   }, [user]);
   /* eslint-enable react-hooks/set-state-in-effect */
-
-  useEffect(() => {
-    setShowAllUpcoming(false);
-  }, [upcoming.length]);
 
   const showConfirm = (title, message, onConfirm, confirmText = 'Да', cancelText = 'Нет') => {
     setConfirmModal({

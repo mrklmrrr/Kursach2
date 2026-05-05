@@ -33,7 +33,7 @@ export const useDoctorPanelData = () => {
       const response = await appointmentApi.getDoctorAppointments();
       const sortedAppointments = [...response.data].sort((a, b) => toDateTime(a) - toDateTime(b));
       setAppointments(sortedAppointments);
-    } catch (err) {
+    } catch {
       setAppointments([]);
     }
   }, []);
@@ -117,7 +117,7 @@ export const useDoctorPanelData = () => {
       setPendingConsultations((prev) => prev.filter((c) => c._id !== id));
       alert('Заявка принята');
       if (onSuccess) onSuccess();
-    } catch (err) {
+    } catch {
       alert('Ошибка принятия заявки');
     }
   }, [setPendingConsultations]);
@@ -128,12 +128,12 @@ export const useDoctorPanelData = () => {
       setPendingConsultations((prev) => prev.filter((c) => c._id !== id));
       alert('Заявка отклонена');
       if (onSuccess) onSuccess();
-    } catch (err) {
+    } catch {
       alert('Ошибка отклонения заявки');
     }
   }, [setPendingConsultations]);
 
-  const updateMedicalField = useCallback((field, value) => {
+  const updateMedicalField = useCallback(() => {
     // placeholder
   }, []);
 
@@ -145,7 +145,7 @@ export const useDoctorPanelData = () => {
     alert('Добавлено');
   }, []);
 
-  const updateSickLeaveField = useCallback((field, value) => {
+  const updateSickLeaveField = useCallback(() => {
     // placeholder
   }, []);
 

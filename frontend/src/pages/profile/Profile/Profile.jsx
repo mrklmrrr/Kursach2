@@ -36,6 +36,7 @@ export default function Profile() {
     logout();
   };
 
+  /* eslint-disable react-hooks/set-state-in-effect -- controlled fetch cycle for dependents with loading/error reset */
   useEffect(() => {
     if (!user || user.role === 'doctor') {
       setDependents([]);
@@ -49,6 +50,7 @@ export default function Profile() {
       .catch(() => setDependents([]))
       .finally(() => setDependentsLoading(false));
   }, [user]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const isDoctor = user?.role === 'doctor';
 

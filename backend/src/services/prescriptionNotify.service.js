@@ -15,13 +15,24 @@ async function notifyPrescriptionTelegram(patient, prescription) {
     ? new Date(prescription.createdAt).toLocaleString('ru-RU', { dateStyle: 'long', timeStyle: 'short' })
     : new Date().toLocaleString('ru-RU');
 
-  const lines = (prescription.items || []).map(
-    (i) => `• ${escapeHtml(i.name)}${i.dosage ? ` — ${escapeHtml(i.dosage)}` : ''}${i.notes ? ` (${escapeHtml(i.notes)})` : ''}`
-  );
+  const blocks = Array.isArray(prescription.blocks) && prescription.blocks.length > 0
+    ? prescription.blocks
+    : [{ title: 'Назначения', items: prescription.items || [] }];
+
+  const lines = blocks
+    .map((block) => {
+      const title = String(block.title || 'Назначения').trim();
+      const items = (block.items || []).map(
+        (i) => `• ${escapeHtml(i.name)}${i.dosage ? ` — ${escapeHtml(i.dosage)}` : ''}${i.notes ? ` (${escapeHtml(i.notes)})` : ''}`
+      );
+      if (items.length === 0) return '';
+      return `<b>${escapeHtml(title)}</b>\n${items.join('\n')}`;
+    })
+    .filter(Boolean);
 
   let text = `<b>Назначения от ${escapeHtml(prescription.doctorName || 'врача')}</b>\n`;
   text += `📅 <i>${dateStr}</i>\n\n`;
-  text += lines.join('\n');
+  text += lines.join('\n\n');
   if (prescription.recommendations && String(prescription.recommendations).trim()) {
     text += `\n\n<b>Рекомендации врача:</b>\n${escapeHtml(prescription.recommendations.trim())}`;
   }

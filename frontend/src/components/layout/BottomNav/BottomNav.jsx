@@ -1,14 +1,19 @@
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../../../hooks/useAuth';
 import './BottomNav.css';
 
-const navItems = [
-  { to: '/home', icon: 'home', label: 'Главная' },
-  { to: '/doctor/patients', icon: 'local_hospital', label: 'Пациенты' },
-  { to: '/chats', icon: 'chat', label: 'Чаты' },
-  { to: '/profile', icon: 'person', label: 'Профиль' },
-];
-
 export default function BottomNav() {
+  const { user } = useAuth();
+  const isDoctor = user?.role === 'doctor';
+  const navItems = [
+    { to: '/home', icon: 'home', label: 'Главная' },
+    isDoctor
+      ? { to: '/doctor/patients', icon: 'local_hospital', label: 'Пациенты' }
+      : { to: '/doctors', icon: 'medical_services', label: 'Врачи' },
+    { to: '/chats', icon: 'chat', label: 'Чаты' },
+    { to: '/profile', icon: 'person', label: 'Профиль' },
+  ];
+
   return (
     <div className="bottom-nav-shell">
       <div className="bottom-nav-track">

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Modal, Tabs } from '@components/ui';
+import { Modal } from '@components/ui';
 import MedicalSystemSection from './MedicalSystemSection';
 import SickLeaveSection from './SickLeaveSection';
 import { ResearchNavigation, MedicalHistory } from './MedicalRecordHelpers';
@@ -88,7 +88,7 @@ export default function MedicalRecordModal({
                       className="profile-tab-btn"
                       onClick={() => onPrescription(patient)}
                     >
-                      E-назначение
+                      Назначение
                     </button>
                   )}
                 </div>

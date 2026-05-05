@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { doctorPanelApi } from '@services/doctorPanelApi';
 import { useAuth } from '@hooks/useAuth';
 import { AppHeader, BottomNav } from '@components/layout';
-import { useDoctorPanelData } from '@hooks/doctorPanel';
-import { useMedicalRecordModal } from './hooks/useMedicalRecordModal';
+import { useDoctorPanelData, useMedicalRecordModal } from '@hooks/doctorPanel';
 import { useToast } from '@contexts/ToastProvider/useToast';
 import Chats from '../chat/Chats/Chats';
 import Profile from '../profile/Profile/Profile';
@@ -32,6 +31,10 @@ const TAB_MAP = {
 const VALID_TABS = Object.keys(TAB_MAP);
 
 const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, panelData, toast, navigate }) => {
+  const removeAppointment = (appointmentId) => {
+    panelData.setAppointments((prev) => prev.filter((item) => item._id !== appointmentId));
+  };
+
   if (activeTab === 'chats') {
     return <Chats inDoctorPanel={true} />;
   }
@@ -55,25 +58,6 @@ const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, p
       </div>
     );
   }
-
-  const mergeAppointment = useCallback((appointment) => {
-    if (!appointment?._id) return;
-    panelData.setAppointments((prev) => {
-      const exists = prev.some((item) => item._id === appointment._id);
-      const next = exists
-        ? prev.map((item) => (item._id === appointment._id ? appointment : item))
-        : [appointment, ...prev];
-      return next.sort((a, b) => {
-        const ad = new Date(`${a.date}T${a.time}:00`).getTime();
-        const bd = new Date(`${b.date}T${b.time}:00`).getTime();
-        return ad - bd;
-      });
-    });
-  }, [panelData]);
-
-  const removeAppointment = useCallback((appointmentId) => {
-    panelData.setAppointments((prev) => prev.filter((item) => item._id !== appointmentId));
-  }, [panelData]);
 
   const handleToggleOnline = async () => {
     const next = !profile?.isOnline;
@@ -174,12 +158,12 @@ const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, p
         />
       )}
 
-       {activeTab === 'patients' && (
-         <PatientsTab
-           patients={panelData.patients}
-           onSelectPatient={onOpenPatientProfile}
-         />
-       )}
+      {activeTab === 'patients' && (
+        <PatientsTab
+          patients={panelData.patients}
+          onSelectPatient={onOpenPatientProfile}
+        />
+      )}
     </div>
   );
 };
@@ -236,30 +220,32 @@ export default function DoctorPanel() {
       // Очистить state после обработки
       navigate(location.pathname, { replace: true, state: {} });
     }
+    // Intentionally depends on navigation and patient collections; modal handlers are stable enough for this flow.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state, panelData.patients, panelData.patientById, navigate, location.pathname]);
 
-   const handleOpenPatientProfile = (patientId, fallbackName) => {
-     let patient = panelData.patientById?.get(String(patientId));
-     if (!patient) {
-       patient = panelData.patients.find(p => String(p.id) === String(patientId));
-     }
-     if (!patient) {
-       patient = {
-         id: patientId,
-         name: fallbackName || 'Пациент',
-         phone: '—',
-         birthDate: '',
-         consultationCount: 0
-       };
-     }
-     setSelectedPatient(patient);
-   };
+  const handleOpenPatientProfile = (patientId, fallbackName) => {
+    let patient = panelData.patientById?.get(String(patientId));
+    if (!patient) {
+      patient = panelData.patients.find((p) => String(p.id) === String(patientId));
+    }
+    if (!patient) {
+      patient = {
+        id: patientId,
+        name: fallbackName || 'Пациент',
+        phone: '—',
+        birthDate: '',
+        consultationCount: 0
+      };
+    }
+    setSelectedPatient(patient);
+  };
 
-    const handleOpenPatientMedicalRecord = (patient) => {
-      if (patient) {
-        medicalRecordModal.openMedicalRecord(patient);
-      }
-    };
+  const handleOpenPatientMedicalRecord = (patient) => {
+    if (patient) {
+      medicalRecordModal.openMedicalRecord(patient);
+    }
+  };
 
   if (user?.role !== 'doctor') {
     return null;
@@ -282,33 +268,33 @@ export default function DoctorPanel() {
       <BottomNav />
 
       <DoctorPanelModals
-          commentModal={panelData.commentModal?.modal || {}}
-          appointments={panelData.appointments || []}
-          setAppointments={panelData.setAppointments}
-          onCloseCommentModal={panelData.commentModal?.closeModal || (() => {})}
-          onSaveComment={panelData.commentModal?.save || (() => {})}
-          selectedPatient={selectedPatient}
-          onClosePatientProfile={() => setSelectedPatient(null)}
-          onOpenMedicalRecord={handleOpenPatientMedicalRecord}
-          prescriptionPatient={prescriptionPatient}
-          onClosePrescription={() => setPrescriptionPatient(null)}
-          onPrescriptionSaved={panelData.refreshAppointments}
-           medicalRecordModal={medicalRecordModal}
-           user={user}
-           onCloseMedicalRecord={medicalRecordModal.closeMedicalRecord}
-           onSetTab={medicalRecordModal.setTab}
-           onToggleSection={medicalRecordModal.setExpandedSection}
-           onFieldChange={medicalRecordModal.updateMedicalField}
-           onSaveSection={medicalRecordModal.saveSection}
-           onAddSickLeaveDraft={medicalRecordModal.addSickLeaveDraft}
-           onSickLeaveFieldChange={medicalRecordModal.updateSickLeaveField}
-           onSaveSickLeave={medicalRecordModal.saveSickLeave}
-            onToggleHistory={medicalRecordModal.toggleHistory}
-            onToggleSickLeaveHistory={medicalRecordModal.toggleSickLeaveHistory}
-            getSickLeaveWithChanges={medicalRecordModal.getSickLeaveWithChanges}
-            hasUnsavedChanges={medicalRecordModal.hasUnsavedChanges}
-           onOpenPrescription={setPrescriptionPatient}>
-        </DoctorPanelModals>
-      </div>
+        commentModal={panelData.commentModal?.modal || {}}
+        appointments={panelData.appointments || []}
+        setAppointments={panelData.setAppointments}
+        onCloseCommentModal={panelData.commentModal?.closeModal || (() => {})}
+        onSaveComment={panelData.commentModal?.save || (() => {})}
+        selectedPatient={selectedPatient}
+        onClosePatientProfile={() => setSelectedPatient(null)}
+        onOpenMedicalRecord={handleOpenPatientMedicalRecord}
+        prescriptionPatient={prescriptionPatient}
+        onClosePrescription={() => setPrescriptionPatient(null)}
+        onPrescriptionSaved={panelData.refreshAppointments}
+        medicalRecordModal={medicalRecordModal}
+        user={user}
+        onCloseMedicalRecord={medicalRecordModal.closeMedicalRecord}
+        onSetTab={medicalRecordModal.setTab}
+        onToggleSection={medicalRecordModal.setExpandedSection}
+        onFieldChange={medicalRecordModal.updateMedicalField}
+        onSaveSection={medicalRecordModal.saveSection}
+        onAddSickLeaveDraft={medicalRecordModal.addSickLeaveDraft}
+        onSickLeaveFieldChange={medicalRecordModal.updateSickLeaveField}
+        onSaveSickLeave={medicalRecordModal.saveSickLeave}
+        onToggleHistory={medicalRecordModal.toggleHistory}
+        onToggleSickLeaveHistory={medicalRecordModal.toggleSickLeaveHistory}
+        getSickLeaveWithChanges={medicalRecordModal.getSickLeaveWithChanges}
+        hasUnsavedChanges={medicalRecordModal.hasUnsavedChanges}
+        onOpenPrescription={setPrescriptionPatient}
+      />
+    </div>
   );
 }

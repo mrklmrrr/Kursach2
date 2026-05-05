@@ -5,17 +5,27 @@ import { adminApi } from '../../services/authApi';
 import './AdminDashboard.css';
 
 export default function AdminDashboard() {
+  const emptyFormData = {
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    specialty: '',
+    price: '',
+    experience: '',
+    description: '',
+    password: ''
+  };
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [tab, setTab] = useState('dashboard');
   const [dashboard, setDashboard] = useState(null);
   const [doctors, setDoctors] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: '', lastName: '', email: '', phone: '',
-    specialty: '', price: '', experience: '', description: '', password: ''
-  });
+  const [editingDoctorId, setEditingDoctorId] = useState(null);
+  const [formData, setFormData] = useState(emptyFormData);
   const [loading, setLoading] = useState(true);
+  const getDoctorId = (doctor) => doctor?.id || doctor?._id;
 
   const loadData = async () => {
     try {
@@ -99,10 +109,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     try {
       await adminApi.createDoctor(formData);
-      setFormData({
-        firstName: '', lastName: '', email: '', phone: '',
-        specialty: '', price: '', experience: '', description: '', password: ''
-      });
+      setFormData(emptyFormData);
       setShowForm(false);
       loadData();
     } catch (err) {
@@ -110,7 +117,60 @@ export default function AdminDashboard() {
     }
   };
 
+  const startEditDoctor = (doctor) => {
+    const doctorId = getDoctorId(doctor);
+    if (!doctorId) {
+      alert('Не удалось определить ID врача');
+      return;
+    }
+    setEditingDoctorId(doctorId);
+    setFormData({
+      firstName: doctor.firstName || '',
+      lastName: doctor.lastName || '',
+      email: doctor.email || '',
+      phone: doctor.phone || '',
+      specialty: doctor.specialty || '',
+      price: doctor.price ?? '',
+      experience: doctor.experience ?? '',
+      description: doctor.description || '',
+      password: ''
+    });
+    setShowForm(true);
+  };
+
+  const resetForm = () => {
+    setEditingDoctorId(null);
+    setFormData(emptyFormData);
+    setShowForm(false);
+  };
+
+  const handleUpdateDoctor = async (e) => {
+    e.preventDefault();
+    if (!editingDoctorId) return;
+    try {
+      const payload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        specialty: formData.specialty,
+        price: formData.price,
+        experience: formData.experience,
+        description: formData.description
+      };
+      await adminApi.updateDoctor(editingDoctorId, payload);
+      resetForm();
+      loadData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Ошибка редактирования врача');
+    }
+  };
+
   const handleDeleteDoctor = async (id) => {
+    if (!id) {
+      alert('Не удалось определить ID врача');
+      return;
+    }
     if (!confirm('Удалить врача?')) return;
     try {
       await adminApi.deleteDoctor(id);
@@ -121,8 +181,13 @@ export default function AdminDashboard() {
   };
 
   const handleToggleOnline = async (doctor) => {
+    const doctorId = getDoctorId(doctor);
+    if (!doctorId) {
+      alert('Не удалось определить ID врача');
+      return;
+    }
     try {
-      await adminApi.toggleDoctorOnline(doctor.id, !doctor.isOnline);
+      await adminApi.toggleDoctorOnline(doctorId, !doctor.isOnline);
       loadData();
     } catch (err) {
       alert(err.message);
@@ -137,17 +202,17 @@ export default function AdminDashboard() {
         <h1>Админ-панель</h1>
         <div className="admin-header-actions">
           <span>{user?.firstName} {user?.lastName}</span>
-          <button className="logout-btn" onClick={() => { logout(); navigate('/admin'); }}>
+          <button type="button" className="logout-btn" onClick={() => { logout(); navigate('/admin'); }}>
             Выйти
           </button>
         </div>
       </div>
 
       <div className="admin-tabs">
-        <button className={`tab-btn ${tab === 'dashboard' ? 'active' : ''}`} onClick={() => setTab('dashboard')}>
+        <button type="button" className={`tab-btn ${tab === 'dashboard' ? 'active' : ''}`} onClick={() => setTab('dashboard')}>
           📊 Дашборд
         </button>
-        <button className={`tab-btn ${tab === 'doctors' ? 'active' : ''}`} onClick={() => setTab('doctors')}>
+        <button type="button" className={`tab-btn ${tab === 'doctors' ? 'active' : ''}`} onClick={() => setTab('doctors')}>
           👨‍⚕️ Врачи
         </button>
       </div>
@@ -179,12 +244,19 @@ export default function AdminDashboard() {
 
       {tab === 'doctors' && (
         <div className="admin-doctors">
-          <button className="add-btn" onClick={() => setShowForm(!showForm)}>
+          <button
+            type="button"
+            className="add-btn"
+            onClick={() => (showForm ? resetForm() : setShowForm(true))}
+          >
             {showForm ? '✕ Отмена' : '+ Добавить врача'}
           </button>
 
           {showForm && (
-            <form className="doctor-form" onSubmit={handleCreateDoctor}>
+            <form
+              className="doctor-form"
+              onSubmit={editingDoctorId ? handleUpdateDoctor : handleCreateDoctor}
+            >
               <input placeholder="Имя" value={formData.firstName}
                 onChange={e => setFormData({...formData, firstName: e.target.value})} required />
               <input placeholder="Фамилия" value={formData.lastName}
@@ -201,27 +273,32 @@ export default function AdminDashboard() {
                 onChange={e => setFormData({...formData, experience: e.target.value})} />
               <input placeholder="Описание" value={formData.description}
                 onChange={e => setFormData({...formData, description: e.target.value})} />
-              <input type="password" placeholder="Пароль (по умолч.: doctor123)" value={formData.password}
-                onChange={e => setFormData({...formData, password: e.target.value})} />
-              <button type="submit">Создать</button>
+              {!editingDoctorId && (
+                <input type="password" placeholder="Пароль (по умолч.: doctor123)" value={formData.password}
+                  onChange={e => setFormData({...formData, password: e.target.value})} />
+              )}
+              <button type="submit">{editingDoctorId ? 'Сохранить' : 'Создать'}</button>
             </form>
           )}
 
           <div className="doctors-list">
             {doctors.map(doc => (
-              <div key={doc._id} className="doctor-card">
+              <div key={getDoctorId(doc)} className="doctor-card">
                 <div className="doctor-info">
                   <h3>{doc.firstName} {doc.lastName}</h3>
                   <p className="specialty">{doc.specialty}</p>
                   <p className="price">{doc.price} BYN</p>
                 </div>
                 <div className="doctor-actions">
+                  <button type="button" className="edit-btn" onClick={() => startEditDoctor(doc)}>
+                    ✏️
+                  </button>
                   <label className="toggle-online">
                     <input type="checkbox" checked={doc.isOnline}
                       onChange={() => handleToggleOnline(doc)} />
                     <span>Онлайн</span>
                   </label>
-                  <button className="delete-btn" onClick={() => handleDeleteDoctor(doc.id)}>
+                  <button type="button" className="delete-btn" onClick={() => handleDeleteDoctor(getDoctorId(doc))}>
                     🗑️
                   </button>
                 </div>

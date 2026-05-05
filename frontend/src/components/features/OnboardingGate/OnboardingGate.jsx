@@ -72,6 +72,7 @@ export default function OnboardingGate() {
     if (path === '/login' || path === '/register' || path.startsWith('/admin')) return;
 
     if (user.role === 'doctor' && path.startsWith('/doctor')) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOpen(true);
       setStep(0);
       return;
@@ -87,6 +88,7 @@ export default function OnboardingGate() {
     const path = location.pathname;
     const stay =
       (user.role === 'patient' && path === '/home') || (user.role === 'doctor' && path.startsWith('/doctor'));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!stay) setOpen(false);
   }, [location.pathname, open, user]);
 

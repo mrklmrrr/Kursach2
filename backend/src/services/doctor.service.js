@@ -8,6 +8,10 @@ class DoctorService {
     return this.doctorRepository.findAll(filter);
   }
 
+  async getAllForAdmin() {
+    return this.doctorRepository.findAllForAdmin();
+  }
+
   async getById(id) {
     return this.doctorRepository.findById(id);
   }

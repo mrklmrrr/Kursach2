@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageLayout from '@components/layout/PageLayout/PageLayout';
 import { useResearchData, useResearchForm, useTemplateBuilder } from '@hooks/doctorPanel/useResearch';
@@ -49,6 +49,7 @@ function LaboratoryResearch() {
 
   useEffect(() => {
     if (!showTemplateBuilder && panelMode === 'template') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPanelMode('study');
     }
   }, [showTemplateBuilder, panelMode]);
@@ -57,11 +58,11 @@ function LaboratoryResearch() {
     setExpandedResults((prev) => ({ ...prev, [resultId]: !prev[resultId] }));
   };
 
-  const nameMatchesSearch = (name) => {
+  const nameMatchesSearch = useCallback((name) => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return true;
     return String(name || '').toLowerCase().includes(q);
-  };
+  }, [searchQuery]);
 
   const visibleLabTypes = useMemo(() => researchTypes.filter((t) => nameMatchesSearch(t.name)), [researchTypes, nameMatchesSearch]);
   const visibleGridTemplates = useMemo(() => templates.filter((t) => nameMatchesSearch(t.name)), [templates, nameMatchesSearch]);
@@ -239,7 +240,6 @@ function LaboratoryResearch() {
             onEditTemplate={openEditTemplate}
             onDeleteTemplate={deleteTemplate}
             searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
           />
         )}
 

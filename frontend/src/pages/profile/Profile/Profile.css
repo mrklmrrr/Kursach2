@@ -7,7 +7,7 @@
 .prescription-item {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  padding: 12px 14px;
+  padding: 8px 10px;
   margin-bottom: 10px;
   background: #fafafa;
 }
@@ -22,7 +22,53 @@ body.dark .prescription-item {
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
-  margin-bottom: 8px;
+}
+
+.prescription-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.prescription-toggle:hover {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.prescription-chevron {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+  line-height: 1;
+}
+
+.prescription-body {
+  margin-top: 6px;
+  padding: 10px 8px 2px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.prescription-block {
+  margin-bottom: 10px;
+}
+
+.prescription-block:last-child {
+  margin-bottom: 0;
+}
+
+.prescription-block-title {
+  margin: 0 0 6px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #4b5563;
 }
 
 .prescription-date {
@@ -37,8 +83,34 @@ body.dark .prescription-item {
   color: #374151;
 }
 
+.prescription-recommendations {
+  margin: 10px 0 2px;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
 body.dark .prescription-item ul {
   color: #d1d5db;
+}
+
+body.dark .prescription-toggle:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+body.dark .prescription-chevron {
+  color: #9ca3af;
+}
+
+body.dark .prescription-body {
+  border-top-color: #374151;
+}
+
+body.dark .prescription-recommendations {
+  color: #d1d5db;
+}
+
+body.dark .prescription-block-title {
+  color: #9ca3af;
 }
 
 body.dark .profile-avatar-edit {
@@ -1032,7 +1104,7 @@ body.dark .password-message.error {
 .prescription-item {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  padding: 12px 14px;
+  padding: 8px 10px;
   margin-bottom: 10px;
   background: #fafafa;
 }
@@ -1047,7 +1119,6 @@ body.dark .prescription-item {
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
-  margin-bottom: 8px;
 }
 
 .prescription-date {

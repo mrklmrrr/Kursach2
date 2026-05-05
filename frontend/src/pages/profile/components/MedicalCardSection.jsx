@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { formatDateTime, formatHistoryDate } from '../utils/profileUtils';
 import PatientLaboratorySection from './PatientLaboratorySection';
 import InstrumentalInvestigationsSection from './InstrumentalInvestigationsSection';
+import { prescriptionApi } from '../../../services/prescriptionApi';
 
 export const MedicalCardSection = ({ medicalRecord, laboratoryResults = [], instrumentalResults = [], loading, error, allLeaves, currentLeaf }) => {
   const [medicalRecordOpen, setMedicalRecordOpen] = useState(false);
@@ -9,6 +10,47 @@ export const MedicalCardSection = ({ medicalRecord, laboratoryResults = [], inst
   const [medicalHistoryOpen, setMedicalHistoryOpen] = useState(false);
   const [medicalRecordTab, setMedicalRecordTab] = useState('systems');
   const [showSickLeaveHistory, setShowSickLeaveHistory] = useState(false);
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [prescriptionsLoading, setPrescriptionsLoading] = useState(false);
+  const [prescriptionsError, setPrescriptionsError] = useState('');
+  const [expandedPrescriptionById, setExpandedPrescriptionById] = useState({});
+
+  useEffect(() => {
+    if (!medicalRecordOpen || medicalRecordTab !== 'prescriptions') return;
+    let cancelled = false;
+    setPrescriptionsLoading(true);
+    setPrescriptionsError('');
+    prescriptionApi
+      .list()
+      .then((res) => {
+        if (!cancelled) {
+          setPrescriptions(Array.isArray(res.data) ? res.data : []);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPrescriptions([]);
+          setPrescriptionsError('Не удалось загрузить назначения');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setPrescriptionsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [medicalRecordOpen, medicalRecordTab]);
+
+  const sortedPrescriptions = useMemo(() => {
+    const items = Array.isArray(prescriptions) ? [...prescriptions] : [];
+    return items.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  }, [prescriptions]);
+
+  const togglePrescription = (id) => {
+    const key = String(id);
+    setExpandedPrescriptionById((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   return (
     <section className="section-card section-card--lux">
@@ -58,6 +100,13 @@ export const MedicalCardSection = ({ medicalRecord, laboratoryResults = [], inst
               onClick={() => setMedicalRecordTab('instrumental')}
             >
               Инструментальные исследования
+            </button>
+            <button
+              type="button"
+              className={`profile-tab-btn ${medicalRecordTab === 'prescriptions' ? 'active' : ''}`}
+              onClick={() => setMedicalRecordTab('prescriptions')}
+            >
+              Назначение
             </button>
           </div>
 
@@ -133,6 +182,66 @@ export const MedicalCardSection = ({ medicalRecord, laboratoryResults = [], inst
 
           {medicalRecordTab === 'instrumental' && (
             <InstrumentalInvestigationsSection results={instrumentalResults} loading={loading} />
+          )}
+
+          {medicalRecordTab === 'prescriptions' && (
+            <div className="medical-sick-leaves">
+              {prescriptionsLoading && <p className="empty-info">Загрузка назначений...</p>}
+              {!prescriptionsLoading && prescriptionsError && <p className="error-info">{prescriptionsError}</p>}
+              {!prescriptionsLoading && !prescriptionsError && sortedPrescriptions.length === 0 && (
+                <p className="empty-info">Назначения появятся после приёма, когда врач оформит рекомендации.</p>
+              )}
+              {!prescriptionsLoading && !prescriptionsError && sortedPrescriptions.map((doc, index) => {
+                const key = String(doc._id || `${doc.createdAt || 'date'}-${index}`);
+                const expanded = Boolean(expandedPrescriptionById[key]);
+                return (
+                  <div key={key} className="prescription-item">
+                    <button
+                      type="button"
+                      className="prescription-toggle"
+                      aria-expanded={expanded}
+                      onClick={() => togglePrescription(key)}
+                    >
+                      <span className="prescription-head">
+                        <strong>
+                          {doc.doctorName || 'Врач'}
+                          {doc.doctorSpecialty ? ` (${doc.doctorSpecialty})` : ''}
+                        </strong>
+                        <span className="prescription-date">
+                          {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('ru-RU') : ''}
+                        </span>
+                      </span>
+                      <span className="prescription-chevron" aria-hidden>
+                        {expanded ? '▾' : '▸'}
+                      </span>
+                    </button>
+                    {expanded && (
+                      <div className="prescription-body">
+                        {(Array.isArray(doc.blocks) && doc.blocks.length > 0 ? doc.blocks : [{ title: 'Назначения', items: doc.items || [] }]).map((block, bIndex) => (
+                          <div key={`${key}-b-${bIndex}`} className="prescription-block">
+                            <p className="prescription-block-title">{block.title || `Блок ${bIndex + 1}`}</p>
+                            <ul>
+                              {(block.items || []).map((it, i) => (
+                                <li key={i}>
+                                  {it.name}
+                                  {it.dosage ? ` — ${it.dosage}` : ''}
+                                  {it.notes ? ` (${it.notes})` : ''}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                        {doc.recommendations ? (
+                          <p className="prescription-recommendations">
+                            <strong>Рекомендации:</strong> {doc.recommendations}
+                          </p>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
 
           {/* Вкладка: Лист нетрудоспособности */}

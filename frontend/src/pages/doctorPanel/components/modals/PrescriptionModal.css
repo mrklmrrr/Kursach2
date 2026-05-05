@@ -47,6 +47,7 @@ body.dark .rx-modal {
 
 .rx-row {
   display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
   gap: 8px;
   margin-bottom: 10px;
 }
@@ -72,6 +73,95 @@ body.dark .rx-row input {
   margin-bottom: 6px;
 }
 
+.rx-existing {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 14px;
+}
+
+.rx-existing-head {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.rx-existing-head h4,
+.rx-form-head h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.rx-search {
+  width: 220px;
+  max-width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+}
+
+.rx-existing-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rx-existing-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.rx-existing-item.active {
+  border-color: #6366f1;
+  background: #eef2ff;
+}
+
+.rx-form-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.rx-block {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+
+.rx-block-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.rx-block-title {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 2px solid #e5e7eb;
+}
+
+.rx-row-remove {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 10px;
+  width: 38px;
+  height: 38px;
+  cursor: pointer;
+}
+
 .rx-rec-textarea {
   width: 100%;
   box-sizing: border-box;
@@ -91,6 +181,25 @@ body.dark .rx-rec-textarea {
   color: #f9fafb;
 }
 
+body.dark .rx-existing,
+body.dark .rx-block {
+  border-color: #4b5563;
+}
+
+body.dark .rx-search,
+body.dark .rx-block-title,
+body.dark .rx-row-remove,
+body.dark .rx-existing-item {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+body.dark .rx-existing-item.active {
+  border-color: #818cf8;
+  background: #312e81;
+}
+
 .rx-add {
   margin: 8px 0 16px;
   padding: 8px 12px;
@@ -99,6 +208,16 @@ body.dark .rx-rec-textarea {
   background: transparent;
   cursor: pointer;
   font-size: 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .rx-row {
+    grid-template-columns: 1fr;
+  }
+
+  .rx-row-remove {
+    width: 100%;
+  }
 }
 
 .rx-actions {

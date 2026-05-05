@@ -1,5 +1,3 @@
-import { normalizeGridTemplate } from '@utils/gridUtils';
-
 /**
  * Компонент отображения истории результатов исследований
  */

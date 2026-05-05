@@ -100,7 +100,7 @@ export default function Landing() {
             <p>Email и Telegram (очередь уведомлений; настройки у пациента в профиле).</p>
           </article>
           <article className="marketing-card">
-            <h3>E-назначения</h3>
+            <h3>Назначения</h3>
             <p>Врач фиксирует препараты и режим; пациент видит список в кабинете после приёма.</p>
           </article>
           <article className="marketing-card">

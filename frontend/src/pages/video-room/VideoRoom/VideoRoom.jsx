@@ -1,16 +1,13 @@
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useTimer } from '../../../hooks/useTimer';
 import { VideoCall } from '../../../components/features';
-import { Button, BackButton } from '../../../components/ui';
+import { BackButton } from '../../../components/ui';
 import PageLayout from '../../../components/layout/PageLayout/PageLayout';
 import './VideoRoom.css';
 
 export default function VideoRoom() {
   const { id: roomId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const consultationId = location.state?.consultationId;
 
   const { formatted } = useTimer(3600, () => {
     // Timer ended - 1 hour max

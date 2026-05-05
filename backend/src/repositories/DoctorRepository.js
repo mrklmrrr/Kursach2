@@ -14,6 +14,14 @@ class DoctorRepository {
     return doctors.map((d) => this._format(d));
   }
 
+  async findAllForAdmin() {
+    const doctors = await User.find(DOCTOR_FILTER)
+      .select('firstName lastName email phone specialty price experience description isOnline avatarUrl')
+      .sort({ lastName: 1, firstName: 1 })
+      .lean();
+    return doctors.map((d) => this._format(d));
+  }
+
   async findById(id) {
     const doctor = await findById(User, id, DOCTOR_FILTER);
     return doctor ? this._format(doctor.toObject()) : null;

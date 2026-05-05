@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { isTemplateGrid } from '@utils/gridUtils';
 
 /**
  * Компонент списка/таблицы шаблонов (бланков)
@@ -10,7 +9,6 @@ export default function GridTemplatesList({
   onEditTemplate,
   onDeleteTemplate,
   searchQuery,
-  onSearchChange,
 }) {
   const [expanded, setExpanded] = useState(false);
 

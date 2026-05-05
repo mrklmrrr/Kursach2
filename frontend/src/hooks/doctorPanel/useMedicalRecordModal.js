@@ -15,24 +15,32 @@ export const useMedicalRecordModal = () => {
 
   const [expandedSection, setExpandedSection] = useState('');
   const [historyOpen, setHistoryOpen] = useState(false);
+  const toggleHistory = () => setHistoryOpen((prev) => !prev);
   const [tab, setTab] = useState('systems');
   const [showSickLeaveHistory, setShowSickLeaveHistory] = useState(false);
+  const toggleSickLeaveHistory = () => setShowSickLeaveHistory((prev) => !prev);
+
+  // Локальное состояние для несохраненных изменений больничных листов
+  const [dirtySickLeaves, setDirtySickLeaves] = useState(new Map());
 
   const openMedicalRecord = async (patient) => {
     if (!patient?.id) return;
-    
+
     setModal({
       open: true,
       patient,
       record: null,
+      laboratoryResults: [],
+      instrumentalResults: [],
       loading: true,
       savingSectionKey: '',
       error: ''
     });
-    
+
     setExpandedSection('');
     setHistoryOpen(false);
     setTab('systems');
+    setShowSickLeaveHistory(false);
 
     try {
       const [recordRes, labRes, instrRes] = await Promise.allSettled([
@@ -45,10 +53,34 @@ export const useMedicalRecordModal = () => {
       const labData = labRes.status === 'fulfilled' ? labRes.value.data : [];
       const instrData = instrRes.status === 'fulfilled' ? instrRes.value.data : [];
 
-      const recordWithOriginal = recordData ? {
+      let recordWithOriginal = recordData ? {
         ...recordData,
-        sickLeaves: (recordData.sickLeaves || []).map(leaf => ({ ...leaf, originalStatus: leaf.status }))
+        sickLeaves: (recordData.sickLeaves || []).map((leaf) => ({ ...leaf, originalStatus: leaf.status }))
       } : null;
+
+      // АВТОМАТИЧЕСКОЕ СОЗДАНИЕ ЧЕРНОВИКА, если нет открытых листов
+      const hasOpenLeave = recordWithOriginal?.sickLeaves?.some((l) => l.status === 'open');
+      if (!hasOpenLeave) {
+        const draftLeaf = {
+          tempId: `temp-${Date.now()}`,
+          issueDate: new Date().toISOString(),
+          startDate: '',
+          endDate: '',
+          disease: '',
+          diagnosis: '',
+          recommendations: '',
+          status: 'open',
+          originalStatus: 'open',
+          doctorName: 'Врач',
+          updatedAt: new Date().toISOString()
+        };
+
+        if (recordWithOriginal) {
+          recordWithOriginal.sickLeaves = [draftLeaf, ...(recordWithOriginal.sickLeaves || [])];
+        } else {
+          recordWithOriginal = { systems: [], changeLogs: [], sickLeaves: [draftLeaf] };
+        }
+      }
 
       setModal((prev) => ({
         ...prev,
@@ -83,6 +115,7 @@ export const useMedicalRecordModal = () => {
     setHistoryOpen(false);
     setTab('systems');
     setShowSickLeaveHistory(false);
+    setDirtySickLeaves(new Map()); // Очищаем несохраненные изменения
   };
 
   const updateMedicalField = (sectionKey, field, value) => {
@@ -102,9 +135,9 @@ export const useMedicalRecordModal = () => {
 
   const saveSection = async (section) => {
     if (!modal.patient?.id || !section?.key) return;
-    
+
     setModal((prev) => ({ ...prev, savingSectionKey: section.key, error: '' }));
-    
+
     try {
       const { data } = await medicalRecordApi.updatePatientSection(
         modal.patient.id,
@@ -116,7 +149,7 @@ export const useMedicalRecordModal = () => {
           recommendations: section.recommendations || ''
         }
       );
-      
+
       setModal((prev) => ({
         ...prev,
         savingSectionKey: '',
@@ -135,7 +168,20 @@ export const useMedicalRecordModal = () => {
     }
   };
 
+  // Функция для получения данных больничного листа с учетом локальных изменений
+  const getSickLeaveWithChanges = (leaf) => {
+    const leafKey = leaf._id || leaf.tempId;
+    const localChanges = dirtySickLeaves.get(leafKey) || {};
+    return { ...leaf, ...localChanges };
+  };
+
+  // Функция для проверки, есть ли несохраненные изменения
+  const hasUnsavedChanges = (leafKey) => {
+    return dirtySickLeaves.has(leafKey);
+  };
+
   const addSickLeaveDraft = (user) => {
+    const newLeafKey = `temp-${Date.now()}`;
     setModal((prev) => {
       if (!prev.record) return prev;
       return {
@@ -144,7 +190,7 @@ export const useMedicalRecordModal = () => {
           ...prev.record,
           sickLeaves: [
             {
-              tempId: `temp-${Date.now()}`,
+              tempId: newLeafKey,
               issueDate: new Date().toISOString(),
               startDate: '',
               endDate: '',
@@ -164,37 +210,36 @@ export const useMedicalRecordModal = () => {
   };
 
   const updateSickLeaveField = (leafKey, field, value) => {
-    setModal((prev) => {
-      if (!prev.record) return prev;
-      return {
-        ...prev,
-        record: {
-          ...prev.record,
-          sickLeaves: (prev.record.sickLeaves || []).map((leaf) => {
-            const key = leaf._id || leaf.tempId;
-            return key === leafKey ? { ...leaf, [field]: value } : leaf;
-          })
-        }
-      };
+    // Сохраняем изменения локально, не обновляя основной state
+    setDirtySickLeaves((prev) => {
+      const current = prev.get(leafKey) || {};
+      const updated = { ...current, [field]: value };
+      const newMap = new Map(prev);
+      newMap.set(leafKey, updated);
+      return newMap;
     });
   };
 
   const saveSickLeave = async (leaf) => {
     if (!modal.patient?.id) return;
-    
+
     const leafKey = leaf._id || leaf.tempId || '';
     if (!leafKey || leaf.originalStatus === 'closed') return;
 
     setModal((prev) => ({ ...prev, savingSectionKey: leafKey, error: '' }));
-    
+
+    // Получаем локальные изменения для этого листа
+    const localChanges = dirtySickLeaves.get(leafKey) || {};
+
+    // Объединяем оригинальные данные с локальными изменениями
     const payload = {
-      issueDate: leaf.issueDate || '',
-      startDate: leaf.startDate || '',
-      endDate: leaf.endDate || '',
-      disease: leaf.disease || '',
-      diagnosis: leaf.diagnosis || '',
-      recommendations: leaf.recommendations || '',
-      status: leaf.status || 'open'
+      issueDate: localChanges.issueDate || leaf.issueDate || '',
+      startDate: localChanges.startDate || leaf.startDate || '',
+      endDate: localChanges.endDate || leaf.endDate || '',
+      disease: localChanges.disease || leaf.disease || '',
+      diagnosis: localChanges.diagnosis || leaf.diagnosis || '',
+      recommendations: localChanges.recommendations || leaf.recommendations || '',
+      status: localChanges.status || leaf.status || 'open'
     };
 
     try {
@@ -202,12 +247,19 @@ export const useMedicalRecordModal = () => {
         ? await medicalRecordApi.updatePatientSickLeave(modal.patient.id, leaf._id, payload)
         : await medicalRecordApi.createPatientSickLeave(modal.patient.id, payload);
 
+      // Очищаем локальные изменения после успешного сохранения
+      setDirtySickLeaves((prev) => {
+        const newMap = new Map(prev);
+        newMap.delete(leafKey);
+        return newMap;
+      });
+
       setModal((prev) => {
         const updatedRecord = {
           ...(prev.record || {}),
           ...data,
           patient: prev.patient,
-          sickLeaves: (data.sickLeaves || []).map(leaf => ({ ...leaf, originalStatus: leaf.status }))
+          sickLeaves: (data.sickLeaves || []).map((item) => ({ ...item, originalStatus: item.status }))
         };
         return {
           ...prev,
@@ -219,7 +271,8 @@ export const useMedicalRecordModal = () => {
       console.error('Ошибка сохранения больничного листа:', err);
       setModal((prev) => ({
         ...prev,
-        savingSectionKey: ''
+        savingSectionKey: '',
+        error: err.response?.data?.message || 'Не удалось сохранить больничный лист'
       }));
     }
   };
@@ -240,6 +293,10 @@ export const useMedicalRecordModal = () => {
     saveSection,
     addSickLeaveDraft,
     updateSickLeaveField,
-    saveSickLeave
+    saveSickLeave,
+    getSickLeaveWithChanges,
+    hasUnsavedChanges,
+    toggleHistory,
+    toggleSickLeaveHistory
   };
 };

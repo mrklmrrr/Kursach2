@@ -93,6 +93,11 @@ export const adminApi = {
   login: (email, password) => authApiInstance.post('/admin/login', { email, password }),
   getDashboard: () => authApiInstance.get('/admin/dashboard'),
   getDoctors: () => authApiInstance.get('/admin/doctors'),
+  createDoctor: (doctorData) => authApiInstance.post('/admin/doctors', doctorData),
+  updateDoctor: (doctorId, doctorData) => authApiInstance.put(`/admin/doctors/${doctorId}`, doctorData),
+  deleteDoctor: (doctorId) => authApiInstance.delete(`/admin/doctors/${doctorId}`),
+  toggleDoctorOnline: (doctorId, isOnline) =>
+    authApiInstance.patch(`/admin/doctors/${doctorId}/online`, { isOnline }),
   getPatients: () => authApiInstance.get('/admin/patients'),
   getConsultations: () => authApiInstance.get('/admin/consultations'),
   updateDoctorStatus: (doctorId, status) => 

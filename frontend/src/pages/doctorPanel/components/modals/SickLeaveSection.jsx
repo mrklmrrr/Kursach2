@@ -37,7 +37,17 @@ export default function SickLeaveSection({
           {showHistory ? (
             <p className="empty-info">История больничных пуста.</p>
           ) : (
-            <p className="empty-info">Загрузка активного листа...</p>
+            <>
+              <p className="empty-info">Активный лист не найден.</p>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={onAddDraft}
+                disabled={!onAddDraft}
+              >
+                Создать лист нетрудоспособности
+              </button>
+            </>
           )}
         </>
       ) : (

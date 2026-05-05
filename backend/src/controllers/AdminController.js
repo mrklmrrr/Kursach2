@@ -28,7 +28,7 @@ class AdminController {
   /* ---------- Врачи ---------- */
 
   async getDoctors(req, res) {
-    const doctors = await this.doctorService.getAll();
+    const doctors = await this.doctorService.getAllForAdmin();
     res.json(doctors);
   }
 
@@ -69,20 +69,38 @@ class AdminController {
   }
 
   async updateDoctor(req, res) {
-    const { firstName, lastName, specialty, price, experience, description } = req.body;
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      specialty,
+      price,
+      experience,
+      description
+    } = req.body;
     const updates = {};
 
     if (firstName) updates.firstName = firstName;
     if (lastName) updates.lastName = lastName;
+    if (email !== undefined) updates.email = email;
+    if (phone !== undefined) updates.phone = phone;
     if (specialty) updates.specialty = specialty;
     if (price !== undefined) updates.price = Number(price);
-    if (experience !== undefined) updates.experience = Number(experience);
+    if (experience !== undefined) updates.experience = experience === '' ? null : Number(experience);
     if (description !== undefined) updates.description = description;
 
     const doctor = await this.doctorService.updateDoctor(req.params.id, updates);
     if (!doctor) {
       throw ApiError.notFound('Врач не найден');
     }
+    await logAudit({
+      actorId: req.userId,
+      actorRole: 'admin',
+      action: 'doctor.update',
+      resource: `User:${doctor.id || doctor._id}`,
+      details: `${doctor.firstName || ''} ${doctor.lastName || ''}`.trim()
+    });
     res.json(doctor);
   }
 
