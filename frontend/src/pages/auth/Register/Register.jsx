@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
-import { Button, Input } from '../../../components/ui';
+import { Button, Input, DateInput } from '../../../components/ui';
 import { GENDER_TYPES } from '../../../constants';
 import { validate } from '../../../utils/validation';
 import './AuthForms.css';
@@ -85,7 +85,7 @@ export default function Register() {
           {errors.phone && <span className="field-error">{errors.phone}</span>}
         </div>
         <div className="field-group">
-          <Input name="birthDate" type="date" value={form.birthDate} onChange={handleChange} required />
+          <DateInput name="birthDate" value={form.birthDate} onChange={handleChange} required className="input-field" />
           {errors.birthDate && <span className="field-error">{errors.birthDate}</span>}
         </div>
         <div className="field-group">

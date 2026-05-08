@@ -68,5 +68,6 @@ export const doctorPanelApi = {
       apiCache.set(PATIENTS_CACHE_KEY, response.data, CACHE_TTL);
       return response;
     });
-  }
+  },
+  getPatientDependents: (patientId) => api.get(`/doctor/patients/${patientId}/dependents`)
 };

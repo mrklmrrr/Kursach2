@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dependentApi } from '../../../services/dependentApi';
 import { AppHeader, BottomNav, UserSidebar } from '../../../components/layout';
-import { Button, Input } from '../../../components/ui';
+import { Button, Input, DateInput } from '../../../components/ui';
 import { RELATION_TYPES, GENDER_TYPES } from '../../../constants';
 import './AddRelative.css';
 
@@ -164,7 +164,12 @@ export default function AddRelative() {
               </div>
               <div>
                 <label className="ar-label">Дата рождения</label>
-                <input className="ar-input" type="date" name="birthDate" value={form.birthDate} onChange={handleManualChange} />
+                <DateInput
+                  className="ar-input"
+                  name="birthDate"
+                  value={form.birthDate}
+                  onChange={handleManualChange}
+                />
               </div>
             </div>
 

@@ -63,6 +63,9 @@ export default function DoctorPanelModals({
         record={medicalRecordModal.modal.record}
         laboratoryResults={medicalRecordModal.modal.laboratoryResults}
         instrumentalResults={medicalRecordModal.modal.instrumentalResults}
+        dependents={medicalRecordModal.modal.dependents}
+        dependentsLoading={medicalRecordModal.modal.dependentsLoading}
+        dependentsError={medicalRecordModal.modal.dependentsError}
         loading={medicalRecordModal.modal.loading}
         error={medicalRecordModal.modal.error}
         tab={medicalRecordModal.tab}
@@ -80,6 +83,7 @@ export default function DoctorPanelModals({
         onToggleHistory={onToggleHistory}
         onToggleSickLeaveHistory={onToggleSickLeaveHistory}
         onPrescription={onOpenPrescription}
+        onLoadDependents={medicalRecordModal.loadPatientDependents}
         getSickLeaveWithChanges={getSickLeaveWithChanges}
         hasUnsavedChanges={hasUnsavedChanges}
         onClose={onCloseMedicalRecord}

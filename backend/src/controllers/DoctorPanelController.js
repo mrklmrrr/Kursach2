@@ -2,9 +2,10 @@ const { consultationStatus } = require('../constants');
 const ApiError = require('../utils/ApiError');
 
 class DoctorPanelController {
-  constructor(doctorService, consultationService) {
+  constructor(doctorService, consultationService, dependentService) {
     this.doctorService = doctorService;
     this.consultationService = consultationService;
+    this.dependentService = dependentService;
   }
 
   /** Профиль врача */
@@ -138,6 +139,39 @@ class DoctorPanelController {
     }
 
     res.json(patients);
+  }
+
+  /** Родственники пациента (для врача) */
+  async getPatientDependents(req, res) {
+    const patientId = String(req.params.patientId || '').trim();
+    if (!patientId) {
+      throw ApiError.badRequest('Не указан идентификатор пациента');
+    }
+
+    const consultations = await this.consultationService.getByDoctorId(req.userId);
+    const { UserRepository } = require('../repositories');
+    const userRepo = new UserRepository();
+    const patient = await userRepo.findById(patientId);
+    if (!patient) {
+      throw ApiError.notFound('Пациент не найден');
+    }
+
+    const objectId = String(patient.id || patient._id || '');
+    const legacyId = patient.legacyId !== undefined && patient.legacyId !== null
+      ? String(patient.legacyId)
+      : null;
+
+    const hasAccess = consultations.some((consultation) => {
+      const consultationPatientId = String(consultation.patientId || '');
+      return consultationPatientId === objectId || (legacyId && consultationPatientId === legacyId);
+    });
+
+    if (!hasAccess) {
+      throw ApiError.forbidden('Нет доступа к родственникам этого пациента');
+    }
+
+    const dependents = await this.dependentService.getByUserId(objectId);
+    res.json(Array.isArray(dependents) ? dependents : []);
   }
 }
 

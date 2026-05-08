@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { medicalRecordApi } from '@services/medicalRecordApi';
+import { doctorPanelApi } from '@services/doctorPanelApi';
 
 export const useMedicalRecordModal = () => {
   const [modal, setModal] = useState({
@@ -8,6 +9,10 @@ export const useMedicalRecordModal = () => {
     record: null,
     laboratoryResults: [],
     instrumentalResults: [],
+    dependents: [],
+    dependentsLoading: false,
+    dependentsError: '',
+    dependentsLoadedForPatientId: '',
     loading: false,
     savingSectionKey: '',
     error: ''
@@ -32,6 +37,10 @@ export const useMedicalRecordModal = () => {
       record: null,
       laboratoryResults: [],
       instrumentalResults: [],
+      dependents: [],
+      dependentsLoading: false,
+      dependentsError: '',
+      dependentsLoadedForPatientId: '',
       loading: true,
       savingSectionKey: '',
       error: ''
@@ -88,6 +97,10 @@ export const useMedicalRecordModal = () => {
         record: recordWithOriginal,
         laboratoryResults: Array.isArray(labData) ? labData : [],
         instrumentalResults: Array.isArray(instrData) ? instrData : [],
+      dependents: prev.dependents || [],
+      dependentsLoading: false,
+      dependentsError: '',
+      dependentsLoadedForPatientId: '',
         loading: false,
         error: recordRes.status === 'rejected' ? (recordRes.reason?.response?.data?.message || 'Не удалось загрузить медицинскую карту') : ''
       }));
@@ -107,6 +120,10 @@ export const useMedicalRecordModal = () => {
       record: null,
       laboratoryResults: [],
       instrumentalResults: [],
+      dependents: [],
+      dependentsLoading: false,
+      dependentsError: '',
+      dependentsLoadedForPatientId: '',
       loading: false,
       savingSectionKey: '',
       error: ''
@@ -116,6 +133,37 @@ export const useMedicalRecordModal = () => {
     setTab('systems');
     setShowSickLeaveHistory(false);
     setDirtySickLeaves(new Map()); // Очищаем несохраненные изменения
+  };
+
+  const loadPatientDependents = async () => {
+    const patientId = modal.patient?.id;
+    if (!patientId) return;
+    if (modal.dependentsLoadedForPatientId === String(patientId)) return;
+
+    setModal((prev) => ({
+      ...prev,
+      dependentsLoading: true,
+      dependentsError: ''
+    }));
+
+    try {
+      const { data } = await doctorPanelApi.getPatientDependents(patientId);
+      setModal((prev) => ({
+        ...prev,
+        dependents: Array.isArray(data) ? data : [],
+        dependentsLoading: false,
+        dependentsError: '',
+        dependentsLoadedForPatientId: String(patientId)
+      }));
+    } catch (err) {
+      setModal((prev) => ({
+        ...prev,
+        dependents: [],
+        dependentsLoading: false,
+        dependentsError: err?.response?.data?.message || 'Не удалось загрузить родственников',
+        dependentsLoadedForPatientId: ''
+      }));
+    }
   };
 
   const updateMedicalField = (sectionKey, field, value) => {
@@ -294,6 +342,7 @@ export const useMedicalRecordModal = () => {
     addSickLeaveDraft,
     updateSickLeaveField,
     saveSickLeave,
+    loadPatientDependents,
     getSickLeaveWithChanges,
     hasUnsavedChanges,
     toggleHistory,

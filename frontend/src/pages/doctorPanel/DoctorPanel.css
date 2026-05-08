@@ -444,6 +444,71 @@
   font-size: 0.85rem;
 }
 
+.doctor-dependents-section {
+  margin-top: 10px;
+}
+
+.doctor-dependents-state {
+  margin: 0;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.doctor-dependents-state--error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.doctor-dependents-list {
+  display: grid;
+  gap: 12px;
+}
+
+.doctor-dependent-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+}
+
+.doctor-dependent-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.doctor-dependent-card__head span {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.doctor-dependent-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px 12px;
+}
+
+.doctor-dependent-card__grid p,
+.doctor-dependent-card__notes p {
+  margin: 0;
+}
+
+.doctor-dependent-card__notes {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #e5e7eb;
+  display: grid;
+  gap: 6px;
+}
+
 .unsaved-indicator {
   color: #f59e0b;
   font-weight: 600;
@@ -1190,6 +1255,30 @@ body.dark .profile-tab-btn {
 body.dark .profile-tab-btn.active {
   background: #4f46e5;
   color: #fff;
+}
+
+body.dark .doctor-dependents-state {
+  background: #1e293b;
+  color: #cbd5e1;
+}
+
+body.dark .doctor-dependents-state--error {
+  border-color: #7f1d1d;
+  background: #3b0a0a;
+  color: #fca5a5;
+}
+
+body.dark .doctor-dependent-card {
+  border-color: #334155;
+  background: #0f172a;
+}
+
+body.dark .doctor-dependent-card__head span {
+  color: #94a3b8;
+}
+
+body.dark .doctor-dependent-card__notes {
+  border-top-color: #334155;
 }
 
 body.dark .medical-section-meta {

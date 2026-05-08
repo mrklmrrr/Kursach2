@@ -150,7 +150,7 @@ async function startApp() {
   const paymentController = new PaymentController(paymentService);
   const dependentController = new DependentController(dependentService);
   const adminController = new AdminController(doctorService, consultationService, authService);
-  const doctorPanelController = new DoctorPanelController(doctorService, consultationService);
+  const doctorPanelController = new DoctorPanelController(doctorService, consultationService, dependentService);
   const appointmentController = new AppointmentController(appointmentService, userRepository);
   const medicalRecordController = new MedicalRecordController(medicalRecordService, userRepository);
   const platformController = new PlatformController();
