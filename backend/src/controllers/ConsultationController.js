@@ -1,6 +1,7 @@
 const { hasConsultationAccess } = require('../utils/chatAccess');
 const { resolveAvatarUrl } = require('../utils/userSerializer');
 const ApiError = require('../utils/ApiError');
+const { User } = require('../models');
 
 const ConsultationController = class {
   constructor(consultationService, userRepository, doctorRepository) {
@@ -58,56 +59,201 @@ const ConsultationController = class {
 
   async getChats(req, res) {
     const consultations = await this.consultationService.getChatsForUser(req.userId, req.userRole);
+    const currentUser = await this.userRepository.findById(req.userId);
+    const currentUserId = String(req.userId || '');
+    const currentUserLegacyId = String(currentUser?.legacyId || '');
 
     // Batch-загрузка аватаров для врачей и пациентов
     const doctorIds = [...new Set(consultations.map((c) => String(c.doctorId)))];
     const patientIds = [...new Set(consultations.map((c) => c.patientId))].filter(Boolean);
 
-    const [doctors, patients] = await Promise.all([
-      Promise.all(doctorIds.map((id) => this.doctorRepository.findById(id))),
-      Promise.all(patientIds.map((id) => this.userRepository.findById(id)))
+    const validDoctorObjectIds = doctorIds
+      .map((id) => String(id || '').trim())
+      .filter((id) => /^[a-fA-F0-9]{24}$/.test(id));
+    const patientNumericLegacyIds = patientIds
+      .map((id) => {
+        const value = Number(id);
+        return Number.isNaN(value) ? null : value;
+      })
+      .filter((id) => id !== null);
+
+    const [usersByObjectIds, usersByLegacyIds] = await Promise.all([
+      validDoctorObjectIds.length > 0
+        ? User.find({ _id: { $in: validDoctorObjectIds } })
+          .select('firstName lastName specialty avatarUrl role legacyId isOnline')
+          .lean()
+        : Promise.resolve([]),
+      patientNumericLegacyIds.length > 0
+        ? User.find({ legacyId: { $in: patientNumericLegacyIds } })
+          .select('firstName lastName specialty avatarUrl role legacyId isOnline')
+          .lean()
+        : Promise.resolve([])
     ]);
+
+    const users = [...usersByObjectIds, ...usersByLegacyIds];
+    const uniqueUsers = Array.from(
+      new Map(users.map((user) => [String(user._id), user])).values()
+    );
+
+    const doctors = uniqueUsers.filter((user) => String(user.role) === 'doctor');
+    const patients = uniqueUsers.filter((user) => String(user.role) !== 'doctor');
 
     const doctorMap = new Map();
     doctors.filter(Boolean).forEach((d) => {
       doctorMap.set(String(d.id || d._id), {
         avatarUrl: resolveAvatarUrl(d.avatarUrl || ''),
         doctorName: d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim(),
-        specialty: d.specialty || ''
+        specialty: d.specialty || '',
+        isOnline: Boolean(d.isOnline)
       });
     });
 
     const patientMap = new Map();
     patients.filter(Boolean).forEach((p) => {
-      const avatar = resolveAvatarUrl(p.avatarUrl || '');
-      patientMap.set(String(p.id || p._id), avatar);
+      const payload = {
+        id: String(p.id || p._id || ''),
+        avatarUrl: resolveAvatarUrl(p.avatarUrl || ''),
+        role: p.role || 'patient',
+        fullName: `${p.firstName || ''} ${p.lastName || ''}`.trim(),
+        specialty: p.specialty || '',
+        isOnline: Boolean(p.isOnline)
+      };
+      patientMap.set(String(p.id || p._id), payload);
       if (p.legacyId != null) {
-        patientMap.set(String(p.legacyId), avatar);
+        patientMap.set(String(p.legacyId), payload);
       }
     });
 
     const chats = consultations.map((consultation) => {
       const messages = consultation.messages || [];
       const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+      const doctorInfo = doctorMap.get(String(consultation.doctorId)) || {
+        doctorName: consultation.doctorName,
+        avatarUrl: '',
+        specialty: consultation.specialty,
+        isOnline: false
+      };
+      const patientInfo = patientMap.get(String(consultation.patientId)) || {
+        id: String(consultation.patientId || ''),
+        fullName: consultation.patientName,
+        avatarUrl: '',
+        role: 'patient',
+        specialty: '',
+        isOnline: false
+      };
+      const isSelfOnPatientSide = String(consultation.patientId || '') === currentUserId
+        || String(consultation.patientId || '') === currentUserLegacyId;
+      const companion = isSelfOnPatientSide
+        ? {
+            id: String(consultation.doctorId || ''),
+            role: 'doctor',
+            name: doctorInfo.doctorName || consultation.doctorName || 'Врач',
+            avatarUrl: doctorInfo.avatarUrl || '',
+            specialty: doctorInfo.specialty || consultation.specialty || 'Специалист',
+            isOnline: Boolean(doctorInfo.isOnline)
+          }
+        : {
+            id: String(patientInfo.id || consultation.patientId || ''),
+            role: patientInfo.role || 'patient',
+            name: patientInfo.fullName || consultation.patientName || 'Пациент',
+            avatarUrl: patientInfo.avatarUrl || '',
+            specialty: (patientInfo.role === 'doctor' ? (patientInfo.specialty || 'Специалист') : 'Пациент'),
+            isOnline: Boolean(patientInfo.isOnline)
+          };
+
       return {
         _id: consultation._id,
         type: consultation.type,
         doctorId: consultation.doctorId,
-        doctorName: doctorMap.get(String(consultation.doctorId))?.doctorName || consultation.doctorName,
+        doctorName: doctorInfo.doctorName || consultation.doctorName,
         patientId: consultation.patientId,
         patientName: consultation.patientName,
-        specialty: doctorMap.get(String(consultation.doctorId))?.specialty || consultation.specialty,
+        specialty: doctorInfo.specialty || consultation.specialty,
         status: consultation.status,
         createdAt: consultation.createdAt,
         updatedAt: consultation.updatedAt,
         lastMessage,
         messageCount: messages.length,
-        doctorAvatarUrl: doctorMap.get(String(consultation.doctorId))?.avatarUrl || '',
-        patientAvatarUrl: patientMap.get(String(consultation.patientId)) || ''
+        doctorAvatarUrl: doctorInfo.avatarUrl || '',
+        doctorIsOnline: Boolean(doctorInfo.isOnline),
+        patientAvatarUrl: patientInfo.avatarUrl || '',
+        patientIsOnline: Boolean(patientInfo.isOnline),
+        patientRole: patientInfo.role || 'patient',
+        patientSpecialty: patientInfo.specialty || '',
+        companion
       };
     });
 
     res.json(chats);
+  }
+
+  async createDoctorChat(req, res) {
+    if (req.userRole !== 'doctor') {
+      throw ApiError.forbidden('Только врач может создать чат с другим врачом');
+    }
+
+    const targetDoctorId = String(req.body?.doctorId || '');
+    if (!targetDoctorId) {
+      throw ApiError.badRequest('doctorId обязателен');
+    }
+    if (String(req.userId) === targetDoctorId) {
+      throw ApiError.badRequest('Нельзя создать чат с самим собой');
+    }
+
+    const [currentUser, targetDoctor] = await Promise.all([
+      this.userRepository.findById(req.userId),
+      this.userRepository.findById(targetDoctorId)
+    ]);
+    if (!currentUser || currentUser.role !== 'doctor') {
+      throw ApiError.forbidden('Текущий пользователь не является врачом');
+    }
+    if (!targetDoctor || targetDoctor.role !== 'doctor') {
+      throw ApiError.notFound('Врач для чата не найден');
+    }
+    if (currentUser.legacyId === null || currentUser.legacyId === undefined) {
+      throw ApiError.badRequest('Невозможно создать чат: отсутствует legacyId врача');
+    }
+    if (targetDoctor.legacyId === null || targetDoctor.legacyId === undefined) {
+      throw ApiError.badRequest('Невозможно создать чат: отсутствует legacyId второго врача');
+    }
+
+    const existingChats = await this.consultationService.getChatsForUser(req.userId, req.userRole);
+    const existing = existingChats.find((chat) => (
+      String(chat.type || '').toLowerCase() === 'chat'
+      && (
+        (String(chat.doctorId) === String(targetDoctorId) && String(chat.patientId) === String(currentUser.legacyId))
+        || (String(chat.doctorId) === String(req.userId) && String(chat.patientId) === String(targetDoctor.legacyId))
+      )
+    ));
+
+    if (existing) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          consultationId: existing._id,
+          reused: true
+        }
+      });
+    }
+
+    const newChat = await this.consultationService.create({
+      doctorId: targetDoctor._id || targetDoctor.id,
+      doctorName: `${targetDoctor.firstName || ''} ${targetDoctor.lastName || ''}`.trim() || 'Врач',
+      specialty: targetDoctor.specialty || 'Специалист',
+      price: Number(targetDoctor.price) || 0,
+      duration: 30,
+      patientId: currentUser.legacyId,
+      patientName: `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Врач',
+      type: 'chat'
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        consultationId: newChat._id,
+        reused: false
+      }
+    });
   }
 
   async getMessages(req, res) {
@@ -124,6 +270,7 @@ const ConsultationController = class {
       consultationId: consultation._id,
       doctorName: doctor?.name || consultation.doctorName,
       specialty: doctor?.specialty || consultation.specialty,
+      doctorIsOnline: Boolean(doctor?.isOnline),
       messages: consultation.messages || []
     };
 
@@ -134,6 +281,7 @@ const ConsultationController = class {
         response.patientId = consultation.patientId;
         response.patientName = consultation.patientName;
         response.patientAvatarUrl = resolveAvatarUrl(patient.avatarUrl || '');
+        response.patientIsOnline = Boolean(patient.isOnline);
       }
     } else {
       // Include doctor info and avatar for patients

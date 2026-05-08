@@ -36,6 +36,15 @@ function emitToUser(targetUserId, eventName, payload) {
   return true;
 }
 
+async function updatePresence(userId, isOnline) {
+  if (!userId) return;
+  try {
+    await User.updateOne({ _id: userId }, { $set: { isOnline: Boolean(isOnline) } });
+  } catch (err) {
+    logger.warn('Presence update failed', { userId: String(userId), isOnline: Boolean(isOnline), err: err?.message });
+  }
+}
+
 function formatVideoCallDurationRu(totalSeconds) {
   const s = Math.max(0, Math.floor(Number(totalSeconds) || 0));
   if (s < 60) return `${s} сек`;
@@ -47,6 +56,68 @@ function formatVideoCallDurationRu(totalSeconds) {
   const h = Math.floor(m / 60);
   const min = m % 60;
   return min > 0 ? `${h} ч ${min} мин` : `${h} ч`;
+}
+
+async function finalizeVideoCallForAll({
+  roomId,
+  actorUserId,
+  consultationRepository,
+  forceCompleteStatus = false
+}) {
+  if (!roomId) return;
+  const consultation = await consultationRepository.findById(roomId);
+  if (!consultation) {
+    io?.to(`video-${roomId}`).emit('video-call-ended', {
+      roomId,
+      endedBy: String(actorUserId || '')
+    });
+    return;
+  }
+
+  const vr = consultation.videoRoom;
+  const vrStatus = vr?.status;
+  if (vr && (vrStatus === 'waiting' || vrStatus === 'active')) {
+    const now = new Date();
+    const startMs = vr.startedAt ? new Date(vr.startedAt).getTime() : null;
+    const durationSec = startMs ? Math.max(0, Math.round((now.getTime() - startMs) / 1000)) : 0;
+
+    const updatePayload = {
+      'videoRoom.status': 'ended',
+      'videoRoom.endedAt': now,
+      'videoRoom.duration': durationSec
+    };
+    if (consultation.status === 'active' || forceCompleteStatus) {
+      updatePayload.status = 'completed';
+    }
+
+    const updatedConsultation = await Consultation.findOneAndUpdate(
+      {
+        _id: roomId,
+        'videoRoom.status': { $in: ['waiting', 'active'] }
+      },
+      { $set: updatePayload },
+      { new: true }
+    );
+
+    if (updatedConsultation) {
+      const text = `Видеозвонок завершён. Длительность: ${formatVideoCallDurationRu(durationSec)}.`;
+      const savedMessage = await consultationRepository.addMessage(roomId, {
+        messageType: 'system',
+        message: text,
+        sender: 'system',
+        senderId: null,
+        timestamp: now.toISOString()
+      });
+      if (savedMessage) {
+        io.to(`chat-${roomId}`).emit('new-message', savedMessage);
+      }
+    }
+  }
+
+  io.to(`video-${roomId}`).emit('video-call-ended', {
+    roomId,
+    endedBy: String(actorUserId || '')
+  });
 }
 
 function setupSocket(server, consultationRepository) {
@@ -77,6 +148,7 @@ function setupSocket(server, consultationRepository) {
   io.on('connection', (socket) => {
     logger.info('Socket client connected');
     registerUserSocket(socket.userId, socket.id);
+    updatePresence(socket.userId, true);
     const pendingInvite = pendingVideoInvites.get(String(socket.userId));
     if (pendingInvite) {
       socket.emit('video-call-incoming', pendingInvite);
@@ -180,15 +252,14 @@ function setupSocket(server, consultationRepository) {
         }
 
         const roomId = String(consultation._id);
-        const now = new Date();
         const updateData = {
           'videoRoom.roomId': roomId,
           'videoRoom.status': 'waiting',
-          'videoRoom.startedAt': now,
+          'videoRoom.startedAt': null,
           'videoRoom.endedAt': null,
           'videoRoom.duration': null
         };
-        if (consultation.status === 'pending') {
+        if (consultation.status === 'pending' || consultation.status === 'completed') {
           updateData.status = 'waiting';
         }
 
@@ -293,6 +364,7 @@ function setupSocket(server, consultationRepository) {
 
         await consultationRepository.updateVideoRoom(chatId, {
           'videoRoom.status': 'active',
+          'videoRoom.startedAt': now,
           'videoRoom.participants': participants,
           status: 'active'
         });
@@ -346,7 +418,7 @@ function setupSocket(server, consultationRepository) {
             { urls: 'stun:stun1.l.google.com:19302' }
           ]
         });
-        io.to(`video-${roomId}`).emit('participant-joined', { userId: socket.userId, role: socket.userRole });
+        socket.to(`video-${roomId}`).emit('participant-joined', { userId: socket.userId, role: socket.userRole });
         logger.debug('Client joined video room', { roomId, userId: socket.userId, role: socket.userRole });
       } catch (err) {
         logger.error('Join video room error:', err);
@@ -376,10 +448,24 @@ function setupSocket(server, consultationRepository) {
       });
     });
 
-    socket.on('leave-video-room', (roomId) => {
+    socket.on('leave-video-room', async (roomId) => {
       socket.leave(`video-${roomId}`);
-      io.to(`video-${roomId}`).emit('participant-left', { userId: socket.userId });
       logger.debug('Client left video room', { roomId, userId: socket.userId });
+      try {
+        // Product requirement: if any participant drops, end call for both.
+        await finalizeVideoCallForAll({
+          roomId,
+          actorUserId: socket.userId,
+          consultationRepository,
+          forceCompleteStatus: true
+        });
+      } catch (err) {
+        logger.error('leave-video-room finalize error', err);
+        io.to(`video-${roomId}`).emit('video-call-ended', {
+          roomId,
+          endedBy: String(socket.userId)
+        });
+      }
     });
 
     socket.on('end-video-call', async ({ roomId } = {}) => {
@@ -398,51 +484,12 @@ function setupSocket(server, consultationRepository) {
             logger.warn('end-video-call denied', { roomId, userId: socket.userId });
             return;
           }
-
-          const vr = consultation.videoRoom;
-          const vrStatus = vr?.status;
-          if (vr && (vrStatus === 'waiting' || vrStatus === 'active')) {
-            const now = new Date();
-            const startMs = vr.startedAt ? new Date(vr.startedAt).getTime() : now.getTime();
-            const durationSec = Math.max(0, Math.round((now.getTime() - startMs) / 1000));
-
-            const updatePayload = {
-              'videoRoom.status': 'ended',
-              'videoRoom.endedAt': now,
-              'videoRoom.duration': durationSec
-            };
-            if (consultation.status === 'active') {
-              updatePayload.status = 'completed';
-            }
-
-            const updatedConsultation = await Consultation.findOneAndUpdate(
-              {
-                _id: roomId,
-                'videoRoom.status': { $in: ['waiting', 'active'] }
-              },
-              { $set: updatePayload },
-              { new: true }
-            );
-
-            if (updatedConsultation) {
-              const text = `Видеозвонок завершён. Длительность: ${formatVideoCallDurationRu(durationSec)}.`;
-              const savedMessage = await consultationRepository.addMessage(roomId, {
-                messageType: 'system',
-                message: text,
-                sender: 'system',
-                senderId: null,
-                timestamp: now.toISOString()
-              });
-              if (savedMessage) {
-                io.to(`chat-${roomId}`).emit('new-message', savedMessage);
-              }
-            }
-          }
         }
 
-        io.to(`video-${roomId}`).emit('video-call-ended', {
+        await finalizeVideoCallForAll({
           roomId,
-          endedBy: String(socket.userId)
+          actorUserId: socket.userId,
+          consultationRepository
         });
         logger.info('Video call ended for all participants', { roomId, endedBy: socket.userId });
       } catch (err) {
@@ -456,6 +503,10 @@ function setupSocket(server, consultationRepository) {
 
     socket.on('disconnect', () => {
       unregisterUserSocket(socket.userId, socket.id);
+      const hasActiveSockets = (userSockets.get(String(socket.userId))?.size || 0) > 0;
+      if (!hasActiveSockets) {
+        updatePresence(socket.userId, false);
+      }
       logger.info('Socket client disconnected');
     });
   });

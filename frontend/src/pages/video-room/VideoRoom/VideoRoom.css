@@ -48,6 +48,12 @@
   padding: 8px 12px;
 }
 
+.timer.timer-waiting {
+  color: #475569;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
 .video-room-title-block {
   flex: 1;
   min-width: 0;
@@ -111,4 +117,10 @@ body.dark .timer {
   color: #c7d2fe;
   background: rgba(79, 70, 229, 0.18);
   border-color: rgba(129, 140, 248, 0.45);
+}
+
+body.dark .timer.timer-waiting {
+  color: #cbd5e1;
+  background: rgba(51, 65, 85, 0.7);
+  border-color: rgba(148, 163, 184, 0.35);
 }

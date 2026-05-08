@@ -11,12 +11,42 @@ export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded 
   const [isConnected, setIsConnected] = useState(false);
   const [remoteStream, setRemoteStream] = useState(null);
   const [roomStatus, setRoomStatus] = useState(null);
+  const [hasPeerJoined, setHasPeerJoined] = useState(false);
   const [error, setError] = useState(null);
   const socketRef = useRef();
   const peerConnectionRef = useRef();
   const localStreamRef = useRef();
   const creatingOfferRef = useRef(false);
   const endedRef = useRef(false);
+  const onCallEndedRef = useRef(onCallEnded);
+  const pendingIceCandidatesRef = useRef([]);
+  const hasPeerJoinedRef = useRef(false);
+
+  useEffect(() => {
+    onCallEndedRef.current = onCallEnded;
+  }, [onCallEnded]);
+
+  const markPeerJoined = useCallback(() => {
+    if (hasPeerJoinedRef.current) return;
+    hasPeerJoinedRef.current = true;
+    setHasPeerJoined(true);
+  }, []);
+
+  const cleanupConnection = useCallback((stopLocalTracks = false) => {
+    if (peerConnectionRef.current) {
+      peerConnectionRef.current.close();
+      peerConnectionRef.current = null;
+    }
+    if (stopLocalTracks && localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => track.stop());
+      localStreamRef.current = null;
+    }
+    setRemoteStream(null);
+    setIsConnected(false);
+    setHasPeerJoined(false);
+    hasPeerJoinedRef.current = false;
+    pendingIceCandidatesRef.current = [];
+  }, []);
 
   const initPeerConnection = useCallback((iceServersConfig) => {
     const pc = new RTCPeerConnection({
@@ -33,6 +63,7 @@ export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded 
 
     pc.ontrack = (event) => {
       setRemoteStream(event.streams[0]);
+      markPeerJoined();
     };
 
     pc.onicecandidate = (event) => {
@@ -53,12 +84,17 @@ export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded 
     };
 
     peerConnectionRef.current = pc;
-  }, [roomId]);
+  }, [roomId, markPeerJoined]);
 
   const handleOffer = useCallback(async (data) => {
     if (!peerConnectionRef.current || peerConnectionRef.current.remoteDescription) return;
 
     await peerConnectionRef.current.setRemoteDescription(data.offer);
+    if (pendingIceCandidatesRef.current.length > 0) {
+      const pending = [...pendingIceCandidatesRef.current];
+      pendingIceCandidatesRef.current = [];
+      await Promise.allSettled(pending.map((candidate) => peerConnectionRef.current.addIceCandidate(candidate)));
+    }
     const answer = await peerConnectionRef.current.createAnswer();
     await peerConnectionRef.current.setLocalDescription(answer);
 
@@ -71,10 +107,19 @@ export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded 
   const handleAnswer = useCallback(async (data) => {
     if (!peerConnectionRef.current) return;
     await peerConnectionRef.current.setRemoteDescription(data.answer);
+    if (pendingIceCandidatesRef.current.length > 0) {
+      const pending = [...pendingIceCandidatesRef.current];
+      pendingIceCandidatesRef.current = [];
+      await Promise.allSettled(pending.map((candidate) => peerConnectionRef.current.addIceCandidate(candidate)));
+    }
   }, []);
 
   const handleCandidate = useCallback(async (data) => {
     if (!peerConnectionRef.current) return;
+    if (!peerConnectionRef.current.remoteDescription) {
+      pendingIceCandidatesRef.current.push(data.candidate);
+      return;
+    }
     await peerConnectionRef.current.addIceCandidate(data.candidate);
   }, []);
 
@@ -97,7 +142,15 @@ export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded 
     if (!roomId || !token) return;
 
     socketRef.current = io(chatApi.getBackendOrigin(), {
-      auth: { token }
+      auth: { token },
+      // Keep WebRTC signaling isolated from chat socket manager.
+      forceNew: true,
+      transports: ['websocket'],
+      upgrade: false,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 800,
+      timeout: 10000
     });
 
     socketRef.current.on('connect', () => {
@@ -109,6 +162,12 @@ export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded 
       setRoomStatus(data.status);
       setIsConnected(true);
       setError(null);
+      const activeParticipants = Array.isArray(data.participants)
+        ? data.participants.filter((participant) => !participant?.leftAt)
+        : [];
+      if (activeParticipants.length >= 2 || data.status === 'active') {
+        markPeerJoined();
+      }
       initPeerConnection(data.iceServers || DEFAULT_ICE_SERVERS);
 
       if (shouldCreateOffer) {
@@ -125,6 +184,7 @@ export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded 
     socketRef.current.on('webrtc-ice-candidate', handleCandidate);
     socketRef.current.on('participant-joined', ({ userId, role }) => {
       console.log('Participant joined:', userId, role);
+      markPeerJoined();
       if (shouldCreateOffer && peerConnectionRef.current && !peerConnectionRef.current.remoteDescription) {
         sendOffer().catch(() => {
           setError('Не удалось начать трансляцию');
@@ -133,19 +193,19 @@ export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded 
     });
     socketRef.current.on('participant-left', ({ userId }) => {
       console.log('Participant left:', userId);
-      if (peerConnectionRef.current) {
-        peerConnectionRef.current.close();
+      const wasAlreadyEnded = endedRef.current;
+      endedRef.current = true;
+      cleanupConnection();
+      if (!wasAlreadyEnded && typeof onCallEndedRef.current === 'function') {
+        onCallEndedRef.current();
       }
-      setRemoteStream(null);
-      setIsConnected(false);
     });
     socketRef.current.on('video-call-ended', () => {
       if (endedRef.current) return;
       endedRef.current = true;
-      setRemoteStream(null);
-      setIsConnected(false);
-      if (typeof onCallEnded === 'function') {
-        onCallEnded();
+      cleanupConnection(true);
+      if (typeof onCallEndedRef.current === 'function') {
+        onCallEndedRef.current();
       }
     });
     socketRef.current.on('video-error', (err) => {
@@ -155,15 +215,13 @@ export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded 
     });
 
     return () => {
+      // Do not emit leave on cleanup: React StrictMode remount in dev would
+      // otherwise produce false "participant-left" events.
+      socketRef.current?.off();
       socketRef.current?.disconnect();
-      if (peerConnectionRef.current) {
-        peerConnectionRef.current.close();
-      }
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach((track) => track.stop());
-      }
+      cleanupConnection(true);
     };
-  }, [roomId, token, shouldCreateOffer, onCallEnded, initPeerConnection, handleOffer, handleAnswer, handleCandidate, sendOffer]);
+  }, [roomId, token, shouldCreateOffer, initPeerConnection, handleOffer, handleAnswer, handleCandidate, sendOffer, cleanupConnection, markPeerJoined]);
 
   const createOffer = useCallback(async () => {
     if (!peerConnectionRef.current) return;
@@ -199,6 +257,9 @@ export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded 
       localStreamRef.current = null;
     }
     setIsConnected(false);
+    setRemoteStream(null);
+    setHasPeerJoined(false);
+    hasPeerJoinedRef.current = false;
   }, [roomId]);
 
   const setLocalStream = useCallback((stream) => {
@@ -223,6 +284,7 @@ export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded 
     isConnected,
     remoteStream,
     roomStatus,
+    hasPeerJoined,
     error,
     createOffer,
     leaveRoom,

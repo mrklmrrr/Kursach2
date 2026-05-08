@@ -4,7 +4,7 @@ import { useWebRTC } from '../../../hooks/useWebRTC';
 import { useAuth } from '../../../hooks/useAuth';
 import './VideoCall.css';
 
-export default function VideoCall({ roomId, onEndCall }) {
+export default function VideoCall({ roomId, onEndCall, endSignal = 0, onPeerJoinedChange = null }) {
   const { token, user } = useAuth();
   const mediaOptions = useMemo(() => ({ video: true, audio: true }), []);
   const { stream, error, isCameraOn, isMicOn, toggleCamera, toggleMic } =
@@ -15,6 +15,7 @@ export default function VideoCall({ roomId, onEndCall }) {
   const {
     remoteStream,
     isConnected,
+    hasPeerJoined,
     error: rtcError,
     leaveRoom,
     setLocalStream
@@ -37,6 +38,19 @@ export default function VideoCall({ roomId, onEndCall }) {
     leaveRoom(true);
     if (onEndCall) onEndCall();
   };
+
+  useEffect(() => {
+    if (typeof onPeerJoinedChange === 'function') {
+      onPeerJoinedChange(hasPeerJoined);
+    }
+  }, [hasPeerJoined, onPeerJoinedChange]);
+
+  useEffect(() => {
+    if (endSignal > 0) {
+      handleEndCall();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [endSignal]);
 
   return (
     <div className="video-call-container">
@@ -62,7 +76,7 @@ export default function VideoCall({ roomId, onEndCall }) {
       {!remoteStream && (
         <div className="remote-placeholder">
           <span className="material-icons">videocam_off</span>
-          <p>Ожидание подключения второго участника...</p>
+          <p>{hasPeerJoined ? 'Устанавливаем видео-соединение...' : 'Ожидание подключения второго участника...'}</p>
         </div>
       )}
 

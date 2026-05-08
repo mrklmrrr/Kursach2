@@ -22,7 +22,7 @@ const VideoRoomController = class {
 
   async join(req, res) {
     const { roomId } = req.params;
-    const { role } = req.userRole; // From middleware
+    const role = req.userRole; // From middleware
     const room = await this.videoRoomService.joinRoom(roomId, req.userId, role);
     res.json({
       success: true,

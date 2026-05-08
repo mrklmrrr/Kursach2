@@ -100,7 +100,19 @@ class ConsultationRepository {
 
   async findChatsForUser(userId, userRole) {
     if (userRole === 'doctor') {
-      return this.findByDoctorId(userId);
+      const [doctorChats, participantChats] = await Promise.all([
+        this.findByDoctorId(userId),
+        this.findByPatientId(userId)
+      ]);
+      const deduped = new Map();
+      [...doctorChats, ...participantChats].forEach((chat) => {
+        deduped.set(String(chat._id), chat);
+      });
+      return Array.from(deduped.values()).sort((a, b) => {
+        const aTs = new Date(a.updatedAt || a.createdAt || 0).getTime();
+        const bTs = new Date(b.updatedAt || b.createdAt || 0).getTime();
+        return bTs - aTs;
+      });
     }
     return this.findByPatientId(userId);
   }

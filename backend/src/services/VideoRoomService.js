@@ -22,7 +22,7 @@ class VideoRoomService {
     }
     
     // Allow creating video room for pending, waiting, or active consultations
-    const allowedStatuses = ['pending', 'waiting', 'active'];
+    const allowedStatuses = ['pending', 'waiting', 'active', 'completed'];
     if (!allowedStatuses.includes(consultation.status)) {
       throw new ApiError(400, `Video room can only be created for ${allowedStatuses.join('/')} consultations. Current status: ${consultation.status}`);
     }
@@ -35,17 +35,15 @@ class VideoRoomService {
 
     // Generate roomId = consultation._id for simplicity
     const roomId = consultation._id.toString();
-    const now = new Date();
-
     // Prepare update data
     const updateData = {
       'videoRoom.roomId': roomId,
       'videoRoom.status': 'waiting',
-      'videoRoom.startedAt': now
+      'videoRoom.startedAt': null
     };
     
     // Only update consultation status if it's pending (first time)
-    if (consultation.status === 'pending') {
+    if (consultation.status === 'pending' || consultation.status === 'completed') {
       updateData.status = 'waiting';
     }
 
@@ -120,7 +118,8 @@ class VideoRoomService {
     }
 
     const now = new Date();
-    const duration = Math.round((now - consultation.videoRoom.startedAt) / 1000);
+    const startedAt = consultation.videoRoom?.startedAt ? new Date(consultation.videoRoom.startedAt) : null;
+    const duration = startedAt ? Math.max(0, Math.round((now - startedAt) / 1000)) : 0;
 
     const updated = await this.consultationRepository.updateVideoRoom(roomId, {
       'videoRoom.status': 'ended',

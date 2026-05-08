@@ -8,6 +8,7 @@ function ChatItem({ chat }) {
   const handleClick = () => {
     navigate(`/chat/${chat.id}`, {
       state: {
+        companion: chat.companion || null,
         doctor: {
           id: chat.doctorId,
           name: chat.doctorName,
@@ -48,5 +49,6 @@ export default memo(ChatItem, (prev, next) => {
   return prev.chat.id === next.chat.id && 
          prev.chat.displayName === next.chat.displayName &&
          prev.chat.lastMessage === next.chat.lastMessage &&
-         prev.chat.time === next.chat.time;
+         prev.chat.time === next.chat.time &&
+         prev.chat.isOnline === next.chat.isOnline;
 });

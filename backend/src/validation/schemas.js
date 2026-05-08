@@ -110,6 +110,12 @@ const consultationSchemas = {
     body: z.object({
       message: z.string().min(1).max(5000)
     })
+  },
+  createDoctorChat: {
+    ...base,
+    body: z.object({
+      doctorId: idString
+    })
   }
 };
 

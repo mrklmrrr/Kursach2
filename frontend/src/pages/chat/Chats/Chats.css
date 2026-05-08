@@ -23,6 +23,102 @@
   margin-bottom: 14px;
 }
 
+.chat-search-wrap {
+  position: relative;
+}
+
+.doctor-search-results {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.doctor-search-results--inline {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+.doctor-search-inline-title {
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+  background: #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.doctor-search-item {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+  background: transparent;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.doctor-search-item:last-child {
+  border-bottom: none;
+}
+
+.doctor-search-item:hover {
+  background: #f8fafc;
+}
+
+.doctor-search-item:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.doctor-search-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.doctor-search-meta {
+  min-width: 0;
+}
+
+.doctor-search-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doctor-search-spec {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.doctor-search-action {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #4f46e5;
+  white-space: nowrap;
+}
+
+.doctor-search-empty {
+  padding: 12px;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
 .chat-search-input {
   width: 100%;
   min-height: 42px;
@@ -66,6 +162,74 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.chats-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chat-skeleton-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.chat-skeleton-avatar,
+.chat-skeleton-name,
+.chat-skeleton-time,
+.chat-skeleton-line {
+  background: linear-gradient(90deg, #e8edf5 25%, #f0f4f9 50%, #e8edf5 75%);
+  background-size: 200% 100%;
+  animation: chat-skeleton-wave 1.3s ease-in-out infinite;
+}
+
+.chat-skeleton-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chat-skeleton-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-skeleton-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-skeleton-name {
+  width: 45%;
+  height: 14px;
+  border-radius: 8px;
+}
+
+.chat-skeleton-time {
+  width: 48px;
+  height: 12px;
+  border-radius: 8px;
+}
+
+.chat-skeleton-line {
+  width: 70%;
+  height: 12px;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+@keyframes chat-skeleton-wave {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .chats-call-overlay {
@@ -211,6 +375,18 @@ body.dark .chat-item {
   border-color: #374151;
 }
 
+body.dark .chat-skeleton-item {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .chat-skeleton-avatar,
+body.dark .chat-skeleton-name,
+body.dark .chat-skeleton-time,
+body.dark .chat-skeleton-line {
+  background: linear-gradient(90deg, #2a3241 25%, #334155 50%, #2a3241 75%);
+}
+
 body.dark .chat-item:hover {
   background: #374151;
 }
@@ -235,6 +411,38 @@ body.dark .chat-search-input {
   background: #1f2937;
   border-color: #374151;
   color: #f3f4f6;
+}
+
+body.dark .doctor-search-results {
+  background: #111827;
+  border-color: #374151;
+}
+
+body.dark .doctor-search-inline-title {
+  background: #1f2937;
+  border-bottom-color: #374151;
+  color: #9ca3af;
+}
+
+body.dark .doctor-search-item {
+  border-bottom-color: #1f2937;
+}
+
+body.dark .doctor-search-item:hover {
+  background: #1f2937;
+}
+
+body.dark .doctor-search-name {
+  color: #f9fafb;
+}
+
+body.dark .doctor-search-spec,
+body.dark .doctor-search-empty {
+  color: #9ca3af;
+}
+
+body.dark .doctor-search-action {
+  color: #818cf8;
 }
 
 body.dark .chat-search-input:focus {

@@ -39,6 +39,21 @@ function formatMessageTime(timestamp) {
   return formatted;
 }
 
+function isLocalHost(hostname) {
+  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+}
+
+function getBackendOriginSafe() {
+  const fallbackOrigin = window.location.origin;
+  const backendOrigin = (chatApi.getBackendOrigin?.() || '').trim();
+  if (!backendOrigin) return fallbackOrigin;
+  try {
+    return new URL(backendOrigin).origin;
+  } catch {
+    return fallbackOrigin;
+  }
+}
+
 // Message component for memoization
 const MessageBubble = memo(function MessageBubble({ msg, isOwn, chatCompanion, resolveFileUrl }) {
   const isSystem = msg.messageType === 'system' || msg.sender === 'system';
@@ -64,10 +79,10 @@ const MessageBubble = memo(function MessageBubble({ msg, isOwn, chatCompanion, r
       {!isOwn && <Avatar name={chatCompanion.name} src={chatCompanion.avatarUrl || undefined} size="small" />}
       <div>
         <div className="message-bubble">
-          {msg.fileUrl && msg.messageType === 'image' && (
+          {msg.fileUrl && (msg.messageType === 'image' || String(msg.fileMimeType || '').startsWith('image/')) && (
             <img className="chat-media-preview" src={resolveFileUrl(msg.fileUrl)} alt={msg.fileName || 'Изображение'} />
           )}
-          {msg.fileUrl && msg.messageType === 'video' && (
+          {msg.fileUrl && (msg.messageType === 'video' || String(msg.fileMimeType || '').startsWith('video/')) && (
             <video className="chat-media-preview" src={resolveFileUrl(msg.fileUrl)} controls />
           )}
           {msg.message ? <div>{msg.message}</div> : null}
@@ -97,7 +112,16 @@ export default function ChatRoom() {
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const doctor = location.state?.doctor || {
+  const companionFromState = location.state?.companion || null;
+  const doctor = (companionFromState?.role === 'doctor'
+    ? {
+        id: companionFromState.id || id,
+        name: companionFromState.name || 'Врач',
+        specialty: companionFromState.specialty || 'Специалист',
+        avatar: companionFromState.avatarUrl || '',
+        avatarUrl: companionFromState.avatarUrl || ''
+      }
+    : location.state?.doctor) || {
     id,
     name: 'Врач',
     specialty: 'Специалист',
@@ -107,21 +131,52 @@ export default function ChatRoom() {
   const patientFromState = location.state?.patient || null;
 
   const isDoctor = user?.role === 'doctor';
+  const isCurrentUserPatientSide = useMemo(() => {
+    if (!isDoctor) return false;
+    const currentId = String(user?.id || '');
+    const currentLegacyId = String(user?.legacyId || '');
+    const patientId = String(chatMeta?.patientId || patientFromState?.id || '');
+    if (!patientId) return false;
+    return patientId === currentId || patientId === currentLegacyId;
+  }, [isDoctor, user?.id, user?.legacyId, chatMeta?.patientId, patientFromState?.id]);
+
   const chatCompanion = useMemo(() => isDoctor
-    ? {
-        id: chatMeta?.patientId || patientFromState?.id,
-        name: chatMeta?.patientName || patientFromState?.name || 'Пациент',
-        specialty: 'Пациент',
-        avatarUrl: chatMeta?.patientAvatarUrl || chatMeta?.patientAvatar || patientFromState?.avatarUrl || patientFromState?.avatar || ''
-      }
+    ? (isCurrentUserPatientSide
+      ? {
+          id: doctor.id || chatMeta?.doctorId,
+          name: chatMeta?.doctorName || doctor.name || 'Врач',
+          specialty: chatMeta?.specialty || doctor.specialty || 'Специалист',
+          avatarUrl: doctor.avatarUrl || doctor.avatar || chatMeta?.doctorAvatarUrl || chatMeta?.doctorAvatar || '',
+          isOnline: Boolean(
+            chatMeta?.doctorIsOnline
+            ?? companionFromState?.isOnline
+            ?? doctor?.isOnline
+          )
+        }
+      : {
+          id: chatMeta?.patientId || patientFromState?.id,
+          name: chatMeta?.patientName || patientFromState?.name || 'Пациент',
+          specialty: 'Пациент',
+          avatarUrl: chatMeta?.patientAvatarUrl || chatMeta?.patientAvatar || patientFromState?.avatarUrl || patientFromState?.avatar || '',
+          isOnline: Boolean(
+            chatMeta?.patientIsOnline
+            ?? companionFromState?.isOnline
+            ?? patientFromState?.isOnline
+          )
+        })
     : {
         id: doctor.id || chatMeta?.doctorId,
         // Prefer fresh API metadata over stale route state
         name: chatMeta?.doctorName || doctor.name || 'Врач',
         specialty: chatMeta?.specialty || doctor.specialty || 'Специалист',
-        avatarUrl: doctor.avatarUrl || doctor.avatar || chatMeta?.doctorAvatarUrl || chatMeta?.doctorAvatar || ''
+        avatarUrl: doctor.avatarUrl || doctor.avatar || chatMeta?.doctorAvatarUrl || chatMeta?.doctorAvatar || '',
+        isOnline: Boolean(
+          chatMeta?.doctorIsOnline
+          ?? companionFromState?.isOnline
+          ?? doctor?.isOnline
+        )
       },
-  [isDoctor, chatMeta, doctor, patientFromState]);
+  [isDoctor, isCurrentUserPatientSide, chatMeta, doctor, patientFromState, companionFromState]);
 
   // Smooth scroll only when new messages arrive (not on every render)
   const lastMessageCountRef = useRef(messages.length);
@@ -143,9 +198,11 @@ export default function ChatRoom() {
           _id: messagesData.consultationId || id,
           doctorName: messagesData.doctorName,
           specialty: messagesData.specialty,
+          doctorIsOnline: Boolean(messagesData.doctorIsOnline),
           patientId: messagesData.patientId || patientFromState?.id || null,
           patientName: messagesData.patientName || patientFromState?.name || null,
           patientAvatarUrl: messagesData.patientAvatarUrl || patientFromState?.avatarUrl || patientFromState?.avatar || null,
+          patientIsOnline: Boolean(messagesData.patientIsOnline),
           doctorId: messagesData.doctorId || doctor.id || null,
           doctorAvatarUrl: messagesData.doctorAvatarUrl || ''
         };
@@ -289,7 +346,15 @@ export default function ChatRoom() {
 
     setUploading(true);
     try {
-      await chatApi.uploadAttachment(id, file, inputMsg.trim());
+      const { data: savedMessage } = await chatApi.uploadAttachment(id, file, inputMsg.trim());
+      if (savedMessage) {
+        setMessages((prev) => {
+          if (prev.some((m) => m._id === savedMessage._id || m.id === savedMessage.id)) {
+            return prev;
+          }
+          return [...prev, savedMessage];
+        });
+      }
       setInputMsg('');
     } catch (err) {
       console.error('Ошибка загрузки вложения', err);
@@ -317,8 +382,24 @@ export default function ChatRoom() {
 
   const resolveFileUrl = useCallback((url) => {
     if (!url) return '';
-    if (url.startsWith('http')) return url;
-    return `${chatApi.getBackendOrigin()}${url}`;
+    const raw = String(url).trim();
+    if (!raw) return '';
+    if (/^(data:|blob:)/i.test(raw)) return raw;
+
+    const backendOrigin = getBackendOriginSafe();
+    if (/^https?:\/\//i.test(raw)) {
+      try {
+        const parsed = new URL(raw);
+        const currentHost = window.location.hostname;
+        if (isLocalHost(parsed.hostname) && !isLocalHost(currentHost)) {
+          return `${backendOrigin}${parsed.pathname}${parsed.search}${parsed.hash}`;
+        }
+      } catch {
+        return raw;
+      }
+      return raw;
+    }
+    return `${backendOrigin}${raw.startsWith('/') ? raw : `/${raw}`}`;
   }, []);
 
   const handleHeaderProfileClick = () => {
@@ -398,7 +479,7 @@ export default function ChatRoom() {
 
   const callDoctorName = incomingCall?.doctorName || chatCompanion.name || 'Врач';
   const callDoctorSpecialty = incomingCall?.doctorSpecialty || chatCompanion.specialty || 'Специалист';
-  const callDoctorAvatar = chatCompanion.avatarUrl || '';
+  const callDoctorAvatar = incomingCall?.doctorAvatarUrl || chatCompanion.avatarUrl || '';
 
   const handleOpenMedicalRecordFromChat = (patient) => {
     const patientId = patient?.id || patient?._id || chatMeta?.patientId || chatCompanion.id;
@@ -424,7 +505,12 @@ export default function ChatRoom() {
           className="chat-room-header-info"
           onClick={handleHeaderProfileClick}
         >
-          <Avatar name={chatCompanion.name} src={chatCompanion.avatarUrl || undefined} size="small" />
+          <Avatar
+            name={chatCompanion.name}
+            src={chatCompanion.avatarUrl || undefined}
+            size="small"
+            showOnline={chatCompanion.isOnline}
+          />
           <div>
             <div className="chat-room-doctor-name">{chatCompanion.name}</div>
             <div className="chat-room-doctor-spec">
@@ -445,6 +531,13 @@ export default function ChatRoom() {
           </button>
         )}
       </header>
+
+      {isDoctor && isRingingOut && (
+        <div className="chat-room-call-status">
+          <span className="material-icons">ring_volume</span>
+          Ожидание ответа пациента...
+        </div>
+      )}
 
       <div className="chat-room-container page-shell page-shell--no-bottom-nav">
         <div className="chat-room-messages">
@@ -503,6 +596,9 @@ export default function ChatRoom() {
         {incomingCall && (
           <div className="chat-room-call-overlay">
             <div className="chat-room-call-modal">
+              <div className="chat-room-call-icon-wrap" aria-hidden="true">
+                <span className="material-icons">videocam</span>
+              </div>
               <div className="chat-room-call-doctor">
                 <Avatar name={callDoctorName} src={callDoctorAvatar || undefined} size="medium" />
                 <div>
@@ -513,10 +609,12 @@ export default function ChatRoom() {
               </div>
               <p className="chat-room-call-text">Врач приглашает вас к видеоконсультации.</p>
               <div className="chat-room-call-actions">
-                <button type="button" className="btn btn-secondary" onClick={handleRejectCall}>
+                <button type="button" className="chat-room-call-btn chat-room-call-btn-reject" onClick={handleRejectCall}>
+                  <span className="material-icons">call_end</span>
                   Отклонить
                 </button>
-                <button type="button" className="btn btn-primary" onClick={handleAcceptCall}>
+                <button type="button" className="chat-room-call-btn chat-room-call-btn-accept" onClick={handleAcceptCall}>
+                  <span className="material-icons">call</span>
                   Присоединиться
                 </button>
               </div>

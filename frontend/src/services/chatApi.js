@@ -42,6 +42,10 @@ export const chatApi = {
     apiCache.delete(CHATS_CACHE_KEY);
     return api.post(`/chats/${chatId}/messages`, { message });
   },
+  createDoctorChat: (doctorId) => {
+    apiCache.delete(CHATS_CACHE_KEY);
+    return api.post('/chats/doctor', { doctorId });
+  },
   uploadAttachment: (chatId, file, message = '') => {
     const formData = new FormData();
     formData.append('file', file);
