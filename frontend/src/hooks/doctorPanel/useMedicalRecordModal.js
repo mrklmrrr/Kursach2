@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { medicalRecordApi } from '@services/medicalRecordApi';
 import { doctorPanelApi } from '@services/doctorPanelApi';
 
@@ -135,25 +135,33 @@ export const useMedicalRecordModal = () => {
     setDirtySickLeaves(new Map()); // Очищаем несохраненные изменения
   };
 
-  const loadPatientDependents = async () => {
-    const patientId = modal.patient?.id;
+  const loadPatientDependents = useCallback(async (patientId, force = false) => {
     if (!patientId) return;
-    if (modal.dependentsLoadedForPatientId === String(patientId)) return;
+    const normalizedPatientId = String(patientId);
+    let shouldFetch = true;
 
-    setModal((prev) => ({
-      ...prev,
-      dependentsLoading: true,
-      dependentsError: ''
-    }));
+    setModal((prev) => {
+      if (!force && (prev.dependentsLoading || prev.dependentsLoadedForPatientId === normalizedPatientId)) {
+        shouldFetch = false;
+        return prev;
+      }
+      return {
+        ...prev,
+        dependentsLoading: true,
+        dependentsError: ''
+      };
+    });
+
+    if (!shouldFetch) return;
 
     try {
-      const { data } = await doctorPanelApi.getPatientDependents(patientId);
+      const { data } = await doctorPanelApi.getPatientDependents(normalizedPatientId);
       setModal((prev) => ({
         ...prev,
         dependents: Array.isArray(data) ? data : [],
         dependentsLoading: false,
         dependentsError: '',
-        dependentsLoadedForPatientId: String(patientId)
+        dependentsLoadedForPatientId: normalizedPatientId
       }));
     } catch (err) {
       setModal((prev) => ({
@@ -164,7 +172,7 @@ export const useMedicalRecordModal = () => {
         dependentsLoadedForPatientId: ''
       }));
     }
-  };
+  }, []);
 
   const updateMedicalField = (sectionKey, field, value) => {
     setModal((prev) => {

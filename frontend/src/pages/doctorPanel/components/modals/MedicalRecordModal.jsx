@@ -58,10 +58,10 @@ export default function MedicalRecordModal({
   const birthDateLabel = formatBirthDate(patient?.birthDate);
 
   useEffect(() => {
-    if (open && tab === 'dependents') {
-      onLoadDependents?.();
+    if (open && tab === 'dependents' && patient?.id) {
+      onLoadDependents?.(patient.id);
     }
-  }, [open, tab, onLoadDependents]);
+  }, [open, tab, patient?.id, onLoadDependents]);
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -194,7 +194,7 @@ export default function MedicalRecordModal({
                     {!dependentsLoading && dependentsError && (
                       <div className="doctor-dependents-state doctor-dependents-state--error">
                         <p>{dependentsError}</p>
-                        <button type="button" className="btn btn-outline btn-small" onClick={() => onLoadDependents?.()}>
+                        <button type="button" className="btn btn-outline btn-small" onClick={() => onLoadDependents?.(patient?.id, true)}>
                           Повторить
                         </button>
                       </div>
