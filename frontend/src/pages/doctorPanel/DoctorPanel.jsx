@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { doctorPanelApi } from '@services/doctorPanelApi';
+import { videoRoomApi } from '@services/videoRoomApi';
 import { useAuth } from '@hooks/useAuth';
 import { AppHeader, BottomNav } from '@components/layout';
 import { useDoctorPanelData, useMedicalRecordModal } from '@hooks/doctorPanel';
@@ -30,9 +31,33 @@ const TAB_MAP = {
 };
 const VALID_TABS = Object.keys(TAB_MAP);
 
-const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, panelData, toast, navigate }) => {
+const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, onOpenPatientMedicalRecord, panelData, toast, navigate }) => {
   const removeAppointment = (appointmentId) => {
     panelData.setAppointments((prev) => prev.filter((item) => item._id !== appointmentId));
+  };
+  const now = new Date();
+  const imminentOnlineConsultation = panelData.upcomingSchedule.find((item) => {
+    const dateTime = item.dateTime || new Date(`${item.date}T${item.time}:00`);
+    if (Number.isNaN(dateTime.getTime())) return false;
+    if (!['online'].includes(String(item.consultationType || item.type || '').toLowerCase())) return false;
+    const msToStart = dateTime.getTime() - now.getTime();
+    const durationMs = (Number(item.duration) || 30) * 60 * 1000;
+    return msToStart <= 10 * 60 * 1000 && msToStart >= -durationMs;
+  });
+
+  const resolvePatient = (patientId, fallbackName) => {
+    const fromMap = panelData.patientById?.get(String(patientId));
+    if (fromMap) return fromMap;
+    const fromList = panelData.patients.find((p) => String(p.id || p._id) === String(patientId));
+    if (fromList) return fromList;
+    return {
+      id: patientId,
+      _id: patientId,
+      name: fallbackName || 'Пациент',
+      phone: '—',
+      birthDate: '',
+      consultationCount: 0
+    };
   };
 
   if (activeTab === 'chats') {
@@ -124,6 +149,28 @@ const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, p
       {activeTab === 'requests' && (
         <RequestsTab
           consultations={panelData.pendingConsultations}
+          imminentOnlineConsultation={imminentOnlineConsultation}
+          onOpenPatientProfile={(patientId, fallbackName) => {
+            onOpenPatientProfile(patientId, fallbackName);
+          }}
+          onOpenPatientMedicalRecord={(patientId, fallbackName) => {
+            const patient = resolvePatient(patientId, fallbackName);
+            onOpenPatientMedicalRecord(patient);
+          }}
+          onStartCall={async (consultationId) => {
+            if (!consultationId) {
+              toast('Нет ссылки на консультацию. Попросите пациента оплатить и открыть чат.', 'error');
+              return;
+            }
+            try {
+              const response = await videoRoomApi.createRoom(consultationId);
+              const roomId = response?.data?.roomId || consultationId;
+              navigate(`/video-room/${roomId}`, { state: { consultationId } });
+            } catch (err) {
+              const message = err?.response?.data?.message || 'Не удалось запустить звонок';
+              toast(message, 'error');
+            }
+          }}
           onAccept={(id) => panelData.handleAcceptConsultation?.(id)}
           onReject={(id) => panelData.handleRejectConsultation?.(id)}
         />
@@ -271,6 +318,7 @@ export default function DoctorPanel() {
         activeTab={currentTab}
         profile={profile}
         onOpenPatientProfile={handleOpenPatientProfile}
+        onOpenPatientMedicalRecord={handleOpenPatientMedicalRecord}
         panelData={panelData}
         toast={showToast}
         navigate={navigate}

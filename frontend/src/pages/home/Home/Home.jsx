@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { doctorApi } from '../../../services/doctorApi';
 import { appointmentApi } from '../../../services/appointmentApi';
+import { videoRoomApi } from '../../../services/videoRoomApi';
 import { AppHeader, BottomNav, UserSidebar } from '../../../components/layout';
 import { DoctorCard } from '../../../components/features';
 import { EmptyState, ConfirmModal, Modal } from '../../../components/ui';
@@ -103,6 +104,7 @@ export default function Home() {
               dateObj: dateObj,
               date: a.date,
               rawTime: a.time,
+              consultationId: a.consultationId,
               status: statusLabel,
               type: a.type,
               duration: a.duration,
@@ -156,6 +158,31 @@ export default function Home() {
   const visibleUpcoming = showAllUpcoming ? upcoming : upcoming.slice(0, 3);
   const hasHiddenUpcoming = upcoming.length > 3 && !showAllUpcoming;
   const detailsType = selectedAppointment?.type === 'online' ? 'Онлайн консультация' : 'Офлайн прием';
+  const nowTimestamp = Date.now();
+
+  const isInJoinWindow = (appointment) => {
+    if (!appointment || String(appointment.type || '').toLowerCase() !== 'online') return false;
+    const start = new Date(`${appointment.date}T${appointment.rawTime}:00`).getTime();
+    if (Number.isNaN(start)) return false;
+    const durationMs = (Number(appointment.duration) || 30) * 60 * 1000;
+    const delta = start - nowTimestamp;
+    return delta <= 10 * 60 * 1000 && delta >= -durationMs;
+  };
+
+  const handleJoinAppointment = async (appointment) => {
+    if (!appointment?.consultationId) {
+      alert('Ссылка на консультацию пока недоступна. Попробуйте чуть позже.');
+      return;
+    }
+    try {
+      const response = await videoRoomApi.createRoom(appointment.consultationId);
+      const roomId = response?.data?.roomId || appointment.consultationId;
+      navigate(`/video-room/${roomId}`, { state: { consultationId: appointment.consultationId } });
+    } catch (err) {
+      const message = err?.response?.data?.message || 'Не удалось подключиться к консультации';
+      alert(message);
+    }
+  };
 
   return (
     <div className="home-page user-panel-page">
@@ -209,7 +236,21 @@ export default function Home() {
                     <div className="upcoming-doctor">{item.doctorName}</div>
                     <div className="upcoming-spec">{item.specialty}</div>
                   </div>
-                   <div className="upcoming-time">{formatDateTime(item.date, item.time)}</div>
+                  <div className="upcoming-card-right">
+                    <div className="upcoming-time">{formatDateTime(item.date, item.time)}</div>
+                    {isInJoinWindow(item) && (
+                      <button
+                        type="button"
+                        className="upcoming-join-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleJoinAppointment(item);
+                        }}
+                      >
+                        Подключиться
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -314,6 +355,15 @@ export default function Home() {
                   </div>
                   {(selectedAppointment.status === 'Запланирована' || selectedAppointment.status === 'Подтверждена') && (
                     <div className="appointment-details-actions">
+                      {isInJoinWindow(selectedAppointment) && (
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={() => handleJoinAppointment(selectedAppointment)}
+                        >
+                          Подключиться
+                        </button>
+                      )}
                       <button
                         type="button"
                         className="cancel-btn"

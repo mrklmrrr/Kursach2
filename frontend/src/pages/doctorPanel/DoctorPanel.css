@@ -121,6 +121,11 @@
   align-items: center;
 }
 
+.consultation-card--imminent {
+  border: 1px solid #c7d2fe;
+  background: linear-gradient(180deg, #eef2ff 0%, #ffffff 100%);
+}
+
 .consultation-info h3 {
   font-size: 1rem;
   color: #1f2937;
@@ -189,6 +194,11 @@
   flex-shrink: 0;
 }
 
+.consultation-actions--stacked {
+  flex-direction: column;
+  align-items: stretch;
+}
+
 .consultation-actions button {
   padding: 8px 14px;
   border: none;
@@ -229,6 +239,41 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.patients-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.patients-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.patients-search .material-icons {
+  color: #6b7280;
+  font-size: 1.1rem;
+}
+
+.patients-search-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #1f2937;
+  font-size: 0.9rem;
+}
+
+.patients-search-input::placeholder {
+  color: #9ca3af;
 }
 
 .patient-card {
@@ -911,7 +956,20 @@
   }
 
   .doctor-insights {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .insight-card {
+    padding: 10px 8px;
+  }
+
+  .insight-label {
+    font-size: 0.62rem;
+  }
+
+  .insight-value {
+    font-size: 1.15rem;
   }
 
   .patient-profile-modal__grid {
@@ -1002,6 +1060,28 @@ body.dark .patient-card {
 
 body.dark .consult-count {
   background: #374151;
+}
+
+body.dark .patients-search {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+body.dark .patients-search .material-icons {
+  color: #9ca3af;
+}
+
+body.dark .patients-search-input {
+  color: #f3f4f6;
+}
+
+body.dark .patients-search-input::placeholder {
+  color: #9ca3af;
+}
+
+body.dark .consultation-card--imminent {
+  background: linear-gradient(180deg, rgba(79, 70, 229, 0.25) 0%, #1f2937 100%);
+  border-color: rgba(129, 140, 248, 0.55);
 }
 
 body.dark .d-tab {

@@ -49,6 +49,19 @@ body.dark .insight-value {
 
 @media (max-width: 520px) {
   .doctor-insights {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .insight-card {
+    padding: 10px 8px;
+  }
+
+  .insight-label {
+    font-size: 0.62rem;
+  }
+
+  .insight-value {
+    font-size: 1.15rem;
   }
 }
