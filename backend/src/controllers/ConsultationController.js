@@ -174,6 +174,11 @@ const ConsultationController = class {
         updatedAt: consultation.updatedAt,
         lastMessage,
         messageCount: messages.length,
+        unreadCount: Number(
+          isSelfOnPatientSide
+            ? (consultation.unreadCounts?.patient || 0)
+            : (consultation.unreadCounts?.doctor || 0)
+        ),
         doctorAvatarUrl: doctorInfo.avatarUrl || '',
         doctorIsOnline: Boolean(doctorInfo.isOnline),
         patientAvatarUrl: patientInfo.avatarUrl || '',
@@ -264,6 +269,10 @@ const ConsultationController = class {
     if (!(await this._hasChatAccess(consultation, req.userId, req.userRole))) {
       throw ApiError.forbidden('Нет доступа к этому чату');
     }
+    const viewerSide = this._resolveViewerSide(consultation, req.userId, req.userRole);
+    if (viewerSide) {
+      await this.consultationService.resetUnreadForViewer(consultation._id, viewerSide);
+    }
 
     const doctor = await this.doctorRepository.findById(consultation.doctorId);
     const response = {
@@ -314,7 +323,7 @@ const ConsultationController = class {
       sender: this._resolveSender(req.userRole),
       senderId: String(req.userId),
       timestamp: new Date().toISOString()
-    });
+    }, this._resolveUnreadReceiverBySenderRole(req.userRole));
 
     await this._emitChatUpdateToParticipants(consultation, savedMessage);
     res.status(201).json(savedMessage);
@@ -344,7 +353,7 @@ const ConsultationController = class {
       fileName: req.file.originalname,
       fileMimeType: req.file.mimetype,
       fileSize: req.file.size
-    });
+    }, this._resolveUnreadReceiverBySenderRole(req.userRole));
 
     await this._emitChatUpdateToParticipants(consultation, savedMessage);
     res.status(201).json(savedMessage);
@@ -363,6 +372,26 @@ const ConsultationController = class {
     if (userRole === 'doctor') return 'doctor';
     if (userRole === 'admin') return 'admin';
     return 'user';
+  }
+
+  _resolveUnreadReceiverBySenderRole(userRole) {
+    if (userRole === 'doctor') return 'patient';
+    return 'doctor';
+  }
+
+  _resolveViewerSide(consultation, userId, userRole) {
+    if (!consultation) return null;
+    const currentUserId = String(userId || '');
+    const consultationDoctorId = String(consultation.doctorId || '');
+    const consultationPatientId = String(consultation.patientId || '');
+    if (consultationDoctorId && consultationDoctorId === currentUserId) {
+      return 'doctor';
+    }
+    if (consultationPatientId && consultationPatientId === currentUserId) {
+      return 'patient';
+    }
+    if (userRole === 'doctor') return 'doctor';
+    return 'patient';
   }
 
   _resolveMessageType(mimeType = '') {

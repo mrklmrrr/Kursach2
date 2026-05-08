@@ -31,6 +31,10 @@ const consultationSchema = new mongoose.Schema({
   scheduledAt: { type: String },
   appointmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Appointment', default: null },
   messages: { type: [messageSchema], default: [] },
+  unreadCounts: {
+    doctor: { type: Number, default: 0, min: 0 },
+    patient: { type: Number, default: 0, min: 0 }
+  },
   
   // Поля для видео чатов
   videoRoom: {

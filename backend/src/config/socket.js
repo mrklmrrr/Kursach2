@@ -183,6 +183,8 @@ function setupSocket(server, consultationRepository) {
         }
 
         socket.join(`chat-${chatId}`);
+        const viewerSide = String(consultation.doctorId) === String(socket.userId) ? 'doctor' : 'patient';
+        await consultationRepository.resetUnreadForViewer(chatId, viewerSide);
         logger.debug('Client joined chat room', { chatId });
         socket.emit('chat-history', consultation.messages || []);
       } catch {
@@ -219,7 +221,7 @@ function setupSocket(server, consultationRepository) {
           sender: socket.userRole === 'doctor' ? 'doctor' : 'user',
           senderId: String(socket.userId),
           timestamp: new Date().toISOString()
-        });
+        }, socket.userRole === 'doctor' ? 'patient' : 'doctor');
 
         io.to(`chat-${chatId}`).emit('new-message', savedMessage);
         emitToUser(consultation.doctorId, 'chat-updated', { chatId: String(chatId), message: savedMessage });

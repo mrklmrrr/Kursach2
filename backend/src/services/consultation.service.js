@@ -27,8 +27,12 @@ class ConsultationService {
     return this.consultationRepository.getMessages(consultationId);
   }
 
-  async addMessage(consultationId, messageData) {
-    return this.consultationRepository.addMessage(consultationId, messageData);
+  async addMessage(consultationId, messageData, unreadReceiver = null) {
+    return this.consultationRepository.addMessage(consultationId, messageData, unreadReceiver);
+  }
+
+  async resetUnreadForViewer(consultationId, viewerSide) {
+    return this.consultationRepository.resetUnreadForViewer(consultationId, viewerSide);
   }
 
   async countAll() {

@@ -11,6 +11,12 @@ import './Chats.css';
 
 let initialChatsLoadPromise = null;
 
+function getChatSortTimestamp(chat) {
+  const value = chat?.lastMessageTimestamp || chat?.updatedAt;
+  const time = new Date(value || 0).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
 // Memoized time formatting with cache
 const timeCache = new Map();
 function formatChatTime(value) {
@@ -73,6 +79,9 @@ function normalizeChats(data, isDoctor, currentUserId, currentUserLegacyId) {
         };
     const resolvedCompanion = companion || fallbackCompanion;
 
+    const lastMessageTimestamp = chat.lastMessage?.timestamp || chat.updatedAt || null;
+    const unread = Number(chat.unreadCount || 0);
+
     return {
       id: chat._id,
       doctorId: chat.doctorId,
@@ -109,7 +118,8 @@ function normalizeChats(data, isDoctor, currentUserId, currentUserLegacyId) {
         : 'doctor',
       isInitialized: Number(chat.messageCount || 0) > 0,
       time: formatChatTime(chat.lastMessage?.timestamp || chat.updatedAt),
-      unread: 0,
+      unread,
+      lastMessageTimestamp,
       avatarUrl: isDoctor
         ? (resolvedCompanion.avatarUrl || '')
         : (chat.doctorAvatarUrl || chat.doctorAvatar || ''),
@@ -175,7 +185,8 @@ export default function Chats({ inDoctorPanel = false }) {
       const isDoctor = user?.role === 'doctor';
       const normalized = normalizeChats(data, isDoctor, user?.id, user?.legacyId);
       if (isMountedRef.current) {
-        setChats(normalized);
+        const sorted = [...normalized].sort((a, b) => getChatSortTimestamp(b) - getChatSortTimestamp(a));
+        setChats(sorted);
       }
       console.log('[Chats] Loaded', normalized.length, 'chats');
     } catch (err) {
@@ -266,19 +277,16 @@ export default function Chats({ inDoctorPanel = false }) {
       ? searchMatched.filter((chat) => chat.isInitialized)
       : searchMatched;
 
-    if (!isDoctor) {
-      return initializedMatched;
+    let filtered = initializedMatched;
+    if (isDoctor) {
+      if (participantFilter === 'doctors') {
+        filtered = initializedMatched.filter((chat) => chat.participantRole === 'doctor');
+      } else if (participantFilter === 'patients') {
+        filtered = initializedMatched.filter((chat) => chat.participantRole === 'patient');
+      }
     }
 
-    if (participantFilter === 'doctors') {
-      return initializedMatched.filter((chat) => chat.participantRole === 'doctor');
-    }
-
-    if (participantFilter === 'patients') {
-      return initializedMatched.filter((chat) => chat.participantRole === 'patient');
-    }
-
-    return initializedMatched;
+    return [...filtered].sort((a, b) => getChatSortTimestamp(b) - getChatSortTimestamp(a));
   }, [chats, searchTerm, participantFilter, isDoctor]);
 
   const doctorSearchResults = useMemo(() => {
@@ -380,12 +388,17 @@ export default function Chats({ inDoctorPanel = false }) {
           ? (message.message || 'Системное сообщение')
           : `${senderLabel}: ${content}`;
 
+        const isIncoming = sender !== (isDoctor ? 'doctor' : 'user') && sender !== 'system';
+        const nextUnread = isIncoming ? Number(prev[idx].unread || 0) + 1 : Number(prev[idx].unread || 0);
+
         const updatedChat = {
           ...prev[idx],
           lastMessage: lastMessageText,
           lastSender: sender,
           isInitialized: true,
-          time: formatChatTime(message.timestamp || new Date().toISOString())
+          time: formatChatTime(message.timestamp || new Date().toISOString()),
+          lastMessageTimestamp: message.timestamp || new Date().toISOString(),
+          unread: nextUnread
         };
         const next = [...prev];
         next.splice(idx, 1);

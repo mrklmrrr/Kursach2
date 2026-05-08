@@ -109,8 +109,10 @@ export default function ChatRoom() {
   const [incomingCall, setIncomingCall] = useState(null);
   const [isRingingOut, setIsRingingOut] = useState(false);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
+  const initialScrollDoneRef = useRef(false);
 
   const companionFromState = location.state?.companion || null;
   const doctor = (companionFromState?.role === 'doctor'
@@ -181,14 +183,26 @@ export default function ChatRoom() {
   // Smooth scroll only when new messages arrive (not on every render)
   const lastMessageCountRef = useRef(messages.length);
   useEffect(() => {
+    if (!initialScrollDoneRef.current && !loading && messages.length > 0) {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      } else {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      }
+      initialScrollDoneRef.current = true;
+      lastMessageCountRef.current = messages.length;
+      return;
+    }
+
     if (messages.length > lastMessageCountRef.current) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
     lastMessageCountRef.current = messages.length;
-  }, [messages]);
+  }, [messages, loading]);
 
   useEffect(() => {
     const loadStart = performance.now();
+    initialScrollDoneRef.current = false;
     const loadMessages = async () => {
       try {
         const { data: messagesData } = await chatApi.getMessages(id);
@@ -591,7 +605,7 @@ export default function ChatRoom() {
       )}
 
       <div className="chat-room-container page-shell page-shell--no-bottom-nav">
-        <div className="chat-room-messages">
+        <div className="chat-room-messages" ref={messagesContainerRef}>
           {loading ? (
             <div className="no-messages">Загрузка сообщений...</div>
           ) : messages.length === 0 ? (

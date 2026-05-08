@@ -1,12 +1,13 @@
-const config = require('../config');
 const { roles } = require('../constants');
 
 function resolveAvatarUrl(stored) {
   if (!stored) return '';
-  const s = String(stored);
+  const s = String(stored).trim();
+  if (!s) return '';
   if (/^https?:\/\//i.test(s)) return s;
-  const base = config.publicApiBase || '';
-  return `${base}${s.startsWith('/') ? s : `/${s}`}`;
+  // Keep relative paths for deployment portability.
+  // Frontend normalizes them against runtime API origin.
+  return s.startsWith('/') ? s : `/${s}`;
 }
 
 function formatUser(user) {

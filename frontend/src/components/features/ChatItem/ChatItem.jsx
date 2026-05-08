@@ -50,5 +50,6 @@ export default memo(ChatItem, (prev, next) => {
          prev.chat.displayName === next.chat.displayName &&
          prev.chat.lastMessage === next.chat.lastMessage &&
          prev.chat.time === next.chat.time &&
-         prev.chat.isOnline === next.chat.isOnline;
+         prev.chat.isOnline === next.chat.isOnline &&
+         prev.chat.unread === next.chat.unread;
 });

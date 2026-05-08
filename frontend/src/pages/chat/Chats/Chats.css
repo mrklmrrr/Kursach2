@@ -350,19 +350,20 @@
 }
 
 .chat-unread-badge {
-  background: linear-gradient(135deg, #ef4444, #f97316);
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
   color: white;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  min-width: 22px;
-  height: 22px;
-  border-radius: 50%;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 6px;
+  padding: 0 7px;
   flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+  margin-left: 6px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
 }
 
 /* Dark mode */

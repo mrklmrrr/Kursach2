@@ -122,15 +122,25 @@ class ConsultationRepository {
     return consultation ? (consultation.messages || []).map((m) => m.toObject()) : null;
   }
 
-  async addMessage(consultationId, messageData) {
-    const consultation = await Consultation.findByIdAndUpdate(
-      consultationId,
-      { $push: { messages: messageData } },
-      { returnDocument: 'after' }
-    );
+  async addMessage(consultationId, messageData, unreadReceiver = null) {
+    const update = { $push: { messages: messageData } };
+    if (unreadReceiver === 'doctor' || unreadReceiver === 'patient') {
+      update.$inc = { [`unreadCounts.${unreadReceiver}`]: 1 };
+    }
+    const consultation = await Consultation.findByIdAndUpdate(consultationId, update, { returnDocument: 'after' });
     if (!consultation) return null;
     const lastMessage = consultation.messages?.[consultation.messages.length - 1];
     return lastMessage ? lastMessage.toObject() : null;
+  }
+
+  async resetUnreadForViewer(consultationId, viewerSide) {
+    if (viewerSide !== 'doctor' && viewerSide !== 'patient') return null;
+    const consultation = await Consultation.findByIdAndUpdate(
+      consultationId,
+      { $set: { [`unreadCounts.${viewerSide}`]: 0 } },
+      { returnDocument: 'after' }
+    );
+    return consultation ? consultation.toObject() : null;
   }
 
   async updateStatus(consultationId, status) {
