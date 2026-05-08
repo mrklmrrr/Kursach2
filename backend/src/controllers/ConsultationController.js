@@ -316,7 +316,7 @@ const ConsultationController = class {
       timestamp: new Date().toISOString()
     });
 
-    this._emitMessage(consultation._id, savedMessage);
+    await this._emitChatUpdateToParticipants(consultation, savedMessage);
     res.status(201).json(savedMessage);
   }
 
@@ -346,7 +346,7 @@ const ConsultationController = class {
       fileSize: req.file.size
     });
 
-    this._emitMessage(consultation._id, savedMessage);
+    await this._emitChatUpdateToParticipants(consultation, savedMessage);
     res.status(201).json(savedMessage);
   }
 
@@ -377,6 +377,27 @@ const ConsultationController = class {
       const io = getIO();
       if (io) {
         io.to(`chat-${chatId}`).emit('new-message', payload);
+      }
+    } catch {
+      // noop
+    }
+  }
+
+  async _emitChatUpdateToParticipants(consultation, payload) {
+    try {
+      const { getIO, emitToUser } = require('../config/socket');
+      const io = getIO();
+      if (!io || !consultation) return;
+
+      io.to(`chat-${consultation._id}`).emit('new-message', payload);
+      emitToUser(consultation.doctorId, 'chat-updated', { chatId: String(consultation._id), message: payload });
+
+      const patientLegacyId = consultation.patientId;
+      if (patientLegacyId !== null && patientLegacyId !== undefined) {
+        const patientUser = await User.findOne({ legacyId: patientLegacyId }).select('_id').lean();
+        if (patientUser?._id) {
+          emitToUser(patientUser._id, 'chat-updated', { chatId: String(consultation._id), message: payload });
+        }
       }
     } catch {
       // noop

@@ -22,6 +22,32 @@ export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded 
   const pendingIceCandidatesRef = useRef([]);
   const hasPeerJoinedRef = useRef(false);
 
+  const tuneOutboundQuality = useCallback((pc) => {
+    if (!pc) return;
+    const senders = pc.getSenders();
+    senders.forEach((sender) => {
+      if (!sender?.track) return;
+      if (sender.track.kind === 'video') {
+        sender.track.contentHint = 'detail';
+        const parameters = sender.getParameters();
+        const encodings = Array.isArray(parameters.encodings) && parameters.encodings.length > 0
+          ? parameters.encodings
+          : [{}];
+        encodings[0].maxBitrate = 1_200_000;
+        encodings[0].maxFramerate = 30;
+        encodings[0].scaleResolutionDownBy = 1;
+        parameters.encodings = encodings;
+        parameters.degradationPreference = 'balanced';
+        sender.setParameters(parameters).catch(() => {
+          // Ignore browser-specific sender parameter failures.
+        });
+      }
+      if (sender.track.kind === 'audio') {
+        sender.track.contentHint = 'speech';
+      }
+    });
+  }, []);
+
   useEffect(() => {
     onCallEndedRef.current = onCallEnded;
   }, [onCallEnded]);
@@ -59,6 +85,7 @@ export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded 
       localStreamRef.current.getTracks().forEach(track => {
         pc.addTrack(track, localStreamRef.current);
       });
+      tuneOutboundQuality(pc);
     }
 
     pc.ontrack = (event) => {
@@ -84,7 +111,7 @@ export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded 
     };
 
     peerConnectionRef.current = pc;
-  }, [roomId, markPeerJoined]);
+  }, [roomId, markPeerJoined, tuneOutboundQuality]);
 
   const handleOffer = useCallback(async (data) => {
     if (!peerConnectionRef.current || peerConnectionRef.current.remoteDescription) return;
@@ -277,8 +304,9 @@ export function useWebRTC(roomId, token, shouldCreateOffer = false, onCallEnded 
           peerConnectionRef.current.addTrack(track, stream);
         }
       });
+      tuneOutboundQuality(peerConnectionRef.current);
     }
-  }, []);
+  }, [tuneOutboundQuality]);
 
   return {
     isConnected,

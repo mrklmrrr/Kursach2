@@ -252,11 +252,6 @@ export default function ChatRoom() {
       socketRef.current = globalSocket;
     }
 
-    // Join the chat room
-    if (socketRef.current) {
-      socketRef.current.emit('join-chat', id);
-    }
-
     // Listen for new messages
     const handleMessage = (newMessage) => {
       setMessages((prev) => {
@@ -265,6 +260,17 @@ export default function ChatRoom() {
         }
         return [...prev, newMessage];
       });
+    };
+    const handleChatHistory = (history) => {
+      const messagesArray = Array.isArray(history) ? history : [];
+      setMessages(messagesArray);
+    };
+    const handleConnect = () => {
+      setSocketConnected(true);
+      socketRef.current?.emit('join-chat', id);
+    };
+    const handleDisconnect = () => {
+      setSocketConnected(false);
     };
 
     const handleIncomingCall = (callData) => {
@@ -282,13 +288,22 @@ export default function ChatRoom() {
       alert('Звонок отклонен');
     };
 
+    socketRef.current?.on('connect', handleConnect);
+    socketRef.current?.on('disconnect', handleDisconnect);
+    socketRef.current?.on('chat-history', handleChatHistory);
     socketRef.current?.on('new-message', handleMessage);
     socketRef.current?.on('video-call-incoming', handleIncomingCall);
     socketRef.current?.on('video-call-accepted', handleCallAccepted);
     socketRef.current?.on('video-call-rejected', handleCallRejected);
+    if (socketRef.current?.connected) {
+      handleConnect();
+    }
 
     return () => {
       if (socketRef.current) {
+        socketRef.current.off('connect', handleConnect);
+        socketRef.current.off('disconnect', handleDisconnect);
+        socketRef.current.off('chat-history', handleChatHistory);
         socketRef.current.off('new-message', handleMessage);
         socketRef.current.off('video-call-incoming', handleIncomingCall);
         socketRef.current.off('video-call-accepted', handleCallAccepted);
@@ -302,7 +317,7 @@ export default function ChatRoom() {
     };
   }, [id, token, patientFromState, doctor.id, isDoctor]);
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     if (!inputMsg.trim()) return;
     
     const messageText = inputMsg.trim();
@@ -319,20 +334,56 @@ export default function ChatRoom() {
     
     setMessages((prev) => [...prev, tempMessage]);
     setInputMsg('');
-    
-    // Send via socket
-    if (socketRef.current) {
-      socketRef.current.emit('send-message', { chatId: id, message: messageText });
-    } else {
-      // Fallback to HTTP API if socket not connected
-      chatApi.sendMessage(id, messageText)
-        .catch((err) => {
-          console.error('Failed to send message:', err);
-          setMessages((prev) => prev.filter(m => m._id !== tempMessage._id));
-          alert('Не удалось отправить сообщение');
+
+    try {
+      // HTTP is the source of truth: backend persists message and broadcasts socket event.
+      const { data: savedMessage } = await chatApi.sendMessage(id, messageText);
+      if (savedMessage) {
+        setMessages((prev) => {
+          const withoutTemp = prev.filter((m) => m._id !== tempMessage._id);
+          if (withoutTemp.some((m) => m._id === savedMessage._id || m.id === savedMessage.id)) {
+            return withoutTemp;
+          }
+          return [...withoutTemp, savedMessage];
         });
+      }
+    } catch (err) {
+      console.error('Failed to send message:', err);
+      setMessages((prev) => prev.filter(m => m._id !== tempMessage._id));
+      alert('Не удалось отправить сообщение');
     }
   }, [id, inputMsg, isDoctor, user?.id]);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const syncMessages = async () => {
+      try {
+        const { data } = await chatApi.getMessages(id);
+        if (isCancelled) return;
+        const fresh = Array.isArray(data?.messages) ? data.messages : [];
+        setMessages((prev) => {
+          if (!Array.isArray(prev) || prev.length === 0) return fresh;
+          const byId = new Map();
+          prev.forEach((m) => byId.set(String(m._id || m.id || `${m.timestamp}-${m.message || ''}`), m));
+          fresh.forEach((m) => byId.set(String(m._id || m.id || `${m.timestamp}-${m.message || ''}`), m));
+          return Array.from(byId.values()).sort((a, b) => {
+            const ta = new Date(a.timestamp || 0).getTime();
+            const tb = new Date(b.timestamp || 0).getTime();
+            return ta - tb;
+          });
+        });
+      } catch {
+        // Keep chat usable even if background sync temporarily fails.
+      }
+    };
+
+    const intervalId = window.setInterval(syncMessages, 2500);
+    return () => {
+      isCancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [id]);
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') handleSend();

@@ -6,7 +6,19 @@ import './VideoCall.css';
 
 export default function VideoCall({ roomId, onEndCall, endSignal = 0, onPeerJoinedChange = null }) {
   const { token, user } = useAuth();
-  const mediaOptions = useMemo(() => ({ video: true, audio: true }), []);
+  const mediaOptions = useMemo(() => ({
+    video: {
+      width: { ideal: 1280, max: 1920 },
+      height: { ideal: 720, max: 1080 },
+      frameRate: { ideal: 24, max: 30 },
+      facingMode: 'user'
+    },
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      autoGainControl: true
+    }
+  }), []);
   const { stream, error, isCameraOn, isMicOn, toggleCamera, toggleMic } =
     useMediaStream(mediaOptions);
   const myVideoRef = useRef(null);

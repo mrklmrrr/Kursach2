@@ -343,11 +343,12 @@ export default function Chats({ inDoctorPanel = false }) {
   }, [isDoctor]);
 
   useEffect(() => {
-    if (!token || isDoctor) return undefined;
+    if (!token) return undefined;
     const socket = chatApi.connectSocket(token);
     incomingCallSocketRef.current = socket;
 
     const handleIncomingCall = (callData) => {
+      if (isDoctor) return;
       if (!callData?.chatId || !callData?.roomId) return;
       const chat = chatsRef.current.find((item) => String(item.id) === String(callData.chatId));
       setIncomingCall({
@@ -358,13 +359,49 @@ export default function Chats({ inDoctorPanel = false }) {
       });
     };
 
+    const handleChatUpdated = ({ chatId, message } = {}) => {
+      if (!chatId || !message) return;
+      setChats((prev) => {
+        const idx = prev.findIndex((chat) => String(chat.id) === String(chatId));
+        if (idx === -1) {
+          loadChats();
+          return prev;
+        }
+        const sender = String(message.sender || '').toLowerCase();
+        const senderLabel = sender === 'doctor'
+          ? (isDoctor ? 'Вы' : 'Врач')
+          : sender === 'user'
+            ? (isDoctor ? 'Пациент' : 'Вы')
+            : sender === 'admin'
+              ? 'Администратор'
+              : 'Собеседник';
+        const content = message.message || (message.fileUrl ? 'Вложение' : 'Сообщение');
+        const lastMessageText = (sender === 'system' || message.messageType === 'system')
+          ? (message.message || 'Системное сообщение')
+          : `${senderLabel}: ${content}`;
+
+        const updatedChat = {
+          ...prev[idx],
+          lastMessage: lastMessageText,
+          lastSender: sender,
+          isInitialized: true,
+          time: formatChatTime(message.timestamp || new Date().toISOString())
+        };
+        const next = [...prev];
+        next.splice(idx, 1);
+        return [updatedChat, ...next];
+      });
+    };
+
     socket.on('video-call-incoming', handleIncomingCall);
+    socket.on('chat-updated', handleChatUpdated);
     return () => {
       socket.off('video-call-incoming', handleIncomingCall);
+      socket.off('chat-updated', handleChatUpdated);
       socket.disconnect();
       incomingCallSocketRef.current = null;
     };
-  }, [token, isDoctor, navigate]);
+  }, [token, isDoctor, loadChats]);
 
   const handleAcceptIncomingCall = () => {
     if (!incomingCall) return;

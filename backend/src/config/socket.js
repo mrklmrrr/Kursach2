@@ -45,6 +45,14 @@ async function updatePresence(userId, isOnline) {
   }
 }
 
+async function resolvePatientSocketUserId(rawPatientId) {
+  if (rawPatientId == null) return null;
+  const direct = await User.findById(rawPatientId).select('_id').lean();
+  if (direct?._id) return direct._id;
+  const byLegacy = await User.findOne({ legacyId: rawPatientId }).select('_id').lean();
+  return byLegacy?._id || null;
+}
+
 function formatVideoCallDurationRu(totalSeconds) {
   const s = Math.max(0, Math.floor(Number(totalSeconds) || 0));
   if (s < 60) return `${s} сек`;
@@ -214,6 +222,11 @@ function setupSocket(server, consultationRepository) {
         });
 
         io.to(`chat-${chatId}`).emit('new-message', savedMessage);
+        emitToUser(consultation.doctorId, 'chat-updated', { chatId: String(chatId), message: savedMessage });
+        const patientSocketUserId = await resolvePatientSocketUserId(consultation.patientId);
+        if (patientSocketUserId) {
+          emitToUser(patientSocketUserId, 'chat-updated', { chatId: String(chatId), message: savedMessage });
+        }
       } catch {
         socket.emit('chat-error', { message: 'Ошибка отправки сообщения' });
       }
@@ -518,4 +531,4 @@ function getIO() {
   return io;
 }
 
-module.exports = { setupSocket, getIO };
+module.exports = { setupSocket, getIO, emitToUser };

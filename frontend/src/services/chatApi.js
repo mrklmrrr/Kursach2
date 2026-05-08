@@ -58,9 +58,12 @@ export const chatApi = {
   },
   connectSocket: (token) => io(getSocketUrl(), {
     auth: { token },
+    transports: ['websocket'],
+    upgrade: false,
     reconnection: true,
     reconnectionAttempts: 10,
-    reconnectionDelay: 1000
+    reconnectionDelay: 1000,
+    timeout: 10000
   }),
   getBackendOrigin,
   /**
