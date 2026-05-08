@@ -1,10 +1,20 @@
 const { consultationStatus } = require('../constants');
 const logger = require('../utils/logger');
 const ApiError = require('../utils/ApiError');
+const { User } = require('../models');
 
 class VideoRoomService {
   constructor(consultationRepository) {
     this.consultationRepository = consultationRepository;
+  }
+
+  async _resolveLegacyId(userId) {
+    try {
+      const user = await User.findById(userId).select('legacyId');
+      return user?.legacyId != null ? String(user.legacyId) : '';
+    } catch {
+      return '';
+    }
   }
 
   async createRoom(consultationId, userId, userRole) {
@@ -14,8 +24,11 @@ class VideoRoomService {
     }
     
     // Check access: must be doctor or patient of this consultation
-    const isDoctor = String(consultation.doctorId) === String(userId);
-    const isPatient = String(consultation.patientId) === String(userId);
+    const normalizedUserId = String(userId);
+    const normalizedPatientId = String(consultation.patientId || '');
+    const userLegacyId = await this._resolveLegacyId(userId);
+    const isDoctor = String(consultation.doctorId) === normalizedUserId;
+    const isPatient = normalizedPatientId === normalizedUserId || (userLegacyId && normalizedPatientId === userLegacyId);
     
     if (!isDoctor && !isPatient) {
       throw new ApiError(403, 'Access denied: you are not part of this consultation');
@@ -71,10 +84,14 @@ class VideoRoomService {
     };
 
     // Check access: doctor or patient of this consultation
-    if (role === 'doctor' && String(consultation.doctorId) !== String(userId)) {
+    const normalizedUserId = String(userId);
+    const normalizedPatientId = String(consultation.patientId || '');
+    const userLegacyId = await this._resolveLegacyId(userId);
+
+    if (role === 'doctor' && String(consultation.doctorId) !== normalizedUserId) {
       throw new ApiError(403, 'Access denied');
     }
-    if (role === 'patient' && String(consultation.patientId) !== String(userId)) {
+    if (role === 'patient' && normalizedPatientId !== normalizedUserId && (!userLegacyId || normalizedPatientId !== userLegacyId)) {
       throw new ApiError(403, 'Access denied');
     }
 

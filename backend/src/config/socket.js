@@ -282,6 +282,7 @@ function setupSocket(server, consultationRepository) {
           await consultationRepository.updateVideoRoom(chatId, updateData);
         }
 
+        const patientLegacyId = consultation.patientId != null ? String(consultation.patientId) : '';
         let patientUserId = consultation.patientId;
         if (patientUserId != null) {
           const patientUser = await User.findOne({ legacyId: consultation.patientId }).select('_id');
@@ -289,6 +290,7 @@ function setupSocket(server, consultationRepository) {
             patientUserId = patientUser._id;
           }
         }
+        const patientObjectId = patientUserId != null ? String(patientUserId) : '';
 
         const payload = {
           chatId: String(chatId),
@@ -301,18 +303,21 @@ function setupSocket(server, consultationRepository) {
           doctorAvatarUrl: doctorProfile?.avatarUrl || ''
         };
 
-        const delivered = emitToUser(patientUserId, 'video-call-incoming', payload);
+        const deliveredToObjectId = patientObjectId ? emitToUser(patientObjectId, 'video-call-incoming', payload) : false;
+        const deliveredToLegacyId = patientLegacyId ? emitToUser(patientLegacyId, 'video-call-incoming', payload) : false;
+        const delivered = deliveredToObjectId || deliveredToLegacyId;
         if (!delivered) {
           // Fallback: if patient currently opened this chat room, notify through room channel.
           io.to(`chat-${chatId}`).emit('video-call-incoming', payload);
           // If user is temporarily offline, deliver right after next socket reconnect.
-          pendingVideoInvites.set(String(patientUserId), payload);
+          if (patientObjectId) pendingVideoInvites.set(patientObjectId, payload);
+          if (patientLegacyId) pendingVideoInvites.set(patientLegacyId, payload);
         }
         logger.info('Video call invite sent', {
           chatId: String(chatId),
           roomId,
           doctorId: String(socket.userId),
-          patientUserId: String(patientUserId),
+          patientUserId: patientObjectId || patientLegacyId || String(patientUserId),
           delivered
         });
         socket.emit('video-call-ringing', { ...payload, delivered });
@@ -338,6 +343,7 @@ function setupSocket(server, consultationRepository) {
 
         const roomId = String(consultation._id);
         const doctorId = String(consultation.doctorId);
+        const patientLegacyId = consultation.patientId != null ? String(consultation.patientId) : '';
         let patientUserId = consultation.patientId;
         if (patientUserId != null) {
           const patientUser = await User.findOne({ legacyId: consultation.patientId }).select('_id');
@@ -345,9 +351,11 @@ function setupSocket(server, consultationRepository) {
             patientUserId = patientUser._id;
           }
         }
+        const patientObjectId = patientUserId != null ? String(patientUserId) : '';
 
         if (!accepted) {
-          pendingVideoInvites.delete(String(patientUserId));
+          if (patientObjectId) pendingVideoInvites.delete(patientObjectId);
+          if (patientLegacyId) pendingVideoInvites.delete(patientLegacyId);
           await consultationRepository.updateVideoRoom(chatId, {
             'videoRoom.status': 'failed'
           });
@@ -356,10 +364,18 @@ function setupSocket(server, consultationRepository) {
             roomId,
             byUserId: String(socket.userId)
           });
-          emitToUser(patientUserId, 'video-call-ended', {
-            chatId: String(chatId),
-            roomId
-          });
+          if (patientObjectId) {
+            emitToUser(patientObjectId, 'video-call-ended', {
+              chatId: String(chatId),
+              roomId
+            });
+          }
+          if (patientLegacyId) {
+            emitToUser(patientLegacyId, 'video-call-ended', {
+              chatId: String(chatId),
+              roomId
+            });
+          }
           return;
         }
 
@@ -388,9 +404,11 @@ function setupSocket(server, consultationRepository) {
           chatId: String(chatId),
           roomId
         };
-        pendingVideoInvites.delete(String(patientUserId));
+        if (patientObjectId) pendingVideoInvites.delete(patientObjectId);
+        if (patientLegacyId) pendingVideoInvites.delete(patientLegacyId);
         emitToUser(doctorId, 'video-call-accepted', acceptedPayload);
-        emitToUser(patientUserId, 'video-call-accepted', acceptedPayload);
+        if (patientObjectId) emitToUser(patientObjectId, 'video-call-accepted', acceptedPayload);
+        if (patientLegacyId) emitToUser(patientLegacyId, 'video-call-accepted', acceptedPayload);
       } catch (err) {
         logger.error('video-call-response error', err);
         socket.emit('video-error', { message: 'Ошибка ответа на звонок' });

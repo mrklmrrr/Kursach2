@@ -513,8 +513,10 @@ export default function ChatRoom() {
       if (!socketRef.current) {
         throw new Error('Сокет не подключен');
       }
-      socketRef.current.emit('video-call-invite', { chatId: id });
-      setIsRingingOut(true);
+      if (isDoctor) {
+        socketRef.current.emit('video-call-invite', { chatId: id });
+        setIsRingingOut(true);
+      }
       navigate(`/video-room/${roomId}`, {
         state: { consultationId: id }
       });
@@ -585,16 +587,14 @@ export default function ChatRoom() {
             </div>
           </div>
         </button>
-        {isDoctor && (
-          <button
-            className="chat-room-video-btn"
-            onClick={handleStartVideoChat}
-            disabled={startingVideo || isRingingOut}
-            title="Начать видеовызов с пациентом"
-          >
-            <span className="material-icons">{(startingVideo || isRingingOut) ? 'hourglass_top' : 'videocam'}</span>
-          </button>
-        )}
+        <button
+          className="chat-room-video-btn"
+          onClick={handleStartVideoChat}
+          disabled={startingVideo || isRingingOut}
+          title={isDoctor ? 'Начать видеовызов с пациентом' : 'Открыть видеоконсультацию'}
+        >
+          <span className="material-icons">{(startingVideo || isRingingOut) ? 'hourglass_top' : 'videocam'}</span>
+        </button>
       </header>
 
       {isDoctor && isRingingOut && (
@@ -626,7 +626,7 @@ export default function ChatRoom() {
           )}
            <div ref={messagesEndRef} />
         </div>
- 
+
         <div className="chat-room-input-area">
           <button className="chat-room-attach-btn" onClick={handlePickFile} disabled={uploading}>
             <span className="material-icons">{uploading ? 'hourglass_top' : 'attach_file'}</span>
@@ -649,7 +649,7 @@ export default function ChatRoom() {
             <span className="material-icons">send</span>
           </button>
         </div>
- 
+
         {isDoctor && (
           <PatientProfileModal
             patient={selectedPatientProfile}
