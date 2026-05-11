@@ -32,6 +32,25 @@
   --ds-radius-md: 14px;
   --ds-radius-lg: 18px;
   --ds-radius-xl: 22px;
+  /* Кнопки */
+  --ds-btn-radius: 12px;
+  --ds-btn-radius-pill: 999px;
+  --ds-btn-height-sm: 36px;
+  --ds-btn-height-md: 40px;
+  --ds-btn-height-lg: 44px;
+  --ds-btn-pad-x-sm: 14px;
+  --ds-btn-pad-x-md: 18px;
+  --ds-btn-pad-x-lg: 22px;
+  --ds-btn-font-sm: 0.8125rem;
+  --ds-btn-font-md: 0.9375rem;
+  --ds-btn-font-lg: 1rem;
+  --ds-btn-disabled-opacity: 0.55;
+  --ds-btn-primary-from: #4f46e5;
+  --ds-btn-primary-to: #7c3aed;
+  --ds-btn-primary-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  --ds-btn-danger-from: #dc2626;
+  --ds-btn-danger-to: #ef4444;
+  --ds-btn-danger-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
   --ds-shadow-soft: 0 4px 22px rgba(15, 23, 42, 0.06);
   --ds-shadow-card: 0 12px 40px rgba(15, 23, 42, 0.08);
   --ds-shadow-elevated: 0 20px 50px rgba(15, 23, 42, 0.1);

@@ -66,15 +66,33 @@ export default function MedicalRecordModal({
   return (
     <Modal open={open} onClose={onClose}>
       <Modal.Overlay>
-        <Modal.Content className="modal-content--wide">
+        <Modal.Content className="modal-content--wide medical-record-modal-shell">
           <Modal.Header>
-            <h3>Карточка пациента</h3>
+            <div className="medical-record-modal__title-wrap">
+              <h3>Карточка пациента</h3>
+              <p className="medical-record-modal__subtitle">
+                Полная медицинская информация, результаты исследований и история лечения
+              </p>
+            </div>
           </Modal.Header>
 
-          <Modal.Body>
-            <p><strong>Пациент:</strong> {patient?.name || '—'}</p>
-            <p><strong>Дата рождения:</strong> {birthDateLabel}</p>
-            <p><strong>Телефон:</strong> {patient?.phone || '—'}</p>
+          <Modal.Body className="medical-record-modal__body">
+            <section className="medical-record-patient-hero">
+              <div className="medical-record-patient-hero__head">
+                <p className="medical-record-patient-hero__title">Пациент</p>
+                <h4>{patient?.name || '—'}</h4>
+              </div>
+              <div className="medical-record-patient-hero__grid">
+                <div className="medical-record-patient-hero__field">
+                  <span className="medical-record-patient-hero__label">Дата рождения</span>
+                  <span className="medical-record-patient-hero__value">{birthDateLabel}</span>
+                </div>
+                <div className="medical-record-patient-hero__field">
+                  <span className="medical-record-patient-hero__label">Телефон</span>
+                  <span className="medical-record-patient-hero__value">{patient?.phone || '—'}</span>
+                </div>
+              </div>
+            </section>
 
             {loading && <p>Загрузка карты...</p>}
             {!loading && error && <p className="medical-record-error">{error}</p>}
@@ -84,28 +102,28 @@ export default function MedicalRecordModal({
                 <div className="medical-record-tabs">
                   <button
                     type="button"
-                    className={`profile-tab-btn ${tab === 'systems' ? 'active' : ''}`}
+                    className={`medical-record-tab-btn ${tab === 'systems' ? 'active' : ''}`}
                     onClick={() => onSetTab('systems')}
                   >
                     Медицинская карта
                   </button>
                   <button
                     type="button"
-                    className={`profile-tab-btn ${tab === 'sickLeave' ? 'active' : ''}`}
+                    className={`medical-record-tab-btn ${tab === 'sickLeave' ? 'active' : ''}`}
                     onClick={() => onSetTab('sickLeave')}
                   >
                     Лист нетрудоспособности
                   </button>
                   <button
                     type="button"
-                    className={`profile-tab-btn ${tab === 'laboratory' ? 'active' : ''}`}
+                    className={`medical-record-tab-btn ${tab === 'laboratory' ? 'active' : ''}`}
                     onClick={() => onSetTab('laboratory')}
                   >
                     Лабораторные исследования
                   </button>
                   <button
                     type="button"
-                    className={`profile-tab-btn ${tab === 'instrumental' ? 'active' : ''}`}
+                    className={`medical-record-tab-btn ${tab === 'instrumental' ? 'active' : ''}`}
                     onClick={() => onSetTab('instrumental')}
                   >
                     Инструментальные исследования
@@ -113,7 +131,7 @@ export default function MedicalRecordModal({
                   {onPrescription && (
                     <button
                       type="button"
-                      className="profile-tab-btn"
+                      className="medical-record-tab-btn"
                       onClick={() => onPrescription(patient)}
                     >
                       Назначение
@@ -121,7 +139,7 @@ export default function MedicalRecordModal({
                   )}
                   <button
                     type="button"
-                    className={`profile-tab-btn ${tab === 'dependents' ? 'active' : ''}`}
+                    className={`medical-record-tab-btn ${tab === 'dependents' ? 'active' : ''}`}
                     onClick={() => onSetTab('dependents')}
                   >
                     Родственники
@@ -161,29 +179,33 @@ export default function MedicalRecordModal({
                 )}
 
                 {tab === 'laboratory' && (
-                  <>
+                  <section className="medical-record-research-tab">
                     <button
                       type="button"
-                      className="btn btn-primary"
+                      className="btn btn-primary btn-medium medical-record-research-tab__action"
                       onClick={() => navigate(`/doctor/patient/${patient?.id}/laboratory`)}
                     >
                       Добавить лаб анализы
                     </button>
-                    <PatientLaboratorySection results={laboratoryResults} loading={loading} />
-                  </>
+                    <div className="medical-record-research-tab__content">
+                      <PatientLaboratorySection results={laboratoryResults} loading={loading} />
+                    </div>
+                  </section>
                 )}
 
                 {tab === 'instrumental' && (
-                  <>
+                  <section className="medical-record-research-tab">
                     <button
                       type="button"
-                      className="btn btn-primary"
+                      className="btn btn-primary btn-medium medical-record-research-tab__action"
                       onClick={() => navigate(`/doctor/patient/${patient?.id}/instrumental`)}
                     >
                       Добавить инструментальные исследования
                     </button>
-                    <InstrumentalInvestigationsSection results={instrumentalResults} loading={loading} />
-                  </>
+                    <div className="medical-record-research-tab__content">
+                      <InstrumentalInvestigationsSection results={instrumentalResults} loading={loading} />
+                    </div>
+                  </section>
                 )}
 
                 {tab === 'dependents' && (
@@ -234,7 +256,7 @@ export default function MedicalRecordModal({
           </Modal.Body>
 
           <Modal.Footer>
-            <button type="button" className="btn btn-outline" onClick={onClose}>
+            <button type="button" className="btn btn-outline btn-medium" onClick={onClose}>
               Закрыть карту
             </button>
           </Modal.Footer>

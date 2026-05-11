@@ -65,7 +65,7 @@ class AuthController {
     if (!req.file) {
       throw ApiError.badRequest('Файл не загружен');
     }
-    const relPath = `/uploads/avatars/${req.file.filename}`;
+    const relPath = `/api/uploads/avatars/${req.file.filename}`;
     await this.authService.updateUser(req.userId, { avatarUrl: relPath });
     const user = await this.authService.getMe(req.userId);
     res.json(user);

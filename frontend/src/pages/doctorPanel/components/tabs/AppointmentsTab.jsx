@@ -1,10 +1,44 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DAY_MAP, CONSULTATION_TYPE_LABELS, APPOINTMENT_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "../../constants/labels";
 import { EmptyState } from '../../../../components/ui';
+import { parseHistoryDate } from '@utils/date';
 
 const formatDateTime = (date, time) => {
-  const [yyyy, mm, dd] = date.split('-');
-  return `${dd}.${mm}.${yyyy} ${time}`;
+  if (!date && !time) return '—';
+  if (date && time && /^\d{4}-\d{2}-\d{2}$/.test(String(date))) {
+    const [yyyy, mm, dd] = String(date).split('-');
+    return `${dd}.${mm}.${yyyy} ${time}`;
+  }
+  const parsed = parseHistoryDate(`${date || ''}${time ? ` ${time}` : ''}`) || parseHistoryDate(date);
+  if (!parsed) return `${date || '—'}${time ? ` ${time}` : ''}`;
+  const dd = String(parsed.getDate()).padStart(2, '0');
+  const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+  const yyyy = parsed.getFullYear();
+  const hh = String(parsed.getHours()).padStart(2, '0');
+  const min = String(parsed.getMinutes()).padStart(2, '0');
+  return `${dd}.${mm}.${yyyy} ${hh}:${min}`;
+};
+
+const getAppointmentTimestamp = (item) => {
+  if (!item) return Number.NaN;
+  if (item.date && item.time) {
+    const normalizedTime = String(item.time).slice(0, 5);
+    const candidate = new Date(`${item.date}T${normalizedTime}`).getTime();
+    if (Number.isFinite(candidate)) return candidate;
+    const withSeconds = new Date(`${item.date}T${normalizedTime}:00`).getTime();
+    if (Number.isFinite(withSeconds)) return withSeconds;
+    const parsedCombined = parseHistoryDate(`${item.date} ${normalizedTime}`);
+    if (parsedCombined) return parsedCombined.getTime();
+  }
+  if (item.datetime) {
+    const dt = new Date(item.datetime).getTime();
+    if (Number.isFinite(dt)) return dt;
+  }
+  if (item.date) {
+    const parsed = parseHistoryDate(item.date);
+    if (parsed) return parsed.getTime();
+  }
+  return Number.NaN;
 };
 
 export default function AppointmentsTab({
@@ -22,6 +56,55 @@ export default function AppointmentsTab({
   onOpenCommentModal
 }) {
   const [notification, setNotification] = useState(null);
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showAllHistory, setShowAllHistory] = useState(false);
+  const INITIAL_UPCOMING_LIMIT = 5;
+  const INITIAL_HISTORY_LIMIT = 8;
+
+  const upcomingAppointments = useMemo(() => {
+    const now = new Date();
+    return (appointments || [])
+      .map((item) => {
+        const timestamp = getAppointmentTimestamp(item);
+        return { ...item, __sortTime: timestamp };
+      })
+      .filter((item) => Number.isFinite(item.__sortTime) && item.__sortTime >= now.getTime())
+      .sort((a, b) => a.__sortTime - b.__sortTime);
+  }, [appointments]);
+
+  const pastAppointments = useMemo(() => {
+    const now = new Date();
+    return (appointments || [])
+      .map((item) => {
+        const timestamp = getAppointmentTimestamp(item);
+        return { ...item, __sortTime: timestamp };
+      })
+      .filter((item) => Number.isFinite(item.__sortTime) && item.__sortTime < now.getTime())
+      .sort((a, b) => b.__sortTime - a.__sortTime);
+  }, [appointments]);
+
+  const visibleAppointments = showAllUpcoming
+    ? upcomingAppointments
+    : upcomingAppointments.slice(0, INITIAL_UPCOMING_LIMIT);
+  const hiddenUpcomingCount = Math.max(0, upcomingAppointments.length - INITIAL_UPCOMING_LIMIT);
+  const hasPastAppointments = pastAppointments.length > 0;
+  const visibleHistoryAppointments = showAllHistory
+    ? pastAppointments
+    : pastAppointments.slice(0, INITIAL_HISTORY_LIMIT);
+  const hiddenHistoryCount = Math.max(0, pastAppointments.length - INITIAL_HISTORY_LIMIT);
+
+  useEffect(() => {
+    if (upcomingAppointments.length <= INITIAL_UPCOMING_LIMIT && showAllUpcoming) {
+      setShowAllUpcoming(false);
+    }
+  }, [upcomingAppointments.length, showAllUpcoming]);
+
+  useEffect(() => {
+    if (pastAppointments.length <= INITIAL_HISTORY_LIMIT && showAllHistory) {
+      setShowAllHistory(false);
+    }
+  }, [pastAppointments.length, showAllHistory]);
 
   const handleSaveWorkingHours = async () => {
     const result = await onSaveWorkingHours();
@@ -40,8 +123,8 @@ export default function AppointmentsTab({
             <label>Пациент</label>
             <select name="patientId" value={appointmentForm.patientId} onChange={onFormChange} required>
               <option value="">Выберите пациента</option>
-              {patients.map((p, i) => (
-                <option key={i} value={p.id}>{p.name}</option>
+              {patients.map((p) => (
+                <option key={String(p.id || p._id)} value={p.id}>{p.name}</option>
               ))}
             </select>
           </div>
@@ -60,7 +143,7 @@ export default function AppointmentsTab({
             <label>Продолжительность (мин)</label>
             <input type="number" name="duration" value={appointmentForm.duration} onChange={onFormChange} min="15" step="15" />
           </div>
-          <button type="submit" className="btn btn-primary">Назначить запись</button>
+          <button type="submit" className="btn btn-primary btn-medium">Назначить запись</button>
         </form>
       </section>
 
@@ -99,24 +182,18 @@ export default function AppointmentsTab({
               ))}
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <button className="btn btn-primary" onClick={handleSaveWorkingHours}>
+          <div className="appointments-working-actions">
+            <button type="button" className="btn btn-primary btn-medium" onClick={handleSaveWorkingHours}>
               Сохранить рабочее время
             </button>
             {notification && (
-              <div style={{
-                padding: '10px 14px',
-                borderRadius: '8px',
-                fontSize: '0.9rem',
-                fontWeight: '500',
-                backgroundColor: notification.success ? '#d1fae5' : '#fee2e2',
-                color: notification.success ? '#065f46' : '#991b1b',
-                border: `1px solid ${notification.success ? '#a7f3d0' : '#fecaca'}`,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <span style={{ fontSize: '18px' }}>
+              <div
+                className={`appointments-inline-notification ${
+                  notification.success ? 'appointments-inline-notification--success' : 'appointments-inline-notification--error'
+                }`}
+                role="status"
+              >
+                <span className="appointments-inline-notification__icon" aria-hidden="true">
                   {notification.success ? '✓' : '✕'}
                 </span>
                 {notification.message}
@@ -128,17 +205,38 @@ export default function AppointmentsTab({
 
       {/* Список записей */}
       <section className="section-card">
-        <h3>Мои записи</h3>
-        {appointments.length === 0 ? (
+        <div className="appointments-list-head">
+          <h3>Мои записи</h3>
+          <div className="appointments-list-head__actions">
+            <span className="appointments-list-head__badge">Следующие</span>
+            <button
+              type="button"
+              className={`appointments-history-toggle ${showHistory ? 'active' : ''}`}
+              onClick={() => setShowHistory((prev) => !prev)}
+            >
+              {showHistory ? 'Скрыть историю' : 'История записей'}
+            </button>
+          </div>
+        </div>
+        {upcomingAppointments.length === 0 ? (
           <EmptyState
             variant="plain"
             icon="calendar_month"
-            title="Записей пока нет"
-            description="Назначьте приём через форму выше — карточки появятся в этом списке."
+            title="Следующих записей пока нет"
+            description={
+              hasPastAppointments
+                ? 'В списке есть только прошедшие приёмы. Новые будущие записи появятся здесь.'
+                : 'Когда появятся будущие приёмы, они отобразятся в этом разделе.'
+            }
           />
         ) : (
           <div className="appointments-list">
-            {appointments.map(a => (
+            <div className="appointments-list-meta">
+              <span>
+                Показано {visibleAppointments.length} из {upcomingAppointments.length} следующих записей
+              </span>
+            </div>
+            {visibleAppointments.map(a => (
               <div
                 key={a._id}
                 className="appointment-card"
@@ -164,6 +262,63 @@ export default function AppointmentsTab({
                 )}
               </div>
             ))}
+            {upcomingAppointments.length > INITIAL_UPCOMING_LIMIT && (
+              <button
+                type="button"
+                className="appointments-show-more"
+                onClick={() => setShowAllUpcoming((prev) => !prev)}
+              >
+                {showAllUpcoming
+                  ? 'Скрыть дополнительные записи'
+                  : `Показать ещё (${hiddenUpcomingCount})`}
+              </button>
+            )}
+          </div>
+        )}
+        {showHistory && (
+          <div className="appointments-history">
+            <div className="appointments-history__head">
+              <h4>Прошедшие записи</h4>
+              <span>{pastAppointments.length}</span>
+            </div>
+            {pastAppointments.length === 0 ? (
+              <p className="appointments-history__empty">Прошедших записей пока нет.</p>
+            ) : (
+              <div className="appointments-list">
+                {visibleHistoryAppointments.map((a) => (
+                  <div
+                    key={`past-${a._id}`}
+                    className="appointment-card appointment-card--history"
+                    onDoubleClick={() => onOpenCommentModal(a)}
+                  >
+                    <div className="appointment-info">
+                      <h4>{a.patientName}</h4>
+                      <p className="appointment-date">{formatDateTime(a.date, a.time)}</p>
+                      <p className="appointment-type">
+                        {CONSULTATION_TYPE_LABELS[a.consultationType] || '🌐 Онлайн'} • {a.duration} мин
+                      </p>
+                      <span className={`status-badge ${a.status}`}>
+                        {APPOINTMENT_STATUS_LABELS[a.status]}
+                      </span>
+                      <span className={`status-badge payment-${a.paymentStatus || 'unpaid'}`}>
+                        {PAYMENT_STATUS_LABELS[a.paymentStatus || 'unpaid']}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {pastAppointments.length > INITIAL_HISTORY_LIMIT && (
+                  <button
+                    type="button"
+                    className="appointments-show-more appointments-show-more--history"
+                    onClick={() => setShowAllHistory((prev) => !prev)}
+                  >
+                    {showAllHistory
+                      ? 'Скрыть историю'
+                      : `Показать ещё из истории (${hiddenHistoryCount})`}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </section>

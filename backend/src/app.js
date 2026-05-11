@@ -113,11 +113,12 @@ async function startApp() {
     legacyHeaders: false
   }));
   // Middleware to set Cross-Origin Resource Policy for uploads
-  app.use('/uploads', (req, res, next) => {
+  app.use(['/uploads', '/api/uploads'], (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     next();
   });
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+  app.use('/api/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // Health check
   app.get('/', (req, res) => {

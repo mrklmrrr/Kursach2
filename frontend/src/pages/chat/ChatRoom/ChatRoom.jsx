@@ -4,15 +4,13 @@ import { Avatar } from '../../../components/ui';
 import { chatApi } from '../../../services/chatApi';
 import { videoRoomApi } from '../../../services/videoRoomApi';
 import { doctorPanelApi } from '../../../services/doctorPanelApi';
+import { getChatSocket } from '../../../services/chatSocket';
 import { useAuth } from '../../../hooks/useAuth';
+import { useToast } from '../../../contexts/ToastProvider/useToast';
 import { UserSidebar } from '../../../components/layout';
 import DoctorSidebar from '../../doctorPanel/components/DoctorSidebar/DoctorSidebar';
 import PatientProfileModal from '../../doctorPanel/components/modals/PatientProfileModal';
 import './ChatRoom.css';
-
-// Global socket instance to avoid reconnecting on every navigation
-let globalSocket = null;
-let globalSocketRef = { current: null };
 
 // Message time cache
 const messageTimeCache = new Map();
@@ -39,6 +37,36 @@ function formatMessageTime(timestamp) {
   return formatted;
 }
 
+const messageDateCache = new Map();
+function formatMessageDate(timestamp) {
+  const dateKey = new Date(timestamp).toDateString();
+  if (messageDateCache.has(dateKey)) {
+    return messageDateCache.get(dateKey);
+  }
+
+  const formatted = new Date(timestamp).toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long'
+  });
+
+  messageDateCache.set(dateKey, formatted);
+
+  if (messageDateCache.size > 200) {
+    const keys = Array.from(messageDateCache.keys());
+    for (let i = 0; i < 50; i++) {
+      messageDateCache.delete(keys[i]);
+    }
+  }
+
+  return formatted;
+}
+
+function getMessageDayKey(timestamp) {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
 function isLocalHost(hostname) {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
 }
@@ -55,7 +83,13 @@ function getBackendOriginSafe() {
 }
 
 // Message component for memoization
-const MessageBubble = memo(function MessageBubble({ msg, isOwn, chatCompanion, resolveFileUrl }) {
+const MessageBubble = memo(function MessageBubble({
+  msg,
+  isOwn,
+  chatCompanion,
+  resolveFileUrl,
+  onImagePreview
+}) {
   const isSystem = msg.messageType === 'system' || msg.sender === 'system';
   if (isSystem) {
     return (
@@ -80,7 +114,14 @@ const MessageBubble = memo(function MessageBubble({ msg, isOwn, chatCompanion, r
       <div>
         <div className="message-bubble">
           {msg.fileUrl && (msg.messageType === 'image' || String(msg.fileMimeType || '').startsWith('image/')) && (
-            <img className="chat-media-preview" src={resolveFileUrl(msg.fileUrl)} alt={msg.fileName || 'Изображение'} />
+            <button
+              type="button"
+              className="chat-media-preview-btn"
+              onClick={() => onImagePreview(resolveFileUrl(msg.fileUrl))}
+              aria-label="Открыть изображение"
+            >
+              <img className="chat-media-preview" src={resolveFileUrl(msg.fileUrl)} alt={msg.fileName || 'Изображение'} />
+            </button>
           )}
           {msg.fileUrl && (msg.messageType === 'video' || String(msg.fileMimeType || '').startsWith('video/')) && (
             <video className="chat-media-preview" src={resolveFileUrl(msg.fileUrl)} controls />
@@ -98,6 +139,7 @@ export default function ChatRoom() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, token } = useAuth();
+  const { showToast } = useToast();
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState('');
   const [loading, setLoading] = useState(true);
@@ -108,29 +150,36 @@ export default function ChatRoom() {
   const [socketConnected, setSocketConnected] = useState(false);
   const [incomingCall, setIncomingCall] = useState(null);
   const [isRingingOut, setIsRingingOut] = useState(false);
+  const [previewImageSrc, setPreviewImageSrc] = useState('');
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
   const initialScrollDoneRef = useRef(false);
 
-  const companionFromState = location.state?.companion || null;
-  const doctor = (companionFromState?.role === 'doctor'
-    ? {
-        id: companionFromState.id || id,
-        name: companionFromState.name || 'Врач',
-        specialty: companionFromState.specialty || 'Специалист',
-        avatar: companionFromState.avatarUrl || '',
-        avatarUrl: companionFromState.avatarUrl || ''
-      }
-    : location.state?.doctor) || {
-    id,
-    name: 'Врач',
-    specialty: 'Специалист',
-    avatar: '',
-    avatarUrl: ''
-  };
-  const patientFromState = location.state?.patient || null;
+  const companionFromState = useMemo(() => location.state?.companion || null, [location.state]);
+
+  const doctor = useMemo(
+    () =>
+      (companionFromState?.role === 'doctor'
+        ? {
+            id: companionFromState.id || id,
+            name: companionFromState.name || 'Врач',
+            specialty: companionFromState.specialty || 'Специалист',
+            avatar: companionFromState.avatarUrl || '',
+            avatarUrl: companionFromState.avatarUrl || ''
+          }
+        : location.state?.doctor) || {
+        id,
+        name: 'Врач',
+        specialty: 'Специалист',
+        avatar: '',
+        avatarUrl: ''
+      },
+    [companionFromState, location.state?.doctor, id]
+  );
+
+  const patientFromState = useMemo(() => location.state?.patient || null, [location.state]);
 
   const isDoctor = user?.role === 'doctor';
   const isCurrentUserPatientSide = useMemo(() => {
@@ -203,11 +252,13 @@ export default function ChatRoom() {
   useEffect(() => {
     const loadStart = performance.now();
     initialScrollDoneRef.current = false;
+    let cancelled = false;
+
     const loadMessages = async () => {
       try {
         const { data: messagesData } = await chatApi.getMessages(id);
+        if (cancelled) return;
 
-        // Extract chat metadata from messages response
         const currentChatMeta = {
           _id: messagesData.consultationId || id,
           doctorName: messagesData.doctorName,
@@ -226,47 +277,54 @@ export default function ChatRoom() {
         setMessages(messagesArray);
       } catch (err) {
         console.error('[ChatRoom] Failed to load messages:', err);
+        if (cancelled) return;
+        setMessages([]);
         if (err.response?.status === 404) {
-          setMessages([]);
-          alert('Чат не найден или у вас нет доступа к этому чату');
+          showToast('Чат не найден или у вас нет доступа к этому чату', 'error');
+          navigate(isDoctor ? '/doctor/chats' : '/chats', { replace: true });
         } else {
-          setMessages([]);
+          showToast('Не удалось загрузить сообщения', 'error');
         }
       } finally {
-        setLoading(false);
-        console.log('[ChatRoom] loadMessages:', performance.now() - loadStart, 'ms');
+        if (!cancelled) {
+          setLoading(false);
+          console.log('[ChatRoom] loadMessages:', performance.now() - loadStart, 'ms');
+        }
       }
     };
 
     loadMessages();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, patientFromState, doctor.id, isDoctor, navigate, showToast]);
 
-    // Reuse global socket if available
-    if (!globalSocket && token) {
-      console.log('[ChatRoom] Creating new socket connection');
-      const socket = chatApi.connectSocket(token);
-      globalSocket = socket;
-      globalSocketRef.current = socket;
-      socketRef.current = socket;
+  useEffect(() => {
+    if (!token || !id) return undefined;
 
-      socket.on('connect', () => {
-        console.log('[ChatRoom] Socket connected');
-        setSocketConnected(true);
-      });
+    const socket = getChatSocket(token);
+    socketRef.current = socket;
 
-      socket.on('disconnect', () => {
-        console.log('[ChatRoom] Socket disconnected');
-        setSocketConnected(false);
-      });
+    const mergeMessagesFromServer = async () => {
+      try {
+        const { data } = await chatApi.getMessages(id);
+        const fresh = Array.isArray(data?.messages) ? data.messages : [];
+        setMessages((prev) => {
+          if (!Array.isArray(prev) || prev.length === 0) return fresh;
+          const byId = new Map();
+          prev.forEach((m) => byId.set(String(m._id || m.id || `${m.timestamp}-${m.message || ''}`), m));
+          fresh.forEach((m) => byId.set(String(m._id || m.id || `${m.timestamp}-${m.message || ''}`), m));
+          return Array.from(byId.values()).sort((a, b) => {
+            const ta = new Date(a.timestamp || 0).getTime();
+            const tb = new Date(b.timestamp || 0).getTime();
+            return ta - tb;
+          });
+        });
+      } catch {
+        /* сеть временно недоступна — оставляем локальное состояние */
+      }
+    };
 
-      socket.on('chat-error', (error) => {
-        console.error('[ChatRoom] Socket error:', error);
-      });
-    } else if (token) {
-      console.log('[ChatRoom] Reusing existing socket');
-      socketRef.current = globalSocket;
-    }
-
-    // Listen for new messages
     const handleMessage = (newMessage) => {
       setMessages((prev) => {
         if (prev.some((m) => m._id === newMessage._id || m.id === newMessage.id)) {
@@ -275,16 +333,29 @@ export default function ChatRoom() {
         return [...prev, newMessage];
       });
     };
+
     const handleChatHistory = (history) => {
       const messagesArray = Array.isArray(history) ? history : [];
       setMessages(messagesArray);
     };
+
     const handleConnect = () => {
       setSocketConnected(true);
-      socketRef.current?.emit('join-chat', id);
+      socket.emit('join-chat', id);
     };
+
     const handleDisconnect = () => {
       setSocketConnected(false);
+    };
+
+    const handleReconnect = () => {
+      setSocketConnected(true);
+      socket.emit('join-chat', id);
+      mergeMessagesFromServer();
+    };
+
+    const handleChatError = (error) => {
+      console.error('[ChatRoom] Socket error:', error);
     };
 
     const handleIncomingCall = (callData) => {
@@ -292,44 +363,54 @@ export default function ChatRoom() {
       if (!callData?.chatId || String(callData.chatId) !== String(id)) return;
       setIncomingCall(callData);
     };
+
     const handleCallAccepted = (callData) => {
       if (String(callData?.chatId) !== String(id)) return;
       setIsRingingOut(false);
     };
+
     const handleCallRejected = (callData) => {
       if (String(callData?.chatId) !== String(id)) return;
       setIsRingingOut(false);
-      alert('Звонок отклонен');
+      if (isDoctor) {
+        showToast('Звонок отклонён', 'info');
+      }
     };
 
-    socketRef.current?.on('connect', handleConnect);
-    socketRef.current?.on('disconnect', handleDisconnect);
-    socketRef.current?.on('chat-history', handleChatHistory);
-    socketRef.current?.on('new-message', handleMessage);
-    socketRef.current?.on('video-call-incoming', handleIncomingCall);
-    socketRef.current?.on('video-call-accepted', handleCallAccepted);
-    socketRef.current?.on('video-call-rejected', handleCallRejected);
-    if (socketRef.current?.connected) {
+    const onBrowserOnline = () => {
+      mergeMessagesFromServer();
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('reconnect', handleReconnect);
+    socket.on('chat-error', handleChatError);
+    socket.on('chat-history', handleChatHistory);
+    socket.on('new-message', handleMessage);
+    socket.on('video-call-incoming', handleIncomingCall);
+    socket.on('video-call-accepted', handleCallAccepted);
+    socket.on('video-call-rejected', handleCallRejected);
+
+    window.addEventListener('online', onBrowserOnline);
+
+    if (socket.connected) {
       handleConnect();
     }
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.off('connect', handleConnect);
-        socketRef.current.off('disconnect', handleDisconnect);
-        socketRef.current.off('chat-history', handleChatHistory);
-        socketRef.current.off('new-message', handleMessage);
-        socketRef.current.off('video-call-incoming', handleIncomingCall);
-        socketRef.current.off('video-call-accepted', handleCallAccepted);
-        socketRef.current.off('video-call-rejected', handleCallRejected);
-        // Don't disconnect global socket
-        if (socketRef.current === globalSocket) {
-          // Keep socket alive for other chats
-          socketRef.current = null;
-        }
-      }
+      window.removeEventListener('online', onBrowserOnline);
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('reconnect', handleReconnect);
+      socket.off('chat-error', handleChatError);
+      socket.off('chat-history', handleChatHistory);
+      socket.off('new-message', handleMessage);
+      socket.off('video-call-incoming', handleIncomingCall);
+      socket.off('video-call-accepted', handleCallAccepted);
+      socket.off('video-call-rejected', handleCallRejected);
+      socketRef.current = null;
     };
-  }, [id, token, patientFromState, doctor.id, isDoctor]);
+  }, [id, token, isDoctor, showToast]);
 
   const handleSend = useCallback(async () => {
     if (!inputMsg.trim()) return;
@@ -364,43 +445,15 @@ export default function ChatRoom() {
     } catch (err) {
       console.error('Failed to send message:', err);
       setMessages((prev) => prev.filter(m => m._id !== tempMessage._id));
-      alert('Не удалось отправить сообщение');
+      showToast('Не удалось отправить сообщение', 'error');
     }
-  }, [id, inputMsg, isDoctor, user?.id]);
+  }, [id, inputMsg, isDoctor, user?.id, showToast]);
 
-  useEffect(() => {
-    let isCancelled = false;
-
-    const syncMessages = async () => {
-      try {
-        const { data } = await chatApi.getMessages(id);
-        if (isCancelled) return;
-        const fresh = Array.isArray(data?.messages) ? data.messages : [];
-        setMessages((prev) => {
-          if (!Array.isArray(prev) || prev.length === 0) return fresh;
-          const byId = new Map();
-          prev.forEach((m) => byId.set(String(m._id || m.id || `${m.timestamp}-${m.message || ''}`), m));
-          fresh.forEach((m) => byId.set(String(m._id || m.id || `${m.timestamp}-${m.message || ''}`), m));
-          return Array.from(byId.values()).sort((a, b) => {
-            const ta = new Date(a.timestamp || 0).getTime();
-            const tb = new Date(b.timestamp || 0).getTime();
-            return ta - tb;
-          });
-        });
-      } catch {
-        // Keep chat usable even if background sync temporarily fails.
-      }
-    };
-
-    const intervalId = window.setInterval(syncMessages, 2500);
-    return () => {
-      isCancelled = true;
-      window.clearInterval(intervalId);
-    };
-  }, [id]);
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') handleSend();
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   const handlePickFile = () => fileInputRef.current?.click();
@@ -423,7 +476,7 @@ export default function ChatRoom() {
       setInputMsg('');
     } catch (err) {
       console.error('Ошибка загрузки вложения', err);
-      alert(err.response?.data?.message || 'Не удалось загрузить файл');
+      showToast(err.response?.data?.message || 'Не удалось загрузить файл', 'error');
     } finally {
       event.target.value = '';
       setUploading(false);
@@ -523,7 +576,10 @@ export default function ChatRoom() {
     } catch (err) {
       console.error('Ошибка при создании видео комнаты:', err);
       const serverMessage = err?.response?.data?.message || err?.response?.data?.error;
-      alert('Ошибка при создании видео комнаты: ' + (serverMessage || err.message || 'Неизвестная ошибка'));
+      showToast(
+        `Ошибка при создании видео комнаты: ${serverMessage || err.message || 'Неизвестная ошибка'}`,
+        'error'
+      );
     } finally {
       setStartingVideo(false);
     }
@@ -547,6 +603,30 @@ export default function ChatRoom() {
   const callDoctorName = incomingCall?.doctorName || chatCompanion.name || 'Врач';
   const callDoctorSpecialty = incomingCall?.doctorSpecialty || chatCompanion.specialty || 'Специалист';
   const callDoctorAvatar = incomingCall?.doctorAvatarUrl || chatCompanion.avatarUrl || '';
+  const chatTimeline = useMemo(() => {
+    const timeline = [];
+    let previousDayKey = '';
+
+    messages.forEach((msg) => {
+      const currentDayKey = getMessageDayKey(msg.timestamp);
+      if (currentDayKey && currentDayKey !== previousDayKey) {
+        timeline.push({
+          type: 'date',
+          key: `date-${currentDayKey}`,
+          label: formatMessageDate(msg.timestamp)
+        });
+        previousDayKey = currentDayKey;
+      }
+
+      timeline.push({
+        type: 'message',
+        key: `msg-${msg._id || msg.id || `${msg.timestamp}-${msg.message || 'media'}`}`,
+        message: msg
+      });
+    });
+
+    return timeline;
+  }, [messages]);
 
   const handleOpenMedicalRecordFromChat = (patient) => {
     const patientId = patient?.id || patient?._id || chatMeta?.patientId || chatCompanion.id;
@@ -559,12 +639,25 @@ export default function ChatRoom() {
     });
   };
 
+  const handleImagePreviewOpen = (src) => {
+    setPreviewImageSrc(String(src || ''));
+  };
+
+  const handleImagePreviewClose = () => {
+    setPreviewImageSrc('');
+  };
+
   return (
     <div className={`chat-room-page ${isDoctor ? 'doctor-panel-page' : 'user-panel-page'}`}>
       {isDoctor && <DoctorSidebar profile={user} />}
       {!isDoctor && <UserSidebar />}
       <header className="chat-room-header">
-        <button className="back-btn" onClick={() => navigate(isDoctor ? '/doctor/chats' : '/chats')}>
+        <button
+          type="button"
+          className="btn btn-ghost btn-icon btn-small chat-room-header-back"
+          onClick={() => navigate(isDoctor ? '/doctor/chats' : '/chats')}
+          aria-label="Назад к списку чатов"
+        >
           <span className="material-icons">arrow_back</span>
         </button>
         <button
@@ -588,10 +681,12 @@ export default function ChatRoom() {
           </div>
         </button>
         <button
-          className="chat-room-video-btn"
+          type="button"
+          className="btn btn-primary btn-icon chat-room-header-video"
           onClick={handleStartVideoChat}
           disabled={startingVideo || isRingingOut}
           title={isDoctor ? 'Начать видеовызов с пациентом' : 'Открыть видеоконсультацию'}
+          aria-label="Видео"
         >
           <span className="material-icons">{(startingVideo || isRingingOut) ? 'hourglass_top' : 'videocam'}</span>
         </button>
@@ -614,21 +709,38 @@ export default function ChatRoom() {
               Напишите первое сообщение врачу
             </div>
           ) : (
-            messages.map((msg) => (
-              <MessageBubble
-                key={msg._id || msg.id || `${msg.timestamp}-${msg.message || 'media'}`}
-                msg={msg}
-                isOwn={isOwnMessage(msg)}
-                chatCompanion={chatCompanion}
-                resolveFileUrl={resolveFileUrl}
-              />
-            ))
+            chatTimeline.map((item) => {
+              if (item.type === 'date') {
+                return (
+                  <div key={item.key} className="chat-date-separator">
+                    <span>{item.label}</span>
+                  </div>
+                );
+              }
+
+              return (
+                <MessageBubble
+                  key={item.key}
+                  msg={item.message}
+                  isOwn={isOwnMessage(item.message)}
+                  chatCompanion={chatCompanion}
+                  resolveFileUrl={resolveFileUrl}
+                  onImagePreview={handleImagePreviewOpen}
+                />
+              );
+            })
           )}
            <div ref={messagesEndRef} />
         </div>
 
         <div className="chat-room-input-area">
-          <button className="chat-room-attach-btn" onClick={handlePickFile} disabled={uploading}>
+          <button
+            type="button"
+            className="btn btn-outline btn-icon chat-room-input-attach"
+            onClick={handlePickFile}
+            disabled={uploading}
+            aria-label="Прикрепить файл"
+          >
             <span className="material-icons">{uploading ? 'hourglass_top' : 'attach_file'}</span>
           </button>
           <input
@@ -643,9 +755,9 @@ export default function ChatRoom() {
             value={inputMsg}
             onChange={(e) => setInputMsg(e.target.value)}
             placeholder="Напишите сообщение..."
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
           />
-          <button className="chat-room-send-btn" onClick={handleSend}>
+          <button type="button" className="btn btn-primary btn-icon chat-room-input-send" onClick={handleSend} aria-label="Отправить">
             <span className="material-icons">send</span>
           </button>
         </div>
@@ -674,15 +786,35 @@ export default function ChatRoom() {
               </div>
               <p className="chat-room-call-text">Врач приглашает вас к видеоконсультации.</p>
               <div className="chat-room-call-actions">
-                <button type="button" className="chat-room-call-btn chat-room-call-btn-reject" onClick={handleRejectCall}>
+                <button type="button" className="btn btn-danger btn-medium chat-room-call-btn" onClick={handleRejectCall}>
                   <span className="material-icons">call_end</span>
                   Отклонить
                 </button>
-                <button type="button" className="chat-room-call-btn chat-room-call-btn-accept" onClick={handleAcceptCall}>
+                <button type="button" className="btn btn-primary btn-medium chat-room-call-btn" onClick={handleAcceptCall}>
                   <span className="material-icons">call</span>
                   Присоединиться
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+        {previewImageSrc && (
+          <div
+            className="chat-photo-preview-modal"
+            role="dialog"
+            aria-modal="true"
+            onClick={handleImagePreviewClose}
+          >
+            <div className="chat-photo-preview-content" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                className="chat-photo-preview-close"
+                aria-label="Закрыть предпросмотр"
+                onClick={handleImagePreviewClose}
+              >
+                ×
+              </button>
+              <img src={previewImageSrc} alt="Предпросмотр изображения" />
             </div>
           </div>
         )}

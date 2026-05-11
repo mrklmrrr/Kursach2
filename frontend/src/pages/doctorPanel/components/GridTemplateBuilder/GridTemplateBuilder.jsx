@@ -16,7 +16,6 @@ export default function GridTemplateBuilder({
   setRowHeaders,
   colHeaders,
   setColHeaders,
-  colUnits,
   setColUnits,
   cells,
   setCells,
@@ -168,27 +167,6 @@ export default function GridTemplateBuilder({
                       </th>
                     ))}
                   </tr>
-                  <tr>
-                    <th scope="row" className="lab-header-th lab-row-label lab-sticky-col lab-template-units-label">
-                      Ед. изм.
-                    </th>
-                    {Array.from({ length: cols }).map((_, c) => (
-                      <th key={`cu-${c}`} className="lab-header-th lab-template-unit-th">
-                        <input
-                          type="text"
-                          className="lab-header-input lab-col-unit-input"
-                          value={colUnits[c] || ''}
-                          autoComplete="off"
-                          placeholder="г/л, ммоль/л…"
-                          onChange={(e) => {
-                            const next = adjustColUnits(cols, colUnits);
-                            next[c] = e.target.value;
-                            setColUnits(next);
-                          }}
-                        />
-                      </th>
-                    ))}
-                  </tr>
                 </thead>
                 <tbody>
                   {rowHeaders.map((rh, r) => (
@@ -241,10 +219,10 @@ export default function GridTemplateBuilder({
       )}
 
       <div className="form-actions">
-        <button type="button" className="btn btn-primary" onClick={onSave}>
+        <button type="button" className="btn btn-primary btn-medium" onClick={onSave}>
           Сохранить бланк (шаблон)
         </button>
-        <button type="button" className="btn btn-outline" onClick={onCancel}>
+        <button type="button" className="btn btn-outline btn-medium" onClick={onCancel}>
           Закрыть без сохранения
         </button>
       </div>

@@ -283,6 +283,11 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.chats-call-btn {
+  min-width: 0;
 }
 
 /* === ChatItem === */

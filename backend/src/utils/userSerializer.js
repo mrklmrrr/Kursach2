@@ -5,6 +5,9 @@ function resolveAvatarUrl(stored) {
   const s = String(stored).trim();
   if (!s) return '';
   if (/^https?:\/\//i.test(s)) return s;
+  // In production, frontend often proxies only /api.
+  // Remap legacy upload paths so old avatars keep working after deploy.
+  if (s.startsWith('/uploads/')) return `/api${s}`;
   // Keep relative paths for deployment portability.
   // Frontend normalizes them against runtime API origin.
   return s.startsWith('/') ? s : `/${s}`;

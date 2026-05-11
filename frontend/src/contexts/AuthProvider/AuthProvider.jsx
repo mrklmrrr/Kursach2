@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { authApi, adminApi } from '../../services/authApi';
+import { disconnectChatSocket } from '../../services/chatSocket';
 import { AuthContext } from '../authContext';
 
 // Cache for user data to avoid redundant getMe calls
@@ -109,6 +110,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(() => {
+    disconnectChatSocket();
     localStorage.removeItem('token');
     setToken(null);
     userCache = null;

@@ -4,8 +4,10 @@ import { AppHeader, BottomNav, UserSidebar } from '@components/layout';
 import { ChatItem } from '@components/features';
 import { Avatar, EmptyState } from '@components/ui';
 import { chatApi } from '@services/chatApi';
+import { getChatSocket } from '@services/chatSocket';
 import { doctorApi } from '@services/doctorApi';
 import { useAuth } from '@hooks/useAuth';
+import { useToast } from '@contexts/ToastProvider/useToast';
 import DoctorSidebar from '../../doctorPanel/components/DoctorSidebar/DoctorSidebar';
 import './Chats.css';
 
@@ -148,6 +150,7 @@ function normalizeChats(data, isDoctor, currentUserId, currentUserLegacyId) {
 export default function Chats({ inDoctorPanel = false }) {
   const navigate = useNavigate();
   const { user, token } = useAuth();
+  const { showToast } = useToast();
   const isDoctor = user?.role === 'doctor';
   const isPatient = user?.role === 'patient';
   const [chats, setChats] = useState([]);
@@ -328,11 +331,11 @@ export default function Chats({ inDoctorPanel = false }) {
       });
     } catch (err) {
       console.error('[Chats] Failed to start doctor chat:', err);
-      alert(err?.response?.data?.message || 'Не удалось начать чат с врачом');
+      showToast(err?.response?.data?.message || 'Не удалось начать чат с врачом', 'error');
     } finally {
       setCreatingDoctorChatId('');
     }
-  }, [loadChats, navigate]);
+  }, [loadChats, navigate, showToast]);
 
   useEffect(() => {
     // Redirect doctors from /chats to /doctor/chats
@@ -352,7 +355,7 @@ export default function Chats({ inDoctorPanel = false }) {
 
   useEffect(() => {
     if (!token) return undefined;
-    const socket = chatApi.connectSocket(token);
+    const socket = getChatSocket(token);
     incomingCallSocketRef.current = socket;
 
     const handleIncomingCall = (callData) => {
@@ -411,7 +414,6 @@ export default function Chats({ inDoctorPanel = false }) {
     return () => {
       socket.off('video-call-incoming', handleIncomingCall);
       socket.off('chat-updated', handleChatUpdated);
-      socket.disconnect();
       incomingCallSocketRef.current = null;
     };
   }, [token, isDoctor, loadChats]);
@@ -589,10 +591,10 @@ export default function Chats({ inDoctorPanel = false }) {
             </div>
             <p className="chats-call-text">Врач приглашает вас к видеоконсультации.</p>
             <div className="chats-call-actions">
-              <button type="button" className="btn btn-secondary" onClick={handleRejectIncomingCall}>
+              <button type="button" className="btn btn-outline btn-medium chats-call-btn" onClick={handleRejectIncomingCall}>
                 Отклонить
               </button>
-              <button type="button" className="btn btn-primary" onClick={handleAcceptIncomingCall}>
+              <button type="button" className="btn btn-primary btn-medium chats-call-btn" onClick={handleAcceptIncomingCall}>
                 Присоединиться
               </button>
             </div>
