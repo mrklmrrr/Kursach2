@@ -25,30 +25,30 @@
 }
 
 .health-tip-card {
-  background: white;
-  border-radius: 16px;
+  background: var(--ds-surface);
+  border-radius: var(--ds-radius-lg);
   padding: 16px;
-  border: 1px solid #e8edf7;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  border: 1px solid var(--ds-border);
+  box-shadow: var(--ds-shadow-soft);
   text-align: left;
 }
 
 .health-tip-card h4 {
   margin: 0 0 8px;
   font-size: 1rem;
-  color: #1f2937;
+  color: var(--ds-text);
 }
 
 .health-tip-card p {
   margin: 0;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--ds-text-muted);
   line-height: 1.45;
 }
 
 .health-tip-icon {
   font-size: 1.75rem;
-  color: #6366f1;
+  color: var(--ds-brand);
   margin-bottom: 8px;
   display: block;
 }
@@ -56,12 +56,12 @@
 .greeting {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--ds-text);
   margin-bottom: 8px;
 }
 
 .welcome-text {
-  color: #6b7280;
+  color: var(--ds-text-muted);
   font-size: 1rem;
   margin-bottom: 24px;
 }
@@ -71,8 +71,9 @@
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: linear-gradient(135deg, #fef2f2, #fee2e2);
-  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(254, 242, 242, 0.95), rgba(254, 226, 226, 0.98));
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  border-radius: var(--ds-radius-lg);
   cursor: pointer;
   margin-bottom: 24px;
   transition: transform 0.2s;
@@ -85,12 +86,12 @@
 .emergency-icon-wrapper {
   width: 56px;
   height: 56px;
-  background: #ef4444;
+  background: var(--ds-danger);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #fff;
   font-size: 1.75rem;
 }
 
@@ -100,25 +101,25 @@
 
 .emergency-text h3 {
   margin: 0;
-  color: #dc2626;
+  color: var(--ds-danger);
   font-size: 1.125rem;
 }
 
 .emergency-text p {
   margin: 4px 0 0;
-  color: #991b1b;
+  color: var(--ds-text-muted);
   font-size: 0.875rem;
 }
 
 .arrow {
-  color: #dc2626;
+  color: var(--ds-danger);
   font-size: 1.5rem;
 }
 
 .section-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--ds-text);
   margin-bottom: 12px;
 }
 
@@ -143,7 +144,7 @@
   border: none;
   border-radius: 999px;
   background: transparent;
-  color: #6b7280;
+  color: var(--ds-text-muted);
   padding: 4px 10px;
   font-weight: 600;
   cursor: pointer;
@@ -151,8 +152,8 @@
 }
 
 .upcoming-more-btn:hover {
-  background: rgba(79, 70, 229, 0.08);
-  color: #4f46e5;
+  background: var(--ds-brand-soft);
+  color: var(--ds-brand);
 }
 
 .upcoming-collapse-btn {
@@ -164,7 +165,7 @@
   justify-content: center;
   padding: 4px;
   background: transparent;
-  color: #6b7280;
+  color: var(--ds-text-muted);
   border-radius: 999px;
 }
 
@@ -174,8 +175,8 @@
 }
 
 .upcoming-collapse-btn:hover {
-  background: rgba(79, 70, 229, 0.08);
-  color: #4f46e5;
+  background: var(--ds-brand-soft);
+  color: var(--ds-brand);
 }
 
 .upcoming-card {
@@ -183,9 +184,11 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: var(--ds-surface);
+  color: var(--ds-text);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-md);
+  box-shadow: var(--ds-shadow-soft);
   cursor: pointer;
   transition: transform 0.2s;
 }
@@ -196,17 +199,17 @@
 
 .upcoming-doctor {
   font-weight: 600;
-  color: #1f2937;
+  color: var(--ds-text);
 }
 
 .upcoming-spec {
   font-size: 0.875rem;
-  color: #6b7280;
+  color: var(--ds-text-muted);
 }
 
 .upcoming-time {
   font-size: 0.875rem;
-  color: #4f46e5;
+  color: var(--ds-brand);
   font-weight: 600;
 }
 
@@ -220,7 +223,7 @@
 .upcoming-join-btn {
   border: none;
   border-radius: 999px;
-  background: #4f46e5;
+  background: var(--ds-brand);
   color: #fff;
   font-size: 0.78rem;
   font-weight: 600;
@@ -229,17 +232,17 @@
 }
 
 .upcoming-join-btn:hover {
-  background: #4338ca;
+  background: var(--ds-brand-600);
 }
 
 .online-stats {
   font-size: 1rem;
-  color: #6b7280;
+  color: var(--ds-text-muted);
   margin-bottom: 16px;
 }
 
 .highlight {
-  color: #22c55e;
+  color: var(--ds-success);
   font-weight: 700;
 }
 
@@ -263,9 +266,10 @@
   align-items: center;
   gap: 8px;
   padding: 20px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  box-shadow: var(--ds-shadow-soft);
   cursor: pointer;
   transition: transform 0.2s;
 }
@@ -276,46 +280,7 @@
 
 .quick-btn .material-icons {
   font-size: 2rem;
-  color: #4f46e5;
-}
-
-.appointment-details-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1200;
-  background: rgba(17, 24, 39, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-
-.appointment-details-modal {
-  width: 100%;
-  max-width: 440px;
-  border-radius: 16px;
-  background: #ffffff;
-  padding: 20px 18px 18px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
-  position: relative;
-}
-
-.appointment-details-modal h3 {
-  margin: 0 0 14px;
-  color: #111827;
-  font-size: 1.1rem;
-}
-
-.appointment-details-close {
-  border: none;
-  background: transparent;
-  position: absolute;
-  right: 10px;
-  top: 8px;
-  color: #6b7280;
-  font-size: 1.6rem;
-  line-height: 1;
-  cursor: pointer;
+  color: var(--ds-brand);
 }
 
 .appointment-details-grid {
@@ -324,7 +289,7 @@
 }
 
 .appointment-details-grid div {
-  color: #111827;
+  color: var(--ds-text);
   font-size: 0.95rem;
 }
 
@@ -333,7 +298,7 @@
   background: transparent;
   padding: 0;
   margin: 0;
-  color: #4f46e5;
+  color: var(--ds-brand);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -341,12 +306,12 @@
 }
 
 .appointment-doctor-link:hover {
-  color: #4338ca;
+  color: var(--ds-brand-600);
 }
 
 .appointment-details-grid span,
 .appointment-details-comment span {
-  color: #6b7280;
+  color: var(--ds-text-muted);
   margin-right: 6px;
   font-weight: 600;
 }
@@ -354,8 +319,8 @@
 .appointment-details-comment {
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px solid #e5e7eb;
-  color: #111827;
+  border-top: 1px solid var(--ds-border);
+  color: var(--ds-text);
   font-size: 0.95rem;
 }
 
@@ -373,13 +338,13 @@
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  background: #fee2e2;
-  color: #991b1b;
+  background: color-mix(in srgb, var(--ds-danger) 14%, var(--ds-surface));
+  color: var(--ds-danger);
   white-space: nowrap;
 }
 
 body.dark .cancel-btn {
-  background: #7f1d1d;
+  background: color-mix(in srgb, var(--ds-danger) 22%, transparent);
   color: #fecaca;
 }
 
@@ -389,96 +354,9 @@ body.dark .cancel-btn {
   }
 }
 
-body.dark .appointment-details-comment {
-  border-top-color: #374151;
-}
-
-body.dark .greeting,
-body.dark .section-title {
-  color: #f9fafb;
-}
-
-body.dark .welcome-text,
-body.dark .online-stats {
-  color: #9ca3af;
-}
-
-body.dark .upcoming-card,
-body.dark .quick-btn {
-  background: #1f2937;
-}
-
-body.dark .upcoming-more-btn {
-  background: transparent;
-  color: #9ca3af;
-}
-
-body.dark .upcoming-more-btn:hover {
-  background: rgba(224, 231, 255, 0.12);
-  color: #e0e7ff;
-}
-
-body.dark .upcoming-collapse-btn {
-  background: transparent;
-  color: #9ca3af;
-}
-
-body.dark .upcoming-collapse-btn:hover {
-  background: rgba(224, 231, 255, 0.12);
-  color: #e0e7ff;
-}
-
-body.dark .upcoming-doctor {
-  color: #f9fafb;
-}
-
-body.dark .upcoming-spec {
-  color: #9ca3af;
-}
-
-body.dark .appointment-details-modal {
-  background: #111827;
-}
-
-body.dark .appointment-details-modal h3,
-body.dark .appointment-details-grid div,
-body.dark .appointment-details-comment {
-  color: #f9fafb;
-}
-
-body.dark .appointment-details-grid span,
-body.dark .appointment-details-comment span,
-body.dark .appointment-details-close {
-  color: #9ca3af;
-}
-
-body.dark .appointment-doctor-link {
-  color: #a5b4fc;
-}
-
-body.dark .appointment-doctor-link:hover {
-  color: #c7d2fe;
-}
-
-body.dark .appointment-details-comment {
-  border-top-color: #374151;
-}
-
-body.dark .health-tip-card {
-  background: #1f2937;
-  border-color: #374151;
-}
-
-body.dark .health-tip-card h4 {
-  color: #f9fafb;
-}
-
-body.dark .health-tip-card p {
-  color: #9ca3af;
-}
-
 body.dark .emergency-card {
   background: linear-gradient(135deg, rgba(127, 29, 29, 0.4), rgba(153, 27, 27, 0.3));
+  border-color: rgba(248, 113, 113, 0.35);
 }
 
 body.dark .emergency-text h3 {
@@ -491,17 +369,4 @@ body.dark .emergency-text p {
 
 body.dark .arrow {
   color: #fca5a5;
-}
-
-body.dark .upcoming-time {
-  color: #a5b4fc;
-}
-
-body.dark .upcoming-join-btn {
-  background: #6366f1;
-  color: #ffffff;
-}
-
-body.dark .highlight {
-  color: #4ade80;
 }

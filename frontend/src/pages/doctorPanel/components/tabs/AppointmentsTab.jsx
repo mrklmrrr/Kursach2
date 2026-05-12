@@ -94,6 +94,7 @@ export default function AppointmentsTab({
     : pastAppointments.slice(0, INITIAL_HISTORY_LIMIT);
   const hiddenHistoryCount = Math.max(0, pastAppointments.length - INITIAL_HISTORY_LIMIT);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- сброс «показать всех», когда список стал короче лимита */
   useEffect(() => {
     if (upcomingAppointments.length <= INITIAL_UPCOMING_LIMIT && showAllUpcoming) {
       setShowAllUpcoming(false);
@@ -105,6 +106,7 @@ export default function AppointmentsTab({
       setShowAllHistory(false);
     }
   }, [pastAppointments.length, showAllHistory]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSaveWorkingHours = async () => {
     const result = await onSaveWorkingHours();

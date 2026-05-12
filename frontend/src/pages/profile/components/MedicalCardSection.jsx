@@ -15,6 +15,7 @@ export const MedicalCardSection = ({ medicalRecord, laboratoryResults = [], inst
   const [prescriptionsError, setPrescriptionsError] = useState('');
   const [expandedPrescriptionById, setExpandedPrescriptionById] = useState({});
 
+  /* eslint-disable react-hooks/set-state-in-effect -- загрузка назначений при открытии вкладки */
   useEffect(() => {
     if (!medicalRecordOpen || medicalRecordTab !== 'prescriptions') return;
     let cancelled = false;
@@ -41,6 +42,7 @@ export const MedicalCardSection = ({ medicalRecord, laboratoryResults = [], inst
       cancelled = true;
     };
   }, [medicalRecordOpen, medicalRecordTab]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const sortedPrescriptions = useMemo(() => {
     const items = Array.isArray(prescriptions) ? [...prescriptions] : [];

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../contexts/ToastProvider/useToast';
 import { adminApi } from '../../services/authApi';
 import './AdminDashboard.css';
 
@@ -18,9 +19,15 @@ export default function AdminDashboard() {
   };
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { showToast } = useToast();
   const [tab, setTab] = useState('dashboard');
   const [dashboard, setDashboard] = useState(null);
   const [doctors, setDoctors] = useState([]);
+  const [b2b, setB2b] = useState(null);
+  const [audit, setAudit] = useState([]);
+  const [b2bErr, setB2bErr] = useState('');
+  const [auditErr, setAuditErr] = useState('');
+  const [subTabLoading, setSubTabLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingDoctorId, setEditingDoctorId] = useState(null);
   const [formData, setFormData] = useState(emptyFormData);
@@ -48,23 +55,32 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (tab !== 'b2b' && tab !== 'compliance') return;
+    let cancelled = false;
+    setSubTabLoading(true);
     const load = async () => {
       try {
         if (tab === 'b2b') {
           setB2bErr('');
           const res = await adminApi.getB2BMetrics();
-          setB2b(res.data);
+          if (!cancelled) setB2b(res.data);
         } else {
           setAuditErr('');
           const res = await adminApi.getAuditLog();
-          setAudit(Array.isArray(res.data) ? res.data : []);
+          if (!cancelled) setAudit(Array.isArray(res.data) ? res.data : []);
         }
       } catch {
-        if (tab === 'b2b') setB2bErr('Не удалось загрузить B2B-метрики');
-        else setAuditErr('Не удалось загрузить журнал');
+        if (!cancelled) {
+          if (tab === 'b2b') setB2bErr('Не удалось загрузить B2B-метрики');
+          else setAuditErr('Не удалось загрузить журнал');
+        }
+      } finally {
+        if (!cancelled) setSubTabLoading(false);
       }
     };
     load();
+    return () => {
+      cancelled = true;
+    };
   }, [tab]);
 
   const exportB2BCsv = () => {
@@ -112,15 +128,16 @@ export default function AdminDashboard() {
       setFormData(emptyFormData);
       setShowForm(false);
       loadData();
+      showToast('Врач создан', 'success');
     } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка создания врача');
+      showToast(err.response?.data?.message || 'Ошибка создания врача', 'error');
     }
   };
 
   const startEditDoctor = (doctor) => {
     const doctorId = getDoctorId(doctor);
     if (!doctorId) {
-      alert('Не удалось определить ID врача');
+      showToast('Не удалось определить ID врача', 'error');
       return;
     }
     setEditingDoctorId(doctorId);
@@ -161,36 +178,38 @@ export default function AdminDashboard() {
       await adminApi.updateDoctor(editingDoctorId, payload);
       resetForm();
       loadData();
+      showToast('Данные врача обновлены', 'success');
     } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка редактирования врача');
+      showToast(err.response?.data?.message || 'Ошибка редактирования врача', 'error');
     }
   };
 
   const handleDeleteDoctor = async (id) => {
     if (!id) {
-      alert('Не удалось определить ID врача');
+      showToast('Не удалось определить ID врача', 'error');
       return;
     }
     if (!confirm('Удалить врача?')) return;
     try {
       await adminApi.deleteDoctor(id);
       loadData();
+      showToast('Врач удалён', 'success');
     } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка удаления');
+      showToast(err.response?.data?.message || 'Ошибка удаления', 'error');
     }
   };
 
   const handleToggleOnline = async (doctor) => {
     const doctorId = getDoctorId(doctor);
     if (!doctorId) {
-      alert('Не удалось определить ID врача');
+      showToast('Не удалось определить ID врача', 'error');
       return;
     }
     try {
       await adminApi.toggleDoctorOnline(doctorId, !doctor.isOnline);
       loadData();
     } catch (err) {
-      alert(err.message);
+      showToast(err.message || 'Ошибка переключения статуса', 'error');
     }
   };
 
@@ -214,6 +233,12 @@ export default function AdminDashboard() {
         </button>
         <button type="button" className={`tab-btn ${tab === 'doctors' ? 'active' : ''}`} onClick={() => setTab('doctors')}>
           👨‍⚕️ Врачи
+        </button>
+        <button type="button" className={`tab-btn ${tab === 'b2b' ? 'active' : ''}`} onClick={() => setTab('b2b')}>
+          📈 B2B
+        </button>
+        <button type="button" className={`tab-btn ${tab === 'compliance' ? 'active' : ''}`} onClick={() => setTab('compliance')}>
+          🛡 Соответствие
         </button>
       </div>
 
@@ -305,6 +330,76 @@ export default function AdminDashboard() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {tab === 'b2b' && (
+        <div className="admin-subpanel page-shell">
+          {b2bErr && <p className="admin-panel-error">{b2bErr}</p>}
+          {subTabLoading && !b2bErr && <p className="admin-panel-muted">Загрузка метрик…</p>}
+          {!subTabLoading && b2b && (
+            <>
+              <div className="admin-metrics-list">
+                {Object.entries(b2b).map(([key, value]) => (
+                  <div key={key} className="admin-metric-row">
+                    <span className="admin-metric-key">{key}</span>
+                    <span className="admin-metric-val">
+                      {typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="admin-panel-toolbar">
+                <button type="button" className="admin-tool-btn" onClick={exportB2BCsv}>
+                  Скачать CSV
+                </button>
+                <button type="button" className="admin-tool-btn" onClick={printB2B}>
+                  Печать / PDF
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {tab === 'compliance' && (
+        <div className="admin-subpanel page-shell">
+          {auditErr && <p className="admin-panel-error">{auditErr}</p>}
+          {subTabLoading && !auditErr && <p className="admin-panel-muted">Загрузка журнала…</p>}
+          {!subTabLoading && !auditErr && audit.length === 0 && (
+            <p className="admin-panel-muted">Записей в журнале пока нет.</p>
+          )}
+          {!subTabLoading && audit.length > 0 && (
+            <>
+              <div className="admin-audit-wrap">
+                <table className="admin-audit-table">
+                  <thead>
+                    <tr>
+                      <th>Время</th>
+                      <th>Действие</th>
+                      <th>Роль</th>
+                      <th>Ресурс</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {audit.map((row, i) => (
+                      <tr key={row._id || row.id || i}>
+                        <td>{String(row.createdAt ?? '')}</td>
+                        <td>{row.action}</td>
+                        <td>{row.actorRole}</td>
+                        <td>{row.resource}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="admin-panel-toolbar">
+                <button type="button" className="admin-tool-btn" onClick={exportAuditCsv}>
+                  Экспорт CSV
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

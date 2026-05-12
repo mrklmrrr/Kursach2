@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../contexts/ToastProvider/useToast';
 import { useAuth } from '../../hooks/useAuth';
 import { Input, Button } from '../../components/ui';
 
 export default function AdminLoginForm() {
   const navigate = useNavigate();
   const { loginAdmin } = useAuth();
+  const { showToast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -14,7 +16,7 @@ export default function AdminLoginForm() {
     try {
       await loginAdmin(email, password);
     } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка входа');
+      showToast(err.response?.data?.message || 'Ошибка входа', 'error');
     }
   };
 
@@ -42,7 +44,10 @@ export default function AdminLoginForm() {
         </Button>
       </form>
       <p className="auth-link">
-        Пациент или врач? <span onClick={() => navigate('/login')}>Обычный вход</span>
+        Пациент или врач?{' '}
+        <button type="button" className="auth-link-btn" onClick={() => navigate('/login')}>
+          Обычный вход
+        </button>
       </p>
     </div>
   );

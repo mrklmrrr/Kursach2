@@ -7,6 +7,7 @@ import { videoRoomApi } from '../../../services/videoRoomApi';
 import { AppHeader, BottomNav, UserSidebar } from '../../../components/layout';
 import { DoctorCard } from '../../../components/features';
 import { EmptyState, ConfirmModal, Modal } from '../../../components/ui';
+import { useToast } from '../../../contexts/ToastProvider/useToast';
 import './Home.css';
 
 const formatDateTime = (date, time) => {
@@ -33,7 +34,9 @@ const DAY_MAP = {
 
 export default function Home() {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
+  const [joinWindowNow, setJoinWindowNow] = useState(() => Date.now());
   const [doctors, setDoctors] = useState([]);
   const [upcoming, setUpcoming] = useState([]);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -58,10 +61,18 @@ export default function Home() {
   useEffect(() => {
     doctorApi.getAll()
       .then((res) => setDoctors(res.data))
-      .catch((err) => console.error('Ошибка загрузки врачей:', err));
+      .catch((err) => {
+        console.error('Ошибка загрузки врачей:', err);
+        showToast(err.response?.data?.message || 'Не удалось загрузить список врачей', 'error');
+      });
+  }, [showToast]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setJoinWindowNow(Date.now()), 15000);
+    return () => clearInterval(id);
   }, []);
 
-  /* eslint-disable react-hooks/set-state-in-effect -- загрузка списка записей пациента (флаги loading + сброс при смене роли) */
+  /* eslint-disable react-hooks/set-state-in-effect -- загрузка записей пациента, флаги loading и сброс при смене роли */
   useEffect(() => {
     if (!user || user.role === 'doctor') {
       setLoadingAppointments(false);
@@ -113,9 +124,12 @@ export default function Home() {
           });
         setUpcoming(upcomingAppointments);
       })
-      .catch((err) => console.error('Ошибка загрузки записей:', err))
+      .catch((err) => {
+        console.error('Ошибка загрузки записей:', err);
+        showToast(err.response?.data?.message || 'Не удалось загрузить записи', 'error');
+      })
       .finally(() => setLoadingAppointments(false));
-  }, [user]);
+  }, [user, showToast]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const showConfirm = (title, message, onConfirm, confirmText = 'Да', cancelText = 'Нет') => {
@@ -142,7 +156,7 @@ export default function Home() {
           setUpcoming(prev => prev.filter(a => a.id !== appointmentId));
           setSelectedAppointment(null);
         } catch (err) {
-          alert(err.response?.data?.message || 'Ошибка отмены записи');
+          showToast(err.response?.data?.message || 'Ошибка отмены записи', 'error');
         }
       },
       'Да, отменить',
@@ -158,20 +172,19 @@ export default function Home() {
   const visibleUpcoming = showAllUpcoming ? upcoming : upcoming.slice(0, 3);
   const hasHiddenUpcoming = upcoming.length > 3 && !showAllUpcoming;
   const detailsType = selectedAppointment?.type === 'online' ? 'Онлайн консультация' : 'Офлайн прием';
-  const nowTimestamp = Date.now();
 
   const isInJoinWindow = (appointment) => {
     if (!appointment || String(appointment.type || '').toLowerCase() !== 'online') return false;
     const start = new Date(`${appointment.date}T${appointment.rawTime}:00`).getTime();
     if (Number.isNaN(start)) return false;
     const durationMs = (Number(appointment.duration) || 30) * 60 * 1000;
-    const delta = start - nowTimestamp;
+    const delta = start - joinWindowNow;
     return delta <= 10 * 60 * 1000 && delta >= -durationMs;
   };
 
   const handleJoinAppointment = async (appointment) => {
     if (!appointment?.consultationId) {
-      alert('Ссылка на консультацию пока недоступна. Попробуйте чуть позже.');
+      showToast('Ссылка на консультацию пока недоступна. Попробуйте чуть позже.', 'error');
       return;
     }
     try {
@@ -180,7 +193,16 @@ export default function Home() {
       navigate(`/video-room/${roomId}`, { state: { consultationId: appointment.consultationId } });
     } catch (err) {
       const message = err?.response?.data?.message || 'Не удалось подключиться к консультации';
-      alert(message);
+      showToast(message, 'error');
+    }
+  };
+
+  const openEmergency = () => navigate('/emergency');
+
+  const onEmergencyKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openEmergency();
     }
   };
 
@@ -194,7 +216,14 @@ export default function Home() {
           <p className="welcome-text">Как вы себя чувствуете сегодня?</p>
         </section>
 
-        <div className="emergency-card" onClick={() => navigate('/emergency')}>
+        <div
+          className="emergency-card"
+          role="button"
+          tabIndex={0}
+          onClick={openEmergency}
+          onKeyDown={onEmergencyKeyDown}
+          aria-label="Срочная помощь: перейти к экстренному вызову"
+        >
           <div className="emergency-icon-wrapper">
             <span className="material-icons">emergency</span>
           </div>
@@ -260,7 +289,7 @@ export default function Home() {
                 className="upcoming-more-btn"
                 onClick={() => setShowAllUpcoming(true)}
               >
-                еще
+                ещё
               </button>
             )}
             {showAllUpcoming && upcoming.length > 3 && (

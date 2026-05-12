@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { doctorApi } from '../../../services/doctorApi';
 import { AppHeader, BottomNav, UserSidebar } from '../../../components/layout';
 import { DoctorCard } from '../../../components/features';
@@ -8,7 +7,6 @@ import { EmptyState } from '../../../components/ui';
 import './Doctors.css';
 
 export default function Doctors() {
-  const navigate = useNavigate();
   const [doctors, setDoctors] = useState([]);
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [loadingError, setLoadingError] = useState('');

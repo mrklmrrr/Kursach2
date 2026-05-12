@@ -28,12 +28,13 @@ export default function PrescriptionsSection() {
     };
   }, [user?.role, user?.id]);
 
-  if (user?.role !== 'patient') return null;
-
   const sorted = useMemo(() => {
+    if (user?.role !== 'patient') return [];
     const items = Array.isArray(list) ? [...list] : [];
     return items.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-  }, [list]);
+  }, [list, user?.role]);
+
+  if (user?.role !== 'patient') return null;
 
   const toggleExpanded = (id) => {
     const key = String(id);

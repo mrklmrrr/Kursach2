@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useToast } from '@contexts/ToastProvider/useToast';
 import { appointmentApi } from '@services/appointmentApi';
 
 export const useAppointments = () => {
+  const { showToast } = useToast();
   const [appointmentForm, setAppointmentForm] = useState({
     patientId: '',
     datetime: '',
@@ -36,14 +38,14 @@ export const useAppointments = () => {
         delete payload.datetime;
       }
       const { data } = await appointmentApi.assignAppointment(payload);
-      alert('Запись создана');
+      showToast('Запись создана', 'success');
       resetForm();
       if (typeof onSuccess === 'function') {
         onSuccess(data);
       }
       return true;
     } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка создания записи');
+      showToast(err.response?.data?.message || 'Ошибка создания записи', 'error');
       return false;
     }
   };
@@ -57,7 +59,7 @@ export const useAppointments = () => {
       }
       return true;
     } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка отмены');
+      showToast(err.response?.data?.message || 'Ошибка отмены', 'error');
       return false;
     }
   };

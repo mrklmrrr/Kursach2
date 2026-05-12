@@ -1,9 +1,11 @@
 import { useState, useCallback, useMemo } from 'react';
+import { useToast } from '@contexts/ToastProvider/useToast';
 import { doctorPanelApi } from '@services/doctorPanelApi';
 import { appointmentApi } from '@services/appointmentApi';
 import { toDateTime } from '@utils/date';
 
 export const useDoctorPanelData = () => {
+  const { showToast } = useToast();
   const [profile, setProfile] = useState(null);
   const [pendingConsultations, setPendingConsultations] = useState([]);
   const [patients, setPatients] = useState([]);
@@ -83,9 +85,9 @@ export const useDoctorPanelData = () => {
       setAppointmentForm({ patientId: '', datetime: '', type: 'online', consultationType: 'online', duration: 30 });
       refreshAppointments();
     } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка создания записи');
+      showToast(err.response?.data?.message || 'Ошибка создания записи', 'error');
     }
-  }, [appointmentForm, refreshAppointments]);
+  }, [appointmentForm, refreshAppointments, showToast]);
 
   const handleSaveWorkingHours = useCallback(async () => {
     try {
@@ -100,8 +102,8 @@ export const useDoctorPanelData = () => {
   const closeCommentModal = useCallback(() => setCommentModalVisible(false), []);
   const saveComment = useCallback(() => {
     closeCommentModal();
-    alert('Комментарий сохранен');
-  }, [closeCommentModal]);
+    showToast('Комментарий сохранён', 'success');
+  }, [closeCommentModal, showToast]);
 
   const openMedicalRecord = useCallback(() => setMedicalRecordModalVisible(true), []);
   const closeMedicalRecord = useCallback(() => setMedicalRecordModalVisible(false), []);
@@ -115,43 +117,43 @@ export const useDoctorPanelData = () => {
     try {
       await doctorPanelApi.acceptConsultation(id);
       setPendingConsultations((prev) => prev.filter((c) => c._id !== id));
-      alert('Заявка принята');
+      showToast('Заявка принята', 'success');
       if (onSuccess) onSuccess();
     } catch {
-      alert('Ошибка принятия заявки');
+      showToast('Ошибка принятия заявки', 'error');
     }
-  }, [setPendingConsultations]);
+  }, [setPendingConsultations, showToast]);
 
   const handleRejectConsultation = useCallback(async (id, onSuccess) => {
     try {
       await doctorPanelApi.rejectConsultation(id);
       setPendingConsultations((prev) => prev.filter((c) => c._id !== id));
-      alert('Заявка отклонена');
+      showToast('Заявка отклонена', 'success');
       if (onSuccess) onSuccess();
     } catch {
-      alert('Ошибка отклонения заявки');
+      showToast('Ошибка отклонения заявки', 'error');
     }
-  }, [setPendingConsultations]);
+  }, [setPendingConsultations, showToast]);
 
   const updateMedicalField = useCallback(() => {
     // placeholder
   }, []);
 
   const saveSection = useCallback(() => {
-    alert('Сохранено');
-  }, []);
+    showToast('Сохранено', 'success');
+  }, [showToast]);
 
   const addSickLeaveDraft = useCallback(() => {
-    alert('Добавлено');
-  }, []);
+    showToast('Добавлено', 'success');
+  }, [showToast]);
 
   const updateSickLeaveField = useCallback(() => {
     // placeholder
   }, []);
 
   const saveSickLeave = useCallback(() => {
-    alert('Лист нетрудоспособности сохранен');
-  }, []);
+    showToast('Лист нетрудоспособности сохранён', 'success');
+  }, [showToast]);
 
   const loadData = useCallback(async () => {
     try {

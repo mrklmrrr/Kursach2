@@ -1,5 +1,4 @@
-/* Типографика премиум-слоя (токены — в tokens.css) */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+/* Типографика премиум-слоя (Outfit — в index.html, токены — в tokens.css) */
 
 body {
   letter-spacing: -0.01em;

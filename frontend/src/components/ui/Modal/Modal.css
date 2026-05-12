@@ -30,7 +30,8 @@
 
 .modal-content {
   width: min(100%, 420px);
-  background: #ffffff;
+  background: var(--ds-surface, #ffffff);
+  color: var(--ds-text, #111827);
   border-radius: 14px;
   padding: 20px;
   animation: modalContentIn 0.2s ease;
@@ -62,7 +63,7 @@
 
 .modal-header h3 {
   margin: 0;
-  color: #111827;
+  color: var(--ds-text, #111827);
   font-size: 1.25rem;
   font-weight: 600;
 }
@@ -72,7 +73,7 @@
   border: none;
   font-size: 1.5rem;
   line-height: 1;
-  color: #6b7280;
+  color: var(--ds-text-muted, #6b7280);
   cursor: pointer;
   padding: 0 0 0 8px;
   margin: -4px -4px 0 0;
@@ -80,7 +81,7 @@
 }
 
 .modal-close:hover {
-  color: #111827;
+  color: var(--ds-text, #111827);
 }
 
 .modal-body {
@@ -137,30 +138,8 @@
 
 .modal-message {
   text-align: center;
-  color: #6b7280;
+  color: var(--ds-text-muted, #6b7280);
   font-size: 1rem;
   margin: 0 0 24px;
   line-height: 1.5;
-}
-
-/* Dark theme */
-body.dark .modal-content {
-  background: #1f2937;
-  color: #f3f4f6;
-}
-
-body.dark .modal-header h3 {
-  color: #f9fafb;
-}
-
-body.dark .modal-close {
-  color: #9ca3af;
-}
-
-body.dark .modal-close:hover {
-  color: #f3f4f6;
-}
-
-body.dark .modal-message {
-  color: #9ca3af;
 }

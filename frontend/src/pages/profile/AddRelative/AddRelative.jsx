@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../../contexts/ToastProvider/useToast';
 import { dependentApi } from '../../../services/dependentApi';
 import { AppHeader, BottomNav, UserSidebar } from '../../../components/layout';
 import { Button, Input, DateInput } from '../../../components/ui';
@@ -20,6 +21,7 @@ const manualInitial = {
 
 export default function AddRelative() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [mode, setMode] = useState('account');
   const [relativeUsername, setRelativeUsername] = useState('');
   const [relationAcc, setRelationAcc] = useState('parent');
@@ -36,7 +38,7 @@ export default function AddRelative() {
     e.preventDefault();
     const u = relativeUsername.trim().replace(/^@+/, '');
     if (u.length < 3) {
-      alert('Введите username (3–24 символа)');
+      showToast('Введите username (3–24 символа)', 'error');
       return;
     }
     setSaving(true);
@@ -48,7 +50,7 @@ export default function AddRelative() {
       });
       navigate('/profile');
     } catch (err) {
-      alert(err.response?.data?.message || 'Не удалось добавить');
+      showToast(err.response?.data?.message || 'Не удалось добавить', 'error');
     } finally {
       setSaving(false);
     }
@@ -71,7 +73,7 @@ export default function AddRelative() {
       });
       navigate('/profile');
     } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка добавления');
+      showToast(err.response?.data?.message || 'Ошибка добавления', 'error');
     } finally {
       setSaving(false);
     }

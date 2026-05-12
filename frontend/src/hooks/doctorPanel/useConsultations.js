@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { useToast } from '@contexts/ToastProvider/useToast';
 import { doctorPanelApi } from '@services/doctorPanelApi';
 import { appointmentApi } from '@services/appointmentApi';
 
 export const useConsultations = () => {
+  const { showToast } = useToast();
+
   const handleAccept = async (id, onSuccess) => {
     try {
       await doctorPanelApi.acceptConsultation(id);
@@ -11,7 +14,7 @@ export const useConsultations = () => {
       }
       return true;
     } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка');
+      showToast(err.response?.data?.message || 'Ошибка', 'error');
       return false;
     }
   };
@@ -24,7 +27,7 @@ export const useConsultations = () => {
       }
       return true;
     } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка');
+      showToast(err.response?.data?.message || 'Ошибка', 'error');
       return false;
     }
   };
@@ -36,6 +39,7 @@ export const useConsultations = () => {
 };
 
 export const useCommentModal = () => {
+  const { showToast } = useToast();
   const [modal, setModal] = useState({
     open: false,
     appointment: null,
@@ -70,9 +74,10 @@ export const useCommentModal = () => {
       );
       setAppointments(prev => prev.map(a => (a._id === data._id ? data : a)));
       closeModal();
+      showToast('Комментарий сохранён', 'success');
       return true;
     } catch (err) {
-      alert(err.response?.data?.message || 'Не удалось сохранить комментарий');
+      showToast(err.response?.data?.message || 'Не удалось сохранить комментарий', 'error');
       return false;
     }
   };

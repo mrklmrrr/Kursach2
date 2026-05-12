@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@contexts/ToastProvider/useToast';
 import { medicalRecordApi } from '@services/medicalRecordApi';
 import { researchApi } from '@services/researchApi';
 import { isTemplateGrid, normalizeGridTemplate, mergeCellDefaults } from '@utils/gridUtils';
@@ -69,6 +70,7 @@ export function useResearchData(patientId, researchCategory) {
  * Хук для управления формой добавления исследования
  */
 export function useResearchForm(selectedType, loadData) {
+  const { showToast } = useToast();
   const [studyDate, setStudyDate] = useState('');
   const [fieldResults, setFieldResults] = useState({});
   const [gridCells, setGridCells] = useState([]);
@@ -83,6 +85,7 @@ export function useResearchForm(selectedType, loadData) {
     return normalizeGridTemplate(selectedType.gridTemplate);
   }, [selectedType, isGridType]);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- сетка полей синхронизируется с выбранным шаблоном */
   useEffect(() => {
     if (!selectedType || !isGridType) {
       setGridCells([]);
@@ -93,6 +96,7 @@ export function useResearchForm(selectedType, loadData) {
     const cols = Number(gt.cols) || 0;
     setGridCells(mergeCellDefaults(rows, cols, gt.cellDefaults));
   }, [selectedType, isGridType]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const updateGridCell = useCallback((row, col, patch) => {
     setGridCells((prev) => {
@@ -119,7 +123,7 @@ export function useResearchForm(selectedType, loadData) {
 
   const saveStudy = async (patientId, extraPayload = {}) => {
     if (!selectedType) {
-      alert('Выберите тип исследования');
+      showToast('Выберите тип исследования', 'error');
       return false;
     }
 
@@ -142,7 +146,7 @@ export function useResearchForm(selectedType, loadData) {
           }));
 
         if (gridResults.length === 0) {
-          alert('Заполните хотя бы одну ячейку');
+          showToast('Заполните хотя бы одну ячейку', 'error');
           return false;
         }
 
@@ -169,9 +173,10 @@ export function useResearchForm(selectedType, loadData) {
 
       resetForm();
       loadData();
+      showToast('Исследование сохранено', 'success');
       return true;
     } catch (e) {
-      alert(e.response?.data?.message || 'Не удалось сохранить');
+      showToast(e.response?.data?.message || 'Не удалось сохранить', 'error');
       return false;
     }
   };
@@ -200,6 +205,7 @@ export function useResearchForm(selectedType, loadData) {
  * Хук для управления шаблонами (бланками)
  */
 export function useTemplateBuilder(category, loadData) {
+  const { showToast } = useToast();
   const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
   const [editingTemplateId, setEditingTemplateId] = useState(null);
   const [templateName, setTemplateName] = useState('');
@@ -232,7 +238,7 @@ export function useTemplateBuilder(category, loadData) {
 
   const saveTemplate = async () => {
     if (!templateName.trim()) {
-      alert('Введите название шаблона');
+      showToast('Введите название шаблона', 'error');
       return;
     }
 
@@ -290,8 +296,9 @@ export function useTemplateBuilder(category, loadData) {
       }
       setShowTemplateBuilder(false);
       loadData();
+      showToast('Шаблон сохранён', 'success');
     } catch (e) {
-      alert(e.response?.data?.message || 'Не удалось сохранить шаблон');
+      showToast(e.response?.data?.message || 'Не удалось сохранить шаблон', 'error');
     }
   };
 
@@ -301,7 +308,7 @@ export function useTemplateBuilder(category, loadData) {
       await researchApi.deleteResearchType(id);
       loadData();
     } catch (e) {
-      alert(e.response?.data?.message || 'Не удалось удалить');
+      showToast(e.response?.data?.message || 'Не удалось удалить', 'error');
     }
   };
 

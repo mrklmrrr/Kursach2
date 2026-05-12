@@ -17,7 +17,7 @@ export default function Landing() {
           <Link to="/trust">Безопасность</Link>
           <Link to="/demo">Демо</Link>
           <Link to={ROUTES.LOGIN}>Вход</Link>
-          <Link to={ROUTES.REGISTER} className="marketing-btn marketing-btn-primary" style={{ padding: '8px 14px', fontSize: '0.88rem' }}>
+          <Link to={ROUTES.REGISTER} className="marketing-btn marketing-btn-primary marketing-btn--nav-compact">
             Регистрация
           </Link>
         </nav>
@@ -36,7 +36,7 @@ export default function Landing() {
         </p>
         <div className="marketing-cta-row">
           <Link to="/demo" className="marketing-btn marketing-btn-primary">
-            <span className="material-icons" style={{ fontSize: 20 }}>rocket_launch</span>
+            <span className="material-icons marketing-btn__icon">rocket_launch</span>
             Демо за 5 минут
           </Link>
           <Link to="/plans" className="marketing-btn marketing-btn-ghost">

@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageLayout from '@components/layout/PageLayout/PageLayout';
+import { useToast } from '@contexts/ToastProvider/useToast';
 import { useResearchData, useResearchForm, useTemplateBuilder } from '@hooks/doctorPanel/useResearch';
 import { isTemplateGrid, normalizeGridTemplate } from '@utils/gridUtils';
 import GridDataEntry from './components/GridDataEntry/GridDataEntry';
@@ -17,6 +18,7 @@ const STATUS_OPTIONS = [
 
 function InstrumentalResearch() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const { patientId } = useParams();
   const autocompleteRef = useRef(null);
 
@@ -90,7 +92,7 @@ function InstrumentalResearch() {
       const imageFiles = files.filter((file) => file.type.startsWith('image/'));
       const availableSlots = Math.max(0, 5 - studyPhotos.length);
       if (availableSlots === 0) {
-        alert('Можно прикрепить не более 5 фото');
+        showToast('Можно прикрепить не более 5 фото', 'error');
         return;
       }
       const prepared = await Promise.all(
@@ -111,7 +113,7 @@ function InstrumentalResearch() {
         setStudyPhotos((prev) => [...prev, ...normalized]);
       }
     } catch {
-      alert('Не удалось обработать выбранные изображения');
+      showToast('Не удалось обработать выбранные изображения', 'error');
     } finally {
       event.target.value = '';
     }
@@ -123,7 +125,6 @@ function InstrumentalResearch() {
 
   useEffect(() => {
     if (!showTemplateBuilder && panelMode === 'template') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPanelMode('study');
     }
   }, [showTemplateBuilder, panelMode]);
