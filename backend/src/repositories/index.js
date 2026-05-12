@@ -4,6 +4,7 @@ const DependentRepository = require('./DependentRepository');
 const DoctorRepository = require('./DoctorRepository');
 const AppointmentRepository = require('./AppointmentRepository');
 const MedicalRecordRepository = require('./MedicalRecordRepository');
+const EmergencyRequestRepository = require('./EmergencyRequestRepository');
 
 module.exports = {
   UserRepository,
@@ -11,5 +12,6 @@ module.exports = {
   DependentRepository,
   DoctorRepository,
   AppointmentRepository,
-  MedicalRecordRepository
+  MedicalRecordRepository,
+  EmergencyRequestRepository
 };

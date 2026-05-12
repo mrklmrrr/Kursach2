@@ -6,6 +6,7 @@ import DoctorProfile from '../pages/doctors/DoctorProfile/DoctorProfile';
 import Chats from '../pages/chat/Chats/Chats';
 import ChatRoom from '../pages/chat/ChatRoom/ChatRoom';
 import Emergency from '../pages/emergency/Emergency/Emergency';
+import EmergencyWait from '../pages/emergency/EmergencyWait/EmergencyWait';
 import Consultation from '../pages/consultation/Consultation/Consultation';
 import VideoRoom from '../pages/video-room/VideoRoom/VideoRoom';
 import Profile from '../pages/profile/Profile/Profile';
@@ -43,6 +44,7 @@ export const routes = {
     { path: '/chats', element: <Chats /> },
     { path: '/chat/:id', element: <ChatRoom /> },
     { path: '/emergency', element: <Emergency /> },
+    { path: '/emergency/wait', element: <EmergencyWait /> },
     { path: '/profile', element: <Profile /> },
     { path: '/profile/add-relative', element: <AddRelative /> },
     { path: '/confirm', element: <Confirm /> },
@@ -53,6 +55,7 @@ export const routes = {
   ],
   doctorOnly: [
     { path: '/doctor/:tab?', element: <DoctorPanel /> },
+    { path: '/doctor/video/:id', element: <VideoRoom /> },
     { path: '/doctor/chats/:chatId?', element: <Chats inDoctorPanel={true} /> },
     { path: '/doctor/profile', element: <Profile /> },
     { path: '/doctor/patient/:patientId/laboratory', element: <LaboratoryResearch /> },

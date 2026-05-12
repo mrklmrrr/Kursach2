@@ -22,11 +22,11 @@ class AuthController {
   }
 
   async updateUser(req, res) {
-    const user = await this.authService.updateUser(req.userId, req.body);
+    const user = await this.authService.updateUser(req.userId, req.body || {});
     if (!user) {
       throw ApiError.notFound('Пользователь не найден');
     }
-    res.json(user);
+    res.json(this.authService.formatUser(user));
   }
 
   async updateReminderPreferences(req, res) {
@@ -62,11 +62,10 @@ class AuthController {
     if (req.userRole !== roles.PATIENT && req.userRole !== roles.DOCTOR) {
       throw ApiError.forbidden('Только для пациентов и врачей');
     }
-    if (!req.file) {
+    if (!req.file || !req.file.buffer) {
       throw ApiError.badRequest('Файл не загружен');
     }
-    const relPath = `/api/uploads/avatars/${req.file.filename}`;
-    await this.authService.updateUser(req.userId, { avatarUrl: relPath });
+    await this.authService.saveAvatarFromUpload(req.userId, req.file.buffer, req.file.mimetype);
     const user = await this.authService.getMe(req.userId);
     res.json(user);
   }

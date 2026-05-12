@@ -28,5 +28,10 @@ module.exports = function(doctorPanelController) {
   router.get('/api/doctor/patients/:patientId/dependents', authMiddleware, isDoctor,
     asyncHandler((...args) => doctorPanelController.getPatientDependents(...args)));
 
+  router.get('/api/doctor/emergency-requests', authMiddleware, isDoctor,
+    asyncHandler((...args) => doctorPanelController.getEmergencyRequests(...args)));
+  router.post('/api/doctor/emergency-requests/:id/accept', authMiddleware, isDoctor,
+    asyncHandler((...args) => doctorPanelController.acceptEmergencyRequest(...args)));
+
   return router;
 };

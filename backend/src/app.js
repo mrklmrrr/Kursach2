@@ -16,7 +16,8 @@ const {
   DependentRepository,
   DoctorRepository,
   AppointmentRepository,
-  MedicalRecordRepository
+  MedicalRecordRepository,
+  EmergencyRequestRepository
 } = require('./repositories');
 
 // Services
@@ -28,7 +29,8 @@ const {
   DependentService,
   AppointmentService,
   MedicalRecordService,
-  VideoRoomService
+  VideoRoomService,
+  EmergencyRequestService
 } = require('./services');
 
 // Controllers
@@ -44,7 +46,9 @@ const {
   MedicalRecordController,
   PlatformController,
   PrescriptionController,
-  VideoRoomController
+  VideoRoomController,
+  EmergencyRequestController,
+  MediaController
 } = require('./controllers');
 
 // Routes
@@ -61,7 +65,9 @@ const {
   researchRoutes,
   platformRoutes,
   prescriptionRoutes,
-  videoRoomRoutes
+  videoRoomRoutes,
+  emergencyRequestRoutes,
+  mediaRoutes
 } = require('./routes');
 
 // Socket
@@ -113,7 +119,7 @@ async function startApp() {
     legacyHeaders: false
   }));
   // Middleware to set Cross-Origin Resource Policy for uploads
-  app.use(['/uploads', '/api/uploads'], (req, res, next) => {
+  app.use(['/uploads', '/api/uploads', '/api/media'], (req, res, next) => {
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     next();
   });
@@ -135,6 +141,7 @@ async function startApp() {
   const doctorRepository = new DoctorRepository();
   const appointmentRepository = new AppointmentRepository();
   const medicalRecordRepository = new MedicalRecordRepository();
+  const emergencyRequestRepository = new EmergencyRequestRepository();
 
   const authService = new AuthService(userRepository);
   const doctorService = new DoctorService(doctorRepository, consultationRepository);
@@ -148,6 +155,11 @@ async function startApp() {
   );
   const medicalRecordService = new MedicalRecordService(medicalRecordRepository, userRepository);
   const videoRoomService = new VideoRoomService(consultationRepository);
+  const emergencyRequestService = new EmergencyRequestService(
+    emergencyRequestRepository,
+    userRepository,
+    consultationRepository
+  );
 
   const authController = new AuthController(authService);
   const doctorController = new DoctorController(doctorService);
@@ -155,19 +167,28 @@ async function startApp() {
   const paymentController = new PaymentController(paymentService);
   const dependentController = new DependentController(dependentService);
   const adminController = new AdminController(doctorService, consultationService, authService);
-  const doctorPanelController = new DoctorPanelController(doctorService, consultationService, dependentService);
+  const emergencyRequestController = new EmergencyRequestController(emergencyRequestService);
+  const doctorPanelController = new DoctorPanelController(
+    doctorService,
+    consultationService,
+    dependentService,
+    emergencyRequestService
+  );
   const appointmentController = new AppointmentController(appointmentService, userRepository);
   const medicalRecordController = new MedicalRecordController(medicalRecordService, userRepository);
   const platformController = new PlatformController();
   const prescriptionController = new PrescriptionController();
   const videoRoomController = new VideoRoomController(videoRoomService);
+  const mediaController = new MediaController(userRepository, consultationRepository);
 
   // Routes
   app.use(platformRoutes(platformController));
   app.use(prescriptionRoutes(prescriptionController));
   app.use(authRoutes(authController));
+  app.use(mediaRoutes(mediaController));
   app.use(doctorRoutes(doctorController));
   app.use(consultationRoutes(consultationController));
+  app.use(emergencyRequestRoutes(emergencyRequestController));
   app.use(paymentRoutes(paymentController));
   app.use(dependentRoutes(dependentController));
   app.use(appointmentRoutes(appointmentController));

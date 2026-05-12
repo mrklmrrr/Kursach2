@@ -1,5 +1,5 @@
 const { User } = require('../models');
-const { findById, updateById } = require('../utils/dbHelpers');
+const { findById, updateById, resolveId } = require('../utils/dbHelpers');
 
 class UserRepository {
   async create(userData) {
@@ -47,6 +47,26 @@ class UserRepository {
 
   async updateDoctor(id, updates) {
     return this.updateById(id, updates);
+  }
+
+  /** Для выдачи аватара по HTTP (поля avatarImage не в обычных выборках) */
+  async findAvatarBinaryById(id) {
+    const resolved = resolveId(id);
+    if (!resolved) return null;
+    let user = null;
+    if (resolved.byObjectId) {
+      user = await User.findOne({ _id: resolved.byObjectId }).select('+avatarImage +avatarMimeType');
+    }
+    if (!user && resolved.byLegacyId !== null && resolved.byLegacyId !== undefined) {
+      user = await User.findOne({ legacyId: resolved.byLegacyId }).select('+avatarImage +avatarMimeType');
+    }
+    if (!user) return null;
+    const buf = user.avatarImage;
+    if (!buf || !Buffer.isBuffer(buf) || buf.length === 0) return null;
+    return {
+      buffer: buf,
+      mimeType: user.avatarMimeType || 'image/jpeg'
+    };
   }
 }
 

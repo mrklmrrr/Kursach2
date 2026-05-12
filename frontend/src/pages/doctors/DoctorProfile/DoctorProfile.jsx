@@ -185,7 +185,7 @@ export default function DoctorProfile() {
       const { data: existingChats = [] } = await chatApi.getChats();
       const normalizedDoctorId = String(doctorId);
       const existingChat = existingChats.find(
-        (chat) => String(chat.doctorId) === normalizedDoctorId && String(chat.type || '').toLowerCase() === 'chat'
+        (chat) => String(chat.doctorId) === normalizedDoctorId
       );
 
       if (existingChat?._id) {

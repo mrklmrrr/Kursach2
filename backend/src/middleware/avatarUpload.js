@@ -1,18 +1,6 @@
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 
-const dir = path.join(process.cwd(), 'uploads', 'avatars');
-fs.mkdirSync(dir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, dir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || '').toLowerCase();
-    const safe = ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext) ? ext : '.jpg';
-    cb(null, `u${req.userId}-${Date.now()}${safe}`);
-  }
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,

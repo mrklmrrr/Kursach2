@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { Button, Input } from '../../../components/ui';
 import { validate } from '../../../utils/validation';
@@ -7,6 +7,7 @@ import './AuthForms.css';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -28,7 +29,8 @@ export default function Login() {
 
     try {
       await login(phone, password);
-      navigate('/home');
+      const redirectTo = location.state?.from || '/home';
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       setErrors({ form: err.response?.data?.message || 'Ошибка входа' });
     }

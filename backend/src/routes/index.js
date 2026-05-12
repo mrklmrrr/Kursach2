@@ -11,6 +11,8 @@ const researchRoutes = require('./research.routes');
 const platformRoutes = require('./platform.routes');
 const prescriptionRoutes = require('./prescription.routes');
 const videoRoomRoutes = require('./video-room.routes');
+const emergencyRequestRoutes = require('./emergency-request.routes');
+const mediaRoutes = require('./media.routes');
 
 module.exports = {
   authRoutes,
@@ -25,5 +27,7 @@ module.exports = {
   researchRoutes,
   platformRoutes,
   prescriptionRoutes,
-  videoRoomRoutes
+  videoRoomRoutes,
+  emergencyRequestRoutes,
+  mediaRoutes
 };

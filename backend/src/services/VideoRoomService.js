@@ -71,22 +71,16 @@ class VideoRoomService {
 
   async joinRoom(roomId, userId, role) {
     const consultation = await this.consultationRepository.findById(roomId);
-    if (!consultation) {
+    if (!consultation?.videoRoom) {
       throw new ApiError(404, 'Room not found');
     }
+
     const videoRoom = consultation.videoRoom;
-    if (!videoRoom || videoRoom.status !== 'waiting') {
+    const vs = videoRoom.status;
+    if (vs === 'ended' || vs === 'failed') {
       throw new ApiError(400, 'Room not available for joining');
     }
 
-    const participant = {
-      userId,
-      role,
-      joinedAt: new Date(),
-      leftAt: null
-    };
-
-    // Check access: doctor or patient of this consultation
     const normalizedUserId = String(userId);
     const normalizedPatientId = String(consultation.patientId || '');
     const userLegacyId = await this._resolveLegacyId(userId);
@@ -94,21 +88,39 @@ class VideoRoomService {
     if (role === 'doctor' && String(consultation.doctorId) !== normalizedUserId) {
       throw new ApiError(403, 'Access denied');
     }
-    if (role === 'patient' && normalizedPatientId !== normalizedUserId && (!userLegacyId || normalizedPatientId !== userLegacyId)) {
+    if (role !== 'doctor' && normalizedPatientId !== normalizedUserId && (!userLegacyId || normalizedPatientId !== userLegacyId)) {
       throw new ApiError(403, 'Access denied');
     }
 
-    const existingParticipants = Array.isArray(consultation.videoRoom?.participants)
-      ? consultation.videoRoom.participants
-      : [];
+    const allParts = Array.isArray(videoRoom.participants) ? [...videoRoom.participants] : [];
+    const withLeft = allParts.filter((p) => p.leftAt);
+    const withoutLeft = allParts.filter((p) => !p.leftAt);
+    const uid = String(userId);
 
-    const updated = await this.consultationRepository.updateVideoRoom(roomId, {
-      'videoRoom.participants': [...existingParticipants, participant],
+    if (withoutLeft.some((p) => String(p.userId) === uid)) {
+      return videoRoom;
+    }
+
+    const normalizedRole = role === 'doctor' ? 'doctor' : 'patient';
+    const now = new Date();
+    const nextActive = [
+      ...withoutLeft,
+      { userId, role: normalizedRole, joinedAt: now, leftAt: null }
+    ];
+
+    const mergedParticipants = [...withLeft, ...nextActive];
+
+    const update = {
+      'videoRoom.participants': mergedParticipants,
       'videoRoom.status': 'active',
       status: 'active'
-    });
+    };
 
-    logger.info(`${role} joined room: ${roomId}`);
+    if (!videoRoom.startedAt && nextActive.length >= 2) {
+      update['videoRoom.startedAt'] = now;
+    }
+
+    const updated = await this.consultationRepository.updateVideoRoom(roomId, update);
     return updated.videoRoom;
   }
 
@@ -116,13 +128,16 @@ class VideoRoomService {
     const consultation = await this.consultationRepository.findById(roomId);
     if (!consultation?.videoRoom) return;
 
-    const participantIdx = consultation.videoRoom.participants.findIndex(
+    const participants = consultation.videoRoom.participants;
+    if (!Array.isArray(participants)) return;
+
+    const participantIdx = participants.findIndex(
       p => String(p.userId) === String(userId) && !p.leftAt
     );
     if (participantIdx === -1) return;
 
     const now = new Date();
-    const updatedParticipants = [...consultation.videoRoom.participants];
+    const updatedParticipants = [...participants];
     updatedParticipants[participantIdx].leftAt = now;
 
     await this.consultationRepository.updateVideoRoom(roomId, {

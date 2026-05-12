@@ -111,8 +111,24 @@ class AuthService {
     return this.formatUser(user);
   }
 
-  updateUser(userId, updates) {
-    return this.userRepository.updateById(userId, updates);
+  async updateUser(userId, updates) {
+    const allowed = { ...(updates || {}) };
+    ['avatarImage', 'avatarMimeType', 'password', 'role', 'legacyId'].forEach((k) => {
+      delete allowed[k];
+    });
+    if (Object.keys(allowed).length === 0) {
+      return this.userRepository.findById(userId);
+    }
+    return this.userRepository.updateById(userId, allowed);
+  }
+
+  async saveAvatarFromUpload(userId, buffer, mimeType) {
+    const canonicalUrl = `/api/media/avatar/${userId}`;
+    return this.userRepository.updateById(userId, {
+      avatarUrl: canonicalUrl,
+      avatarImage: buffer,
+      avatarMimeType: mimeType || 'image/jpeg'
+    });
   }
 
   async changePassword(userId, currentPassword, newPassword) {

@@ -30,6 +30,14 @@ class AppointmentService {
     if (!doctor || !patient) return appointment;
     if (patient.legacyId === undefined || patient.legacyId === null) return appointment;
 
+    const sharedThread = await this.consultationRepository.findLatestThreadForDoctorPatient(
+      appointment.doctorId,
+      patient.legacyId
+    );
+    if (sharedThread?._id) {
+      return this.appointmentRepository.updateConsultationId(appointment._id, sharedThread._id);
+    }
+
     const doctorName = appointment.doctorName
       || `${doctor.firstName || ''} ${doctor.lastName || ''}`.trim();
     const patientName = appointment.patientName

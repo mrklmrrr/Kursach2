@@ -4,6 +4,10 @@ const config = require('./index');
 const { User, Consultation } = require('../models');
 const logger = require('../utils/logger');
 const { hasConsultationAccess } = require('../utils/chatAccess');
+const { isGeneralPractitionerSpecialty } = require('../constants/generalPractitioner');
+
+/** Комната для push-уведомлений о экстренных заявках (врачи общей практики). */
+const EMERGENCY_GP_ROOM = 'emergency-gp';
 
 let io = null;
 const userSockets = new Map();
@@ -34,6 +38,15 @@ function emitToUser(targetUserId, eventName, payload) {
     io.to(socketId).emit(eventName, payload);
   });
   return true;
+}
+
+function emitToEmergencyGp(eventName, payload) {
+  if (!io) return;
+  try {
+    io.to(EMERGENCY_GP_ROOM).emit(eventName, payload);
+  } catch (err) {
+    logger.warn('emitToEmergencyGp failed', { eventName, err: err?.message });
+  }
 }
 
 async function updatePresence(userId, isOnline) {
@@ -117,7 +130,24 @@ async function finalizeVideoCallForAll({
         timestamp: now.toISOString()
       });
       if (savedMessage) {
-        io.to(`chat-${roomId}`).emit('new-message', savedMessage);
+        const chatId = String(roomId);
+        io.to(`chat-${chatId}`).emit('new-message', savedMessage);
+
+        const pushPayload = { chatId, message: savedMessage };
+        emitToUser(consultation.doctorId, 'new-message', pushPayload);
+        emitToUser(consultation.doctorId, 'chat-updated', pushPayload);
+
+        try {
+          if (consultation.patientId != null) {
+            const patientUser = await User.findOne({ legacyId: consultation.patientId }).select('_id').lean();
+            if (patientUser?._id) {
+              emitToUser(patientUser._id, 'new-message', pushPayload);
+              emitToUser(patientUser._id, 'chat-updated', pushPayload);
+            }
+          }
+        } catch (emitErr) {
+          logger.warn('finalizeVideoCall: patient notify failed', { err: emitErr?.message });
+        }
       }
     }
   }
@@ -161,6 +191,21 @@ function setupSocket(server, consultationRepository) {
     if (pendingInvite) {
       socket.emit('video-call-incoming', pendingInvite);
       pendingVideoInvites.delete(String(socket.userId));
+    }
+
+    if (String(socket.userRole) === 'doctor') {
+      void (async () => {
+        try {
+          const u = await User.findById(socket.userId).select('role specialty').lean();
+          if (!u || u.role !== 'doctor') return;
+          if (isGeneralPractitionerSpecialty(u.specialty)) {
+            socket.join(EMERGENCY_GP_ROOM);
+            logger.debug('Socket joined emergency GP room', { userId: String(socket.userId) });
+          }
+        } catch (err) {
+          logger.warn('emergency GP room join skipped', { err: err?.message });
+        }
+      })();
     }
 
     socket.on('join-chat', async (chatId) => {
@@ -441,11 +486,24 @@ function setupSocket(server, consultationRepository) {
           return;
         }
 
+        try {
+          const VideoRoomService = require('../services/VideoRoomService');
+          const vrs = new VideoRoomService(consultationRepository);
+          const joinRole = String(socket.userRole) === 'doctor' ? 'doctor' : 'patient';
+          await vrs.joinRoom(String(roomId), socket.userId, joinRole);
+        } catch (syncErr) {
+          logger.warn('join-video-room: DB participant sync', { roomId, err: syncErr?.message });
+        }
+
+        const fresh = await consultationRepository.findById(roomId);
+        const vr = fresh?.videoRoom || videoRoom;
+
         socket.join(`video-${roomId}`);
-        socket.emit('room-joined', { 
-          roomId, 
-          status: videoRoom.status, 
-          participants: videoRoom.participants || [],
+        socket.emit('room-joined', {
+          roomId,
+          status: vr.status,
+          participants: vr.participants || [],
+          startedAt: vr.startedAt || null,
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' }
@@ -551,4 +609,4 @@ function getIO() {
   return io;
 }
 
-module.exports = { setupSocket, getIO, emitToUser };
+module.exports = { setupSocket, getIO, emitToUser, emitToEmergencyGp };

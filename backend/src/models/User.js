@@ -10,8 +10,11 @@ const userSchema = new mongoose.Schema({
   /** Уникальный ник в приложении (латиница, цифры, _), для связи «родственники» */
   username: { type: String, default: '', trim: true, lowercase: true },
   email: { type: String, index: { unique: true, sparse: true, name: 'unique_email_idx' } },
-  /** Путь к файлу аватара, например /uploads/avatars/xxx.jpg */
+  /** Публичный URL аватара (например /api/media/avatar/:id) или внешняя ссылка */
   avatarUrl: { type: String, default: '' },
+  /** Бинарные данные аватара (MongoDB); не отдаём в обычных JSON-ответах */
+  avatarImage: { type: Buffer, select: false, default: undefined },
+  avatarMimeType: { type: String, select: false, default: '' },
   password: { type: String },
   birthDate: { type: String },
   gender: { type: String },
@@ -40,6 +43,17 @@ const userSchema = new mongoose.Schema({
   /** Когда последний раз отправляли напоминание о рекомендациях */
   lastHealthPushAt: { type: Date, default: null }
 }, { timestamps: true, autoIndex: false });
+
+function stripAvatarBinary(_doc, ret) {
+  if (ret && typeof ret === 'object') {
+    delete ret.avatarImage;
+    delete ret.avatarMimeType;
+  }
+  return ret;
+}
+
+userSchema.set('toJSON', { transform: stripAvatarBinary });
+userSchema.set('toObject', { transform: stripAvatarBinary });
 
 // Индексы
 userSchema.index({ legacyId: 1 }, { name: 'legacyId_idx' });

@@ -227,6 +227,30 @@
   background: linear-gradient(180deg, #eef2ff 0%, #ffffff 100%);
 }
 
+.emergency-requests-block {
+  margin-bottom: 8px;
+}
+
+.emergency-requests-heading {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #991b1b;
+}
+
+.emergency-requests-hint {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #6b7280;
+}
+
+.consultation-card--emergency {
+  border: 1px solid #fecaca;
+  background: linear-gradient(180deg, #fff1f2 0%, #ffffff 100%);
+  flex-wrap: wrap;
+}
+
 .consult-video-room-hint {
   margin: 10px 0 0;
   font-size: 0.8rem;
@@ -1600,6 +1624,19 @@ body.dark .patients-search-input::placeholder {
 body.dark .consultation-card--imminent {
   background: linear-gradient(180deg, rgba(79, 70, 229, 0.25) 0%, #1f2937 100%);
   border-color: rgba(129, 140, 248, 0.55);
+}
+
+body.dark .consultation-card--emergency {
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.2) 0%, #1f2937 100%);
+  border-color: rgba(248, 113, 113, 0.45);
+}
+
+body.dark .emergency-requests-heading {
+  color: #fca5a5;
+}
+
+body.dark .emergency-requests-hint {
+  color: #9ca3af;
 }
 
 body.dark .schedule-day-toolbar {

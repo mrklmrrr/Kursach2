@@ -4,6 +4,8 @@ import { doctorPanelApi } from '@services/doctorPanelApi';
 import { appointmentApi } from '@services/appointmentApi';
 import { toDateTime, toDateInputValue } from '@utils/date';
 import { isOnlineAppointmentVisibleInUpcoming } from '@utils/onlineAppointmentJoinWindow';
+import { isGeneralPractitionerSpecialty } from '@utils/generalPractitionerSpecialty';
+import { getChatSocket } from '@services/chatSocket';
 
 /** Слот ещё в «предстоящих»: офлайн — до начала; онлайн — до конца слота + запас (как в общем расписании). */
 function isSlotStillUpcoming(item, nowMs) {
@@ -27,6 +29,7 @@ export const useDoctorPanelData = () => {
   const [scheduleClock, setScheduleClock] = useState(() => Date.now());
   /** Дата списка в расписании (YYYY-MM-DD), по умолчанию сегодня */
   const [scheduleViewDate, setScheduleViewDate] = useState(() => toDateInputValue(new Date()));
+  const [emergencyRequests, setEmergencyRequests] = useState([]);
 
   useEffect(() => {
     const id = window.setInterval(() => setScheduleClock(Date.now()), 30000);
@@ -111,6 +114,70 @@ export const useDoctorPanelData = () => {
     });
     return map;
   }, [patients]);
+
+  const isGeneralPracticeDoctor = useMemo(
+    () => isGeneralPractitionerSpecialty(profile?.specialty),
+    [profile?.specialty]
+  );
+
+  const refreshEmergencyRequests = useCallback(async () => {
+    try {
+      const res = await doctorPanelApi.getEmergencyRequests();
+      setEmergencyRequests(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setEmergencyRequests([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isGeneralPracticeDoctor) {
+      setEmergencyRequests([]);
+      return undefined;
+    }
+    refreshEmergencyRequests();
+    const id = window.setInterval(refreshEmergencyRequests, 45000);
+    return () => window.clearInterval(id);
+  }, [isGeneralPracticeDoctor, refreshEmergencyRequests]);
+
+  useEffect(() => {
+    if (!isGeneralPracticeDoctor) return undefined;
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) return undefined;
+
+    const socket = getChatSocket(token);
+
+    const onCreated = (payload) => {
+      if (!payload?.id) return;
+      setEmergencyRequests((prev) => {
+        if (prev.some((r) => String(r.id) === String(payload.id))) return prev;
+        const next = [
+          ...prev,
+          {
+            id: payload.id,
+            patientName: payload.patientName,
+            createdAt: payload.createdAt,
+            expiresAt: payload.expiresAt
+          }
+        ];
+        next.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+        return next;
+      });
+    };
+
+    const onRemoved = (payload) => {
+      if (payload?.id == null) return;
+      const rid = String(payload.id);
+      setEmergencyRequests((prev) => prev.filter((r) => String(r.id) !== rid));
+    };
+
+    socket.on('emergency-request-created', onCreated);
+    socket.on('emergency-request-removed', onRemoved);
+
+    return () => {
+      socket.off('emergency-request-created', onCreated);
+      socket.off('emergency-request-removed', onRemoved);
+    };
+  }, [isGeneralPracticeDoctor]);
 
   const handleFormChange = useCallback((e) => {
     setAppointmentForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -201,6 +268,17 @@ export const useDoctorPanelData = () => {
         setWorkingHours({ start: '09:00', end: '18:00' });
         setWorkingDays(['mon', 'tue', 'wed', 'thu', 'fri']);
       }
+
+      if (profileRes.status === 'fulfilled' && isGeneralPractitionerSpecialty(profileRes.value.data?.specialty)) {
+        try {
+          const er = await doctorPanelApi.getEmergencyRequests();
+          setEmergencyRequests(Array.isArray(er.data) ? er.data : []);
+        } catch {
+          setEmergencyRequests([]);
+        }
+      } else {
+        setEmergencyRequests([]);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -213,6 +291,7 @@ export const useDoctorPanelData = () => {
     workingHours, setWorkingHours, workingDays, setWorkingDays, loading, hasLoaded: !!profile,
     loadData, refreshAppointments, upcomingSchedule, scheduleViewDate, setScheduleViewDate,
     scheduleForViewDate, todayYmd, todayScheduleCount, activeAppointmentsCount, patientById,
+    emergencyRequests, refreshEmergencyRequests, isGeneralPracticeDoctor,
     appointmentForm, handleFormChange, handleAssignAppointment, handleSaveWorkingHours,
     openCommentModal, closeCommentModal, saveComment,
     openMedicalRecord, closeMedicalRecord, medicalRecord: { modal: { open: medicalRecordModalVisible }, tab: medicalRecordTab, expandedSection: medicalRecordExpandedSection, historyOpen: medicalRecordHistoryOpen, showSickLeaveHistory: medicalRecordShowSickLeaveHistory, setTab, setExpandedSection, setHistoryOpen, setShowSickLeaveHistory, updateMedicalField, saveSection, addSickLeaveDraft, updateSickLeaveField, saveSickLeave, closeMedicalRecord: closeMedicalRecord },

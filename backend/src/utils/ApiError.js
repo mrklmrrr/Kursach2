@@ -20,6 +20,10 @@ class ApiError extends Error {
   static notFound(message = 'Ресурс не найден') {
     return new ApiError(404, message);
   }
+
+  static conflict(message = 'Конфликт') {
+    return new ApiError(409, message);
+  }
 }
 
 module.exports = ApiError;

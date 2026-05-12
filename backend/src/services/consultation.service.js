@@ -23,6 +23,10 @@ class ConsultationService {
     return this.consultationRepository.findChatsForUser(userId, userRole);
   }
 
+  async findLatestThreadForDoctorPatient(doctorId, patientLegacyId) {
+    return this.consultationRepository.findLatestThreadForDoctorPatient(doctorId, patientLegacyId);
+  }
+
   async getMessages(consultationId) {
     return this.consultationRepository.getMessages(consultationId);
   }

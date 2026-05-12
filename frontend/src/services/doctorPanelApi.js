@@ -50,5 +50,10 @@ export const doctorPanelApi = {
       return response;
     });
   },
-  getPatientDependents: (patientId) => api.get(`/doctor/patients/${patientId}/dependents`)
+  getPatientDependents: (patientId) => api.get(`/doctor/patients/${patientId}/dependents`),
+  getEmergencyRequests: () => api.get('/doctor/emergency-requests'),
+  acceptEmergencyRequest: (id) => {
+    apiCache.delete(CONSULTATIONS_CACHE_KEY);
+    return api.post(`/doctor/emergency-requests/${id}/accept`);
+  }
 };

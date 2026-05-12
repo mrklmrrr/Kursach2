@@ -153,6 +153,25 @@ const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, o
       {activeTab === 'requests' && (
         <RequestsTab
           imminentOnlineConsultation={imminentOnlineConsultation}
+          emergencyRequests={panelData.emergencyRequests}
+          isGeneralPracticeDoctor={panelData.isGeneralPracticeDoctor}
+          onAcceptEmergencyRequest={async (requestId) => {
+            try {
+              const res = await doctorPanelApi.acceptEmergencyRequest(requestId);
+              const body = res?.data || {};
+              const rawId = body.consultationId ?? body.consultation?._id ?? body.consultation?.id;
+              const cid = rawId != null && rawId !== '' ? String(rawId) : '';
+              toast(body.message || 'Заявка принята', 'success');
+              if (cid) {
+                navigate(`/doctor/video/${cid}`, { replace: true, state: { consultationId: cid } });
+              } else {
+                toast('Не удалось открыть видео: нет идентификатора консультации', 'error');
+              }
+              void panelData.refreshEmergencyRequests();
+            } catch (err) {
+              toast(err.response?.data?.message || 'Не удалось принять заявку', 'error');
+            }
+          }}
           onOpenPatientProfile={(patientId, fallbackName) => {
             onOpenPatientProfile(patientId, fallbackName);
           }}
@@ -168,7 +187,7 @@ const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, o
             try {
               const response = await videoRoomApi.createRoom(consultationId);
               const roomId = response?.data?.roomId || consultationId;
-              navigate(`/video-room/${roomId}`, { state: { consultationId } });
+              navigate(`/doctor/video/${roomId}`, { state: { consultationId } });
             } catch (err) {
               const message = err?.response?.data?.message || 'Не удалось создать видеокомнату';
               toast(message, 'error');

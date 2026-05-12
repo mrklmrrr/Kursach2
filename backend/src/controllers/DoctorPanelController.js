@@ -2,10 +2,11 @@ const { consultationStatus } = require('../constants');
 const ApiError = require('../utils/ApiError');
 
 class DoctorPanelController {
-  constructor(doctorService, consultationService, dependentService) {
+  constructor(doctorService, consultationService, dependentService, emergencyRequestService) {
     this.doctorService = doctorService;
     this.consultationService = consultationService;
     this.dependentService = dependentService;
+    this.emergencyRequestService = emergencyRequestService;
   }
 
   /** Профиль врача */
@@ -69,6 +70,28 @@ class DoctorPanelController {
       throw ApiError.notFound('Консультация не найдена');
     }
     res.json({ message: 'Консультация завершена', consultation });
+  }
+
+  /** Экстренные заявки (только врачи общей практики; для остальных — пустой массив) */
+  async getEmergencyRequests(req, res) {
+    const rows = await this.emergencyRequestService.listOpenForGpDoctor(req.userId);
+    const mapped = (rows || []).map((r) => ({
+      id: r._id,
+      patientName: r.patientName,
+      createdAt: r.createdAt,
+      expiresAt: r.expiresAt
+    }));
+    res.json(mapped);
+  }
+
+  /** Принять экстренную заявку и создать консультацию */
+  async acceptEmergencyRequest(req, res) {
+    const { consultation } = await this.emergencyRequestService.acceptRequest(req.params.id, req.userId);
+    res.json({
+      message: 'Заявка принята',
+      consultationId: consultation._id,
+      consultation
+    });
   }
 
   /** Список пациентов */

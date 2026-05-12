@@ -325,7 +325,12 @@ export default function ChatRoom() {
       }
     };
 
-    const handleMessage = (newMessage) => {
+    const handleMessage = (payload) => {
+      const wrapped = payload && typeof payload === 'object' && payload.chatId != null && payload.message != null;
+      const newMessage = wrapped ? payload.message : payload;
+      if (wrapped && String(payload.chatId) !== String(id)) {
+        return;
+      }
       setMessages((prev) => {
         if (prev.some((m) => m._id === newMessage._id || m.id === newMessage.id)) {
           return prev;
@@ -505,20 +510,36 @@ export default function ChatRoom() {
     if (/^(data:|blob:)/i.test(raw)) return raw;
 
     const backendOrigin = getBackendOriginSafe();
+
+    const withChatMediaToken = (href) => {
+      if (!token || !/\/api\/media\/chat\//i.test(href)) return href;
+      try {
+        const u = /^https?:\/\//i.test(href) ? new URL(href) : new URL(href, backendOrigin);
+        if (!u.searchParams.has('access_token')) {
+          u.searchParams.set('access_token', token);
+        }
+        return u.href;
+      } catch {
+        const sep = href.includes('?') ? '&' : '?';
+        return `${href}${sep}access_token=${encodeURIComponent(token)}`;
+      }
+    };
+
     if (/^https?:\/\//i.test(raw)) {
       try {
         const parsed = new URL(raw);
         const currentHost = window.location.hostname;
         if (isLocalHost(parsed.hostname) && !isLocalHost(currentHost)) {
-          return `${backendOrigin}${parsed.pathname}${parsed.search}${parsed.hash}`;
+          return withChatMediaToken(`${backendOrigin}${parsed.pathname}${parsed.search}${parsed.hash}`);
         }
       } catch {
-        return raw;
+        return withChatMediaToken(raw);
       }
-      return raw;
+      return withChatMediaToken(raw);
     }
-    return `${backendOrigin}${raw.startsWith('/') ? raw : `/${raw}`}`;
-  }, []);
+    const relative = raw.startsWith('/') ? raw : `/${raw}`;
+    return withChatMediaToken(`${backendOrigin}${relative}`);
+  }, [token]);
 
   const handleHeaderProfileClick = () => {
     if (isDoctor) {

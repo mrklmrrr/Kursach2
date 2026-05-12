@@ -17,6 +17,7 @@ export const ROUTES = {
   CHATS: '/chats',
   CHAT_ROOM: (id) => `/chat/${id}`,
   EMERGENCY: '/emergency',
+  EMERGENCY_WAIT: '/emergency/wait',
   PROFILE: '/profile',
   ADD_RELATIVE: '/profile/add-relative',
   CONFIRM: '/confirm',

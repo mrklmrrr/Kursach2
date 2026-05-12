@@ -1,13 +1,25 @@
 import { useNavigate } from 'react-router-dom';
 import { AppHeader, BottomNav, UserSidebar } from '../../../components/layout';
 import { ROUTES } from '../../../constants';
+import { useAuth } from '../../../hooks/useAuth';
+import { useToast } from '../../../contexts/ToastProvider/useToast';
 import './Emergency.css';
 
 export default function Emergency() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { showToast } = useToast();
 
   const handleEmergency = () => {
-    navigate(ROUTES.CONSULTATION('emergency'));
+    if (!user) {
+      navigate('/login', { state: { from: ROUTES.EMERGENCY_WAIT } });
+      return;
+    }
+    if (user.role !== 'patient') {
+      showToast('Экстренный вызов доступен в кабинете пациента', 'error');
+      return;
+    }
+    navigate(ROUTES.EMERGENCY_WAIT);
   };
 
   return (

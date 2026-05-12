@@ -2,6 +2,41 @@ const { hasConsultationAccess } = require('../utils/chatAccess');
 const { resolveAvatarUrl } = require('../utils/userSerializer');
 const ApiError = require('../utils/ApiError');
 const { User } = require('../models');
+const { uploadChatFile, deleteChatFile } = require('../services/chatMediaStorage');
+
+function lastMessageTimestamp(chat) {
+  const ts = chat?.lastMessage?.timestamp || chat?.updatedAt || null;
+  const t = new Date(ts || 0).getTime();
+  return Number.isNaN(t) ? 0 : t;
+}
+
+/** Схлопывает несколько консультаций одной пары врач–пациент в один элемент списка чатов */
+function mergeChatListRowsByDoctorPatient(chats) {
+  if (!Array.isArray(chats) || chats.length <= 1) return chats;
+  const groups = new Map();
+  for (const chat of chats) {
+    const key = `${String(chat.doctorId)}|${String(chat.patientId ?? '')}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(chat);
+  }
+  const merged = [];
+  for (const [, group] of groups) {
+    if (group.length === 1) {
+      merged.push(group[0]);
+      continue;
+    }
+    group.sort((a, b) => {
+      const d = lastMessageTimestamp(b) - lastMessageTimestamp(a);
+      if (d !== 0) return d;
+      return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+    });
+    const primary = { ...group[0] };
+    primary.unreadCount = group.reduce((s, c) => s + Number(c.unreadCount || 0), 0);
+    merged.push(primary);
+  }
+  merged.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+  return merged;
+}
 
 const ConsultationController = class {
   constructor(consultationService, userRepository, doctorRepository) {
@@ -26,6 +61,18 @@ const ConsultationController = class {
     const user = await this.userRepository.findById(req.userId);
     if (!user) {
       throw ApiError.unauthorized('Пользователь не найден');
+    }
+
+    const existing = await this.consultationService.findLatestThreadForDoctorPatient(
+      doctor._id,
+      user.legacyId
+    );
+    if (existing?._id) {
+      return res.json({
+        consultationId: existing._id,
+        ...existing,
+        reused: true
+      });
     }
 
     const consultation = await this.consultationService.create({
@@ -124,7 +171,7 @@ const ConsultationController = class {
       }
     });
 
-    const chats = consultations.map((consultation) => {
+    let chats = consultations.map((consultation) => {
       const messages = consultation.messages || [];
       const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
       const doctorInfo = doctorMap.get(String(consultation.doctorId)) || {
@@ -188,6 +235,8 @@ const ConsultationController = class {
         companion
       };
     });
+
+    chats = mergeChatListRowsByDoctorPatient(chats);
 
     res.json(chats);
   }
@@ -337,26 +386,41 @@ const ConsultationController = class {
     if (!(await this._hasChatAccess(consultation, req.userId, req.userRole))) {
       throw ApiError.forbidden('Нет доступа к этому чату');
     }
-    if (!req.file) {
+    if (!req.file || !req.file.buffer) {
       throw ApiError.badRequest('Файл не передан');
     }
 
     const fileType = this._resolveMessageType(req.file.mimetype);
-    const publicPath = `/uploads/chat/${req.file.filename}`;
-    const savedMessage = await this.consultationService.addMessage(consultation._id, {
-      messageType: fileType,
-      message: String(req.body.message || '').trim(),
-      sender: this._resolveSender(req.userRole),
-      senderId: String(req.userId),
-      timestamp: new Date().toISOString(),
-      fileUrl: publicPath,
-      fileName: req.file.originalname,
-      fileMimeType: req.file.mimetype,
-      fileSize: req.file.size
-    }, this._resolveUnreadReceiverBySenderRole(req.userRole));
+    const safeOriginal = String(req.file.originalname || 'file').replace(/[^\w.\-()\s\u0400-\u04FF]/g, '_').slice(0, 200);
 
-    await this._emitChatUpdateToParticipants(consultation, savedMessage);
-    res.status(201).json(savedMessage);
+    let gridFileId = null;
+    try {
+      gridFileId = await uploadChatFile(req.file.buffer, safeOriginal, {
+        consultationId: String(consultation._id),
+        mimeType: req.file.mimetype,
+        fileName: req.file.originalname || safeOriginal
+      });
+      const publicPath = `/api/media/chat/${String(gridFileId)}`;
+      const savedMessage = await this.consultationService.addMessage(consultation._id, {
+        messageType: fileType,
+        message: String(req.body.message || '').trim(),
+        sender: this._resolveSender(req.userRole),
+        senderId: String(req.userId),
+        timestamp: new Date().toISOString(),
+        fileUrl: publicPath,
+        fileName: req.file.originalname,
+        fileMimeType: req.file.mimetype,
+        fileSize: req.file.size
+      }, this._resolveUnreadReceiverBySenderRole(req.userRole));
+
+      await this._emitChatUpdateToParticipants(consultation, savedMessage);
+      res.status(201).json(savedMessage);
+    } catch (err) {
+      if (gridFileId) {
+        await deleteChatFile(String(gridFileId));
+      }
+      throw err;
+    }
   }
 
   async _hasChatAccess(consultation, userId, userRole) {

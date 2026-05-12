@@ -30,6 +30,27 @@ class ConsultationRepository {
     return consultation || null;
   }
 
+  /**
+   * Один «поток» на пару врач–пациент (patientId = legacyId пациента в этой схеме).
+   * Используется чтобы не плодить дубли чатов при видео, записи и т.п.
+   */
+  async findLatestThreadForDoctorPatient(doctorId, patientLegacyId) {
+    if (patientLegacyId === undefined || patientLegacyId === null) return null;
+    const resolved = resolveId(doctorId);
+    if (!resolved?.byObjectId) return null;
+    const lid = Number(patientLegacyId);
+    const patientCandidates = Number.isNaN(lid)
+      ? [patientLegacyId, String(patientLegacyId)]
+      : [lid, String(lid)];
+    const consultation = await Consultation.findOne({
+      doctorId: resolved.byObjectId,
+      patientId: { $in: patientCandidates }
+    })
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .lean();
+    return consultation || null;
+  }
+
   async findByPatientId(patientId) {
     // Ищем консультации пациента по legacyId (number) и при необходимости по строковому значению.
     // Это нужно для совместимости со старыми и новыми данными.

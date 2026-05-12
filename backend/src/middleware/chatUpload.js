@@ -1,42 +1,26 @@
 const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
-let fileTypeFromFileCompat = null;
+const ApiError = require('../utils/ApiError');
 
-async function detectFileType(filePath) {
-  if (!fileTypeFromFileCompat) {
+let fileTypeFromBufferCompat = null;
+
+async function getFileTypeFromBuffer(buffer) {
+  if (!fileTypeFromBufferCompat) {
     const fileTypeModule = await import('file-type');
-    fileTypeFromFileCompat = fileTypeModule.fileTypeFromFile
-      || (fileTypeModule.default && fileTypeModule.default.fileTypeFromFile);
+    fileTypeFromBufferCompat = fileTypeModule.fileTypeFromBuffer
+      || (fileTypeModule.default && fileTypeModule.default.fileTypeFromBuffer);
   }
-
-  if (typeof fileTypeFromFileCompat !== 'function') {
-    const ApiError = require('../utils/ApiError');
+  if (typeof fileTypeFromBufferCompat !== 'function') {
     throw new ApiError(500, 'file-type detector is unavailable');
   }
-
-  return fileTypeFromFileCompat(filePath);
+  return fileTypeFromBufferCompat(buffer);
 }
 
-const chatUploadDir = path.join(process.cwd(), 'uploads', 'chat');
-
-if (!fs.existsSync(chatUploadDir)) {
-  fs.mkdirSync(chatUploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, chatUploadDir),
-  filename: (req, file, cb) => {
-    const safeOriginalName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-    cb(null, `${Date.now()}-${safeOriginalName}`);
-  }
-});
+const storage = multer.memoryStorage();
 
 function fileFilter(req, file, cb) {
   const isImage = file.mimetype.startsWith('image/');
   const isVideo = file.mimetype.startsWith('video/');
   if (!isImage && !isVideo) {
-    const ApiError = require('../utils/ApiError');
     return cb(new ApiError(400, 'Разрешены только фото и видео'));
   }
   cb(null, true);
@@ -51,23 +35,20 @@ const chatUpload = multer({
 });
 
 async function validateUploadedFile(req, res, next) {
-  if (!req.file || !req.file.path) {
+  if (!req.file || !req.file.buffer) {
     return next();
   }
 
   try {
-    const detectedType = await detectFileType(req.file.path);
+    const slice = req.file.buffer.length > 4100 ? req.file.buffer.subarray(0, 4100) : req.file.buffer;
+    const detectedType = await getFileTypeFromBuffer(slice);
     const validMime = detectedType && (detectedType.mime.startsWith('image/') || detectedType.mime.startsWith('video/'));
     if (!validMime) {
-      fs.unlinkSync(req.file.path);
-      return next(new Error('Файл не прошел проверку сигнатуры'));
+      return next(ApiError.badRequest('Файл не прошел проверку сигнатуры'));
     }
     return next();
-  } catch (error) {
-    if (fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
-    return next(require('../utils/ApiError').badRequest('Ошибка проверки загруженного файла'));
+  } catch {
+    return next(ApiError.badRequest('Ошибка проверки загруженного файла'));
   }
 }
 
