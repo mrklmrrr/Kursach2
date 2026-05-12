@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { doctorPanelApi } from '@services/doctorPanelApi';
 import { videoRoomApi } from '@services/videoRoomApi';
@@ -19,6 +19,7 @@ import {
 } from './components';
 import DoctorSidebar from './components/DoctorSidebar/DoctorSidebar';
 import { SkeletonStats, SkeletonConsultationList, SkeletonAppointmentsList, SkeletonCircle, SkeletonBlock } from '@components/ui/SkeletonLoader/SkeletonLoader';
+import { isWithinOnlineJoinWindow, parseAppointmentStartMs } from '@utils/onlineAppointmentJoinWindow';
 import './DoctorPanel.css';
 
 const TAB_MAP = {
@@ -32,17 +33,24 @@ const TAB_MAP = {
 const VALID_TABS = Object.keys(TAB_MAP);
 
 const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, onOpenPatientMedicalRecord, panelData, toast, navigate }) => {
+  const [panelClock, setPanelClock] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setPanelClock(Date.now()), 15000);
+    return () => clearInterval(id);
+  }, []);
+
   const removeAppointment = (appointmentId) => {
     panelData.setAppointments((prev) => prev.filter((item) => item._id !== appointmentId));
   };
-  const now = new Date();
+  const nowMs = panelClock;
   const imminentOnlineConsultation = panelData.upcomingSchedule.find((item) => {
-    const dateTime = item.dateTime || new Date(`${item.date}T${item.time}:00`);
-    if (Number.isNaN(dateTime.getTime())) return false;
-    if (!['online'].includes(String(item.consultationType || item.type || '').toLowerCase())) return false;
-    const msToStart = dateTime.getTime() - now.getTime();
-    const durationMs = (Number(item.duration) || 30) * 60 * 1000;
-    return msToStart <= 10 * 60 * 1000 && msToStart >= -durationMs;
+    const startMs = item.dateTime
+      ? item.dateTime.getTime()
+      : parseAppointmentStartMs(item.date, item.time);
+    if (Number.isNaN(startMs)) return false;
+    if (String(item.consultationType || item.type || '').toLowerCase() !== 'online') return false;
+    return isWithinOnlineJoinWindow(nowMs, startMs, item.duration);
   });
 
   const resolvePatient = (patientId, fallbackName) => {
@@ -102,7 +110,6 @@ const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, o
     <div className="page-shell page-shell--flex-grow">
       <ProfileHeader profile={profile} isOnline={profile?.isOnline} onToggleOnline={handleToggleOnline} />
       <DoctorPanelStats
-        pendingConsultationsCount={panelData.pendingConsultations?.length ?? 0}
         upcomingScheduleCount={panelData.upcomingSchedule?.length ?? 0}
         activeAppointmentsCount={panelData.activeAppointmentsCount}
       />
@@ -113,9 +120,6 @@ const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, o
           onClick={() => navigate('/doctor/permit')}
         >
           Заявки
-          {(panelData.pendingConsultations?.length ?? 0) > 0 && (
-            <span className="badge">{panelData.pendingConsultations?.length}</span>
-          )}
         </button>
         <button
           type="button"
@@ -123,8 +127,8 @@ const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, o
           onClick={() => navigate('/doctor/schedule')}
         >
           Расписание
-          {panelData.upcomingSchedule?.length > 0 && (
-            <span className="badge">{panelData.upcomingSchedule.length}</span>
+          {panelData.todayScheduleCount > 0 && (
+            <span className="badge">{panelData.todayScheduleCount}</span>
           )}
         </button>
         <button
@@ -148,7 +152,6 @@ const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, o
 
       {activeTab === 'requests' && (
         <RequestsTab
-          consultations={panelData.pendingConsultations}
           imminentOnlineConsultation={imminentOnlineConsultation}
           onOpenPatientProfile={(patientId, fallbackName) => {
             onOpenPatientProfile(patientId, fallbackName);
@@ -157,7 +160,7 @@ const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, o
             const patient = resolvePatient(patientId, fallbackName);
             onOpenPatientMedicalRecord(patient);
           }}
-          onStartCall={async (consultationId) => {
+          onStartVideoRoom={async (consultationId) => {
             if (!consultationId) {
               toast('Нет ссылки на консультацию. Попросите пациента оплатить и открыть чат.', 'error');
               return;
@@ -167,18 +170,19 @@ const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, o
               const roomId = response?.data?.roomId || consultationId;
               navigate(`/video-room/${roomId}`, { state: { consultationId } });
             } catch (err) {
-              const message = err?.response?.data?.message || 'Не удалось запустить звонок';
+              const message = err?.response?.data?.message || 'Не удалось создать видеокомнату';
               toast(message, 'error');
             }
           }}
-          onAccept={(id) => panelData.handleAcceptConsultation?.(id)}
-          onReject={(id) => panelData.handleRejectConsultation?.(id)}
         />
       )}
 
       {activeTab === 'upcoming' && (
         <UpcomingTab
-          schedule={panelData.upcomingSchedule}
+          schedule={panelData.scheduleForViewDate}
+          selectedDate={panelData.scheduleViewDate}
+          onSelectDate={panelData.setScheduleViewDate}
+          todayYmd={panelData.todayYmd}
           onSelectPatient={(patientId, fallbackName) => {
             const pat = panelData.patientById?.get(String(patientId));
             onOpenPatientProfile(patientId, fallbackName || (pat ? pat.name : 'Пациент'));

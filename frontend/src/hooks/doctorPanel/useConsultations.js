@@ -1,42 +1,6 @@
 import { useState } from 'react';
 import { useToast } from '@contexts/ToastProvider/useToast';
-import { doctorPanelApi } from '@services/doctorPanelApi';
 import { appointmentApi } from '@services/appointmentApi';
-
-export const useConsultations = () => {
-  const { showToast } = useToast();
-
-  const handleAccept = async (id, onSuccess) => {
-    try {
-      await doctorPanelApi.acceptConsultation(id);
-      if (typeof onSuccess === 'function') {
-        onSuccess(id);
-      }
-      return true;
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Ошибка', 'error');
-      return false;
-    }
-  };
-
-  const handleReject = async (id, onSuccess) => {
-    try {
-      await doctorPanelApi.rejectConsultation(id);
-      if (typeof onSuccess === 'function') {
-        onSuccess(id);
-      }
-      return true;
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Ошибка', 'error');
-      return false;
-    }
-  };
-
-  return {
-    handleAccept,
-    handleReject
-  };
-};
 
 export const useCommentModal = () => {
   const { showToast } = useToast();

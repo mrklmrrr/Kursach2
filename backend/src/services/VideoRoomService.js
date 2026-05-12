@@ -52,7 +52,10 @@ class VideoRoomService {
     const updateData = {
       'videoRoom.roomId': roomId,
       'videoRoom.status': 'waiting',
-      'videoRoom.startedAt': null
+      'videoRoom.startedAt': null,
+      'videoRoom.endedAt': null,
+      'videoRoom.duration': null,
+      'videoRoom.participants': []
     };
     
     // Only update consultation status if it's pending (first time)
@@ -95,8 +98,12 @@ class VideoRoomService {
       throw new ApiError(403, 'Access denied');
     }
 
+    const existingParticipants = Array.isArray(consultation.videoRoom?.participants)
+      ? consultation.videoRoom.participants
+      : [];
+
     const updated = await this.consultationRepository.updateVideoRoom(roomId, {
-      'videoRoom.participants': [...consultation.videoRoom.participants, participant],
+      'videoRoom.participants': [...existingParticipants, participant],
       'videoRoom.status': 'active',
       status: 'active'
     });

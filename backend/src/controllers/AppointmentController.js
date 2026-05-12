@@ -29,7 +29,8 @@ class AppointmentController {
   /** Получить записи текущего пользователя (пациента) */
   async getByPatient(req, res) {
     const appointments = await this.appointmentService.getByPatientId(req.userId);
-    res.json(appointments);
+    const withConsultations = await this.appointmentService.attachMissingConsultationsForOnline(appointments);
+    res.json(withConsultations);
   }
 
   /** Пациент: оплатить прием перед началом */
@@ -44,7 +45,8 @@ class AppointmentController {
   /** Получить записи врача */
   async getByDoctor(req, res) {
     const appointments = await this.appointmentService.getByDoctorId(req.userId);
-    res.json(appointments);
+    const withConsultations = await this.appointmentService.attachMissingConsultationsForOnline(appointments);
+    res.json(withConsultations);
   }
 
   /** Получить доступные слоты для врача на дату */

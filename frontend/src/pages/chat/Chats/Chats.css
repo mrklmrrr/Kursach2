@@ -24,7 +24,9 @@
 }
 
 .chat-search-wrap {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .doctor-search-results {
@@ -35,12 +37,11 @@
 }
 
 .doctor-search-results--inline {
-  position: absolute;
-  z-index: 20;
-  top: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  flex-shrink: 0;
+  width: 100%;
+  max-height: min(45vh, 320px);
+  overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
 }
 
 .doctor-search-inline-title {

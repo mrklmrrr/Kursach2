@@ -141,7 +141,11 @@ async function startApp() {
   const consultationService = new ConsultationService(consultationRepository);
   const paymentService = new PaymentService(consultationRepository);
   const dependentService = new DependentService(dependentRepository, userRepository);
-  const appointmentService = new AppointmentService(appointmentRepository, userRepository);
+  const appointmentService = new AppointmentService(
+    appointmentRepository,
+    userRepository,
+    consultationRepository
+  );
   const medicalRecordService = new MedicalRecordService(medicalRecordRepository, userRepository);
   const videoRoomService = new VideoRoomService(consultationRepository);
 

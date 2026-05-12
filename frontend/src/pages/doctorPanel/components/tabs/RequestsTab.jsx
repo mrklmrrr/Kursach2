@@ -7,13 +7,10 @@ const formatDateTime = (date, time) => {
 };
 
 export default function RequestsTab({
-  consultations,
   imminentOnlineConsultation,
   onOpenPatientProfile,
   onOpenPatientMedicalRecord,
-  onStartCall,
-  onAccept,
-  onReject
+  onStartVideoRoom
 }) {
   return (
     <div className="consultations-list">
@@ -25,15 +22,18 @@ export default function RequestsTab({
             <p className="consult-date">
               Начало: {formatDateTime(imminentOnlineConsultation.date, imminentOnlineConsultation.time)}
             </p>
-            <span className="status-badge active">До начала менее 10 минут</span>
+            <span className="status-badge active">Видеокомната: за 10 мин до начала и во время приёма</span>
+            <p className="consult-video-room-hint">
+              Создайте комнату — пациент подключится с главной страницы из блока «Ближайшие записи» или из деталей записи.
+            </p>
           </div>
           <div className="consultation-actions consultation-actions--stacked">
             <button
               type="button"
               className="start-btn"
-              onClick={() => onStartCall?.(imminentOnlineConsultation.consultationId)}
+              onClick={() => onStartVideoRoom?.(imminentOnlineConsultation.consultationId)}
             >
-              Начать звонок
+              Создать видеокомнату
             </button>
             <button
               type="button"
@@ -53,35 +53,13 @@ export default function RequestsTab({
         </div>
       )}
 
-      {consultations.length === 0 ? (
+      {!imminentOnlineConsultation && (
         <EmptyState
           variant="plain"
-          icon="inbox"
-          title="Нет ожидающих заявок"
-          description="Новые запросы на консультацию появятся здесь, когда пациенты запишутся к вам."
+          icon="event_available"
+          title="Нет ближайших онлайн-приёмов"
+          description="Когда у вас запланирована онлайн-консультация, за 10 минут до начала здесь появится блок для создания видеокомнаты. Список записей — во вкладке «Расписание»."
         />
-      ) : (
-        consultations.map(c => (
-          <div key={c._id} className="consultation-card pending">
-            <div className="consultation-info">
-              <h3>{c.patientName}</h3>
-              <p className="consult-type">
-                {c.type === 'offline' || c.type === 'chat' ? '🏥 Офлайн' : '🌐 Онлайн'}
-              </p>
-              <p className="consult-date">
-                {c.createdAt ? new Date(c.createdAt).toLocaleDateString('ru-RU') : '—'}
-              </p>
-            </div>
-            <div className="consultation-actions">
-              <button className="accept-btn" onClick={() => onAccept(c._id)}>
-                ✓ Принять
-              </button>
-              <button className="reject-btn" onClick={() => onReject(c._id)}>
-                ✕ Отклонить
-              </button>
-            </div>
-          </div>
-        ))
       )}
     </div>
   );

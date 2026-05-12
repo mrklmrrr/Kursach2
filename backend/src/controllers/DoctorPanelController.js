@@ -49,13 +49,6 @@ class DoctorPanelController {
     res.json(consultations);
   }
 
-  /** Заявки на консультацию (pending) */
-  async getPendingConsultations(req, res) {
-    const all = await this.consultationService.getByDoctorId(req.userId);
-    const pending = all.filter(c => c.status === consultationStatus.PENDING);
-    res.json(pending);
-  }
-
   /** Ближайшие консультации (paid, active) */
   async getUpcomingConsultations(req, res) {
     const all = await this.consultationService.getByDoctorId(req.userId);
@@ -63,32 +56,6 @@ class DoctorPanelController {
       c.status === consultationStatus.PAID || c.status === consultationStatus.ACTIVE
     );
     res.json(upcoming);
-  }
-
-  /** Принять заявку */
-  async acceptConsultation(req, res) {
-    const consultation = await this.consultationService.updateStatusByDoctor(
-      req.params.id,
-      req.userId,
-      consultationStatus.ACTIVE
-    );
-    if (!consultation) {
-      throw ApiError.notFound('Консультация не найдена');
-    }
-    res.json({ message: 'Заявка принята', consultation });
-  }
-
-  /** Отклонить заявку */
-  async rejectConsultation(req, res) {
-    const consultation = await this.consultationService.updateStatusByDoctor(
-      req.params.id,
-      req.userId,
-      consultationStatus.CANCELLED
-    );
-    if (!consultation) {
-      throw ApiError.notFound('Консультация не найдена');
-    }
-    res.json({ message: 'Заявка отклонена', consultation });
   }
 
   /** Завершить консультацию */

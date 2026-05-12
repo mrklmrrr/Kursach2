@@ -16,16 +16,9 @@ module.exports = function(doctorPanelController) {
   // Консультации
   router.get('/api/doctor/consultations', authMiddleware, isDoctor,
     asyncHandler((...args) => doctorPanelController.getConsultations(...args)));
-  router.get('/api/doctor/consultations/pending', authMiddleware, isDoctor,
-    asyncHandler((...args) => doctorPanelController.getPendingConsultations(...args)));
   router.get('/api/doctor/consultations/upcoming', authMiddleware, isDoctor,
     asyncHandler((...args) => doctorPanelController.getUpcomingConsultations(...args)));
 
-  // Управление заявками
-  router.patch('/api/doctor/consultations/:id/accept', authMiddleware, isDoctor,
-    asyncHandler((...args) => doctorPanelController.acceptConsultation(...args)));
-  router.patch('/api/doctor/consultations/:id/reject', authMiddleware, isDoctor,
-    asyncHandler((...args) => doctorPanelController.rejectConsultation(...args)));
   router.patch('/api/doctor/consultations/:id/complete', authMiddleware, isDoctor,
     asyncHandler((...args) => doctorPanelController.completeConsultation(...args)));
 

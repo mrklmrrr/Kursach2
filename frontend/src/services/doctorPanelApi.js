@@ -35,26 +35,7 @@ export const doctorPanelApi = {
       return response;
     });
   },
-  getPendingConsultations: () => {
-    const cached = apiCache.get(CONSULTATIONS_CACHE_KEY);
-    if (cached) {
-      const pending = cached.filter(c => c.status === 'pending');
-      return Promise.resolve({ data: pending });
-    }
-    return api.get('/doctor/consultations/pending').then((response) => {
-      apiCache.set(CONSULTATIONS_CACHE_KEY, response.data, CACHE_TTL);
-      return response;
-    });
-  },
   getUpcomingConsultations: () => api.get('/doctor/consultations/upcoming'),
-  acceptConsultation: (id) => {
-    apiCache.delete(CONSULTATIONS_CACHE_KEY);
-    return api.patch(`/doctor/consultations/${id}/accept`);
-  },
-  rejectConsultation: (id) => {
-    apiCache.delete(CONSULTATIONS_CACHE_KEY);
-    return api.patch(`/doctor/consultations/${id}/reject`);
-  },
   completeConsultation: (id) => {
     apiCache.delete(CONSULTATIONS_CACHE_KEY);
     return api.patch(`/doctor/consultations/${id}/complete`);

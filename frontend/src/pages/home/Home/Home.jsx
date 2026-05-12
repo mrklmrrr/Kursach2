@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { doctorApi } from '../../../services/doctorApi';
@@ -8,6 +8,11 @@ import { AppHeader, BottomNav, UserSidebar } from '../../../components/layout';
 import { DoctorCard } from '../../../components/features';
 import { EmptyState, ConfirmModal, Modal } from '../../../components/ui';
 import { useToast } from '../../../contexts/ToastProvider/useToast';
+import {
+  isOnlineAppointmentVisibleInUpcoming,
+  isWithinOnlineJoinWindow,
+  parseAppointmentStartMs
+} from '../../../utils/onlineAppointmentJoinWindow';
 import './Home.css';
 
 const formatDateTime = (date, time) => {
@@ -38,7 +43,7 @@ export default function Home() {
   const navigate = useNavigate();
   const [joinWindowNow, setJoinWindowNow] = useState(() => Date.now());
   const [doctors, setDoctors] = useState([]);
-  const [upcoming, setUpcoming] = useState([]);
+  const [rawPatientAppointments, setRawPatientAppointments] = useState([]);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showAllUpcoming, setShowAllUpcoming] = useState(false);
   const [loadingAppointments, setLoadingAppointments] = useState(true);
@@ -76,53 +81,13 @@ export default function Home() {
   useEffect(() => {
     if (!user || user.role === 'doctor') {
       setLoadingAppointments(false);
-      setUpcoming([]);
+      setRawPatientAppointments([]);
       return;
     }
     setLoadingAppointments(true);
     appointmentApi.getAll()
       .then((res) => {
-        const now = new Date();
-        const upcomingAppointments = res.data
-          .filter((a) => {
-            const isPlanned = a.status === 'scheduled' || a.status === 'confirmed';
-            if (!isPlanned) return false;
-
-            const appointmentDateTime = new Date(`${a.date}T${a.time}`);
-            return appointmentDateTime >= now;
-          })
-          .sort((a, b) => {
-            const dateA = new Date(a.date + 'T' + a.time);
-            const dateB = new Date(b.date + 'T' + b.time);
-            return dateA - dateB;
-          })
-          .map((a) => {
-            const dateObj = new Date(a.date);
-            const dayOfWeek = DAY_MAP[['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][dateObj.getDay()]] || a.date;
-            const statusLabel = {
-              scheduled: 'Запланирована',
-              confirmed: 'Подтверждена',
-              completed: 'Завершена',
-              cancelled: 'Отменена'
-            }[a.status] || a.status;
-
-            return {
-              id: a._id,
-              doctorId: a.doctorId,
-              doctorName: a.doctorName,
-              specialty: a.type === 'online' ? 'Онлайн' : 'Офлайн',
-              time: `${dayOfWeek}, ${a.time}`,
-              dateObj: dateObj,
-              date: a.date,
-              rawTime: a.time,
-              consultationId: a.consultationId,
-              status: statusLabel,
-              type: a.type,
-              duration: a.duration,
-              doctorComment: a.doctorComment
-            };
-          });
-        setUpcoming(upcomingAppointments);
+        setRawPatientAppointments(Array.isArray(res.data) ? res.data : []);
       })
       .catch((err) => {
         console.error('Ошибка загрузки записей:', err);
@@ -131,6 +96,56 @@ export default function Home() {
       .finally(() => setLoadingAppointments(false));
   }, [user, showToast]);
   /* eslint-enable react-hooks/set-state-in-effect */
+
+  const upcoming = useMemo(() => {
+    const nowMs = joinWindowNow;
+    return rawPatientAppointments
+      .filter((a) => {
+        const isPlanned = a.status === 'scheduled' || a.status === 'confirmed';
+        if (!isPlanned) return false;
+
+        const startMs = parseAppointmentStartMs(a.date, a.time);
+        if (Number.isNaN(startMs)) return false;
+
+        const isOnline = String(a.consultationType || a.type || '').toLowerCase() === 'online';
+        if (isOnline) {
+          return isOnlineAppointmentVisibleInUpcoming(nowMs, startMs, a.duration);
+        }
+        return startMs >= nowMs;
+      })
+      .sort((a, b) => {
+        const dateA = parseAppointmentStartMs(a.date, a.time);
+        const dateB = parseAppointmentStartMs(b.date, b.time);
+        return dateA - dateB;
+      })
+      .map((a) => {
+        const dateObj = new Date(a.date);
+        const dayOfWeek = DAY_MAP[['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][dateObj.getDay()]] || a.date;
+        const statusLabel = {
+          scheduled: 'Запланирована',
+          confirmed: 'Подтверждена',
+          completed: 'Завершена',
+          cancelled: 'Отменена'
+        }[a.status] || a.status;
+
+        return {
+          id: a._id,
+          doctorId: a.doctorId,
+          doctorName: a.doctorName,
+          specialty: String(a.consultationType || a.type || '').toLowerCase() === 'online' ? 'Онлайн' : 'Офлайн',
+          time: `${dayOfWeek}, ${a.time}`,
+          dateObj,
+          date: a.date,
+          rawTime: a.time,
+          consultationId: a.consultationId,
+          status: statusLabel,
+          type: a.type,
+          consultationType: a.consultationType,
+          duration: a.duration,
+          doctorComment: a.doctorComment
+        };
+      });
+  }, [rawPatientAppointments, joinWindowNow]);
 
   const showConfirm = (title, message, onConfirm, confirmText = 'Да', cancelText = 'Нет') => {
     setConfirmModal({
@@ -153,7 +168,7 @@ export default function Home() {
       async () => {
         try {
           await appointmentApi.cancel(appointmentId);
-          setUpcoming(prev => prev.filter(a => a.id !== appointmentId));
+          setRawPatientAppointments(prev => prev.filter(a => String(a._id) !== String(appointmentId)));
           setSelectedAppointment(null);
         } catch (err) {
           showToast(err.response?.data?.message || 'Ошибка отмены записи', 'error');
@@ -171,15 +186,16 @@ export default function Home() {
   const tipOfDay = HEALTH_TIPS[new Date().getDate() % HEALTH_TIPS.length];
   const visibleUpcoming = showAllUpcoming ? upcoming : upcoming.slice(0, 3);
   const hasHiddenUpcoming = upcoming.length > 3 && !showAllUpcoming;
-  const detailsType = selectedAppointment?.type === 'online' ? 'Онлайн консультация' : 'Офлайн прием';
+  const detailsType = String(selectedAppointment?.consultationType || selectedAppointment?.type || '').toLowerCase() === 'online'
+    ? 'Онлайн консультация'
+    : 'Офлайн прием';
 
   const isInJoinWindow = (appointment) => {
-    if (!appointment || String(appointment.type || '').toLowerCase() !== 'online') return false;
-    const start = new Date(`${appointment.date}T${appointment.rawTime}:00`).getTime();
+    if (!appointment) return false;
+    if (String(appointment.consultationType || appointment.type || '').toLowerCase() !== 'online') return false;
+    const start = parseAppointmentStartMs(appointment.date, appointment.rawTime);
     if (Number.isNaN(start)) return false;
-    const durationMs = (Number(appointment.duration) || 30) * 60 * 1000;
-    const delta = start - joinWindowNow;
-    return delta <= 10 * 60 * 1000 && delta >= -durationMs;
+    return isWithinOnlineJoinWindow(joinWindowNow, start, appointment.duration);
   };
 
   const handleJoinAppointment = async (appointment) => {
@@ -276,7 +292,7 @@ export default function Home() {
                           handleJoinAppointment(item);
                         }}
                       >
-                        Подключиться
+                        Подключиться к консультации
                       </button>
                     )}
                   </div>
@@ -390,7 +406,7 @@ export default function Home() {
                           className="btn btn-primary"
                           onClick={() => handleJoinAppointment(selectedAppointment)}
                         >
-                          Подключиться
+                          Подключиться к консультации
                         </button>
                       )}
                       <button

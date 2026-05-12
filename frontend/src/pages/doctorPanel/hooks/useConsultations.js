@@ -1,1 +1,1 @@
-export { useConsultations, useCommentModal } from '@hooks/doctorPanel/useConsultations';
+export { useCommentModal } from '@hooks/doctorPanel/useConsultations';

@@ -3,15 +3,14 @@ import './DoctorPanelTabs.css';
 /**
  * Компонент навигации между табами в панели врача
  */
-export default function DoctorPanelTabs({ 
-  activeTab, 
-  onTabChange, 
-  pendingCount, 
-  upcomingCount, 
-  appointmentsCount 
+export default function DoctorPanelTabs({
+  activeTab,
+  onTabChange,
+  upcomingCount,
+  appointmentsCount
 }) {
   const tabs = [
-    { id: 'requests', label: 'Заявки', badge: pendingCount },
+    { id: 'requests', label: 'Заявки', badge: null },
     { id: 'upcoming', label: 'Расписание', badge: upcomingCount },
     { id: 'appointments', label: 'Записи', badge: appointmentsCount },
     { id: 'patients', label: 'Пациенты', badge: null },

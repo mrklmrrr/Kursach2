@@ -12,7 +12,6 @@ export { useConsultationHistory, useMedicalRecord, usePasswordChange } from './p
 export {
   useDoctorPanelData,
   useMedicalRecordModal,
-  useConsultations,
   useCommentModal,
   useAppointments,
   useWorkingHours

@@ -1,9 +1,64 @@
 const ApiError = require('../utils/ApiError');
 
 class AppointmentService {
-  constructor(appointmentRepository, userRepository) {
+  constructor(appointmentRepository, userRepository, consultationRepository) {
     this.appointmentRepository = appointmentRepository;
     this.userRepository = userRepository;
+    this.consultationRepository = consultationRepository;
+  }
+
+  _isOnlineAppointment(appointment) {
+    const format = String(appointment?.consultationType || appointment?.type || '').toLowerCase();
+    return format === 'online';
+  }
+
+  /**
+   * Для онлайн-записи создаёт (или подвязывает) Consultation — нужен consultationId для видеокомнаты и чата.
+   */
+  async ensureConsultationForOnlineAppointment(appointment) {
+    if (!appointment?._id) return appointment;
+    if (appointment.consultationId) return appointment;
+    if (!this._isOnlineAppointment(appointment)) return appointment;
+
+    const existing = await this.consultationRepository.findByAppointmentId(appointment._id);
+    if (existing?._id) {
+      return this.appointmentRepository.updateConsultationId(appointment._id, existing._id);
+    }
+
+    const doctor = await this.userRepository.findById(appointment.doctorId);
+    const patient = await this.userRepository.findById(appointment.patientId);
+    if (!doctor || !patient) return appointment;
+    if (patient.legacyId === undefined || patient.legacyId === null) return appointment;
+
+    const doctorName = appointment.doctorName
+      || `${doctor.firstName || ''} ${doctor.lastName || ''}`.trim();
+    const patientName = appointment.patientName
+      || `${patient.firstName || ''} ${patient.lastName || ''}`.trim();
+
+    const consultation = await this.consultationRepository.create({
+      doctorId: appointment.doctorId,
+      doctorName: doctorName || 'Врач',
+      specialty: doctor.specialty || 'Врач',
+      price: Number(appointment.paymentAmount) || Number(doctor.price) || 0,
+      duration: Number(appointment.duration) || 30,
+      patientId: patient.legacyId,
+      patientName: patientName || 'Пациент',
+      type: 'video',
+      appointmentId: appointment._id
+    });
+
+    return this.appointmentRepository.updateConsultationId(appointment._id, consultation._id);
+  }
+
+  async attachMissingConsultationsForOnline(appointments) {
+    if (!Array.isArray(appointments) || appointments.length === 0) return appointments;
+    return Promise.all(
+      appointments.map(async (a) => {
+        if (a.consultationId) return a;
+        if (!this._isOnlineAppointment(a)) return a;
+        return this.ensureConsultationForOnlineAppointment(a);
+      })
+    );
   }
 
   async create(doctorId, patientId, data) {
@@ -46,7 +101,7 @@ class AppointmentService {
       throw new ApiError(409, 'Этот временной слот уже занят');
     }
 
-    return this.appointmentRepository.create({
+    const created = await this.appointmentRepository.create({
       doctorId,
       patientId,
       doctorName: `${doctor.firstName} ${doctor.lastName}`,
@@ -55,6 +110,7 @@ class AppointmentService {
       paymentStatus: 'unpaid',
       ...data
     });
+    return this.ensureConsultationForOnlineAppointment(created);
   }
 
   async getById(id) {
@@ -112,11 +168,12 @@ class AppointmentService {
     }
 
     if (appointment.paymentStatus === 'paid') {
-      return appointment;
+      return this.ensureConsultationForOnlineAppointment(appointment);
     }
 
     const amount = Number(appointment.paymentAmount) || 0;
-    return this.appointmentRepository.markAsPaid(appointmentId, amount);
+    const paid = await this.appointmentRepository.markAsPaid(appointmentId, amount);
+    return paid ? this.ensureConsultationForOnlineAppointment(paid) : null;
   }
 
   async delete(id) {

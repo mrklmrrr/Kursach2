@@ -1,18 +1,37 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useToast } from '@contexts/ToastProvider/useToast';
 import { doctorPanelApi } from '@services/doctorPanelApi';
 import { appointmentApi } from '@services/appointmentApi';
-import { toDateTime } from '@utils/date';
+import { toDateTime, toDateInputValue } from '@utils/date';
+import { isOnlineAppointmentVisibleInUpcoming } from '@utils/onlineAppointmentJoinWindow';
+
+/** Слот ещё в «предстоящих»: офлайн — до начала; онлайн — до конца слота + запас (как в общем расписании). */
+function isSlotStillUpcoming(item, nowMs) {
+  if (!item.dateTime || Number.isNaN(item.dateTime.getTime())) return false;
+  const startMs = item.dateTime.getTime();
+  const isOnline = String(item.consultationType || item.type || '').toLowerCase() === 'online';
+  if (isOnline) {
+    return isOnlineAppointmentVisibleInUpcoming(nowMs, startMs, item.duration);
+  }
+  return startMs >= nowMs;
+}
 
 export const useDoctorPanelData = () => {
   const { showToast } = useToast();
   const [profile, setProfile] = useState(null);
-  const [pendingConsultations, setPendingConsultations] = useState([]);
   const [patients, setPatients] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [workingHours, setWorkingHours] = useState({ start: '09:00', end: '18:00' });
   const [workingDays, setWorkingDays] = useState(['mon', 'tue', 'wed', 'thu', 'fri']);
   const [loading, setLoading] = useState(true);
+  const [scheduleClock, setScheduleClock] = useState(() => Date.now());
+  /** Дата списка в расписании (YYYY-MM-DD), по умолчанию сегодня */
+  const [scheduleViewDate, setScheduleViewDate] = useState(() => toDateInputValue(new Date()));
+
+  useEffect(() => {
+    const id = window.setInterval(() => setScheduleClock(Date.now()), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   const [appointmentForm, setAppointmentForm] = useState({
     patientId: '',
@@ -42,16 +61,43 @@ export const useDoctorPanelData = () => {
 
   const upcomingSchedule = useMemo(() => {
     if (!appointments.length) return [];
-    const now = new Date();
+    const nowMs = scheduleClock;
     return appointments
       .filter((item) => item.status === 'scheduled' || item.status === 'confirmed')
       .map((item) => {
         const dateTime = new Date(`${item.date}T${item.time}:00`);
         return { ...item, dateTime };
       })
-      .filter((item) => !Number.isNaN(item.dateTime.getTime()) && item.dateTime >= now)
+      .filter((item) => isSlotStillUpcoming(item, nowMs))
       .sort((a, b) => a.dateTime - b.dateTime);
-  }, [appointments]);
+  }, [appointments, scheduleClock]);
+
+  const todayYmd = useMemo(() => toDateInputValue(new Date(scheduleClock)), [scheduleClock]);
+
+  const scheduleForViewDate = useMemo(() => {
+    if (!appointments.length || !scheduleViewDate) return [];
+    const nowMs = scheduleClock;
+    return appointments
+      .filter((item) =>
+        (item.status === 'scheduled' || item.status === 'confirmed') && item.date === scheduleViewDate
+      )
+      .map((item) => {
+        const dateTime = new Date(`${item.date}T${item.time}:00`);
+        return { ...item, dateTime };
+      })
+      .filter((item) => isSlotStillUpcoming(item, nowMs))
+      .sort((a, b) => a.dateTime - b.dateTime);
+  }, [appointments, scheduleViewDate, scheduleClock]);
+
+  const todayScheduleCount = useMemo(() => {
+    const nowMs = scheduleClock;
+    return appointments.filter((a) => {
+      if ((a.status !== 'scheduled' && a.status !== 'confirmed') || a.date !== todayYmd) return false;
+      const dateTime = new Date(`${a.date}T${a.time}:00`);
+      if (Number.isNaN(dateTime.getTime())) return false;
+      return isSlotStillUpcoming({ ...a, dateTime }, nowMs);
+    }).length;
+  }, [appointments, todayYmd, scheduleClock]);
 
   const activeAppointmentsCount = useMemo(() =>
     appointments.filter((a) => a.status === 'scheduled' || a.status === 'confirmed').length ?? 0,
@@ -113,28 +159,6 @@ export const useDoctorPanelData = () => {
   const setHistoryOpen = useCallback((open) => setMedicalRecordHistoryOpen(open), []);
   const setShowSickLeaveHistory = useCallback((show) => setMedicalRecordShowSickLeaveHistory(show), []);
 
-  const handleAcceptConsultation = useCallback(async (id, onSuccess) => {
-    try {
-      await doctorPanelApi.acceptConsultation(id);
-      setPendingConsultations((prev) => prev.filter((c) => c._id !== id));
-      showToast('Заявка принята', 'success');
-      if (onSuccess) onSuccess();
-    } catch {
-      showToast('Ошибка принятия заявки', 'error');
-    }
-  }, [setPendingConsultations, showToast]);
-
-  const handleRejectConsultation = useCallback(async (id, onSuccess) => {
-    try {
-      await doctorPanelApi.rejectConsultation(id);
-      setPendingConsultations((prev) => prev.filter((c) => c._id !== id));
-      showToast('Заявка отклонена', 'success');
-      if (onSuccess) onSuccess();
-    } catch {
-      showToast('Ошибка отклонения заявки', 'error');
-    }
-  }, [setPendingConsultations, showToast]);
-
   const updateMedicalField = useCallback(() => {
     // placeholder
   }, []);
@@ -157,16 +181,14 @@ export const useDoctorPanelData = () => {
 
   const loadData = useCallback(async () => {
     try {
-      const [profileRes, pendingRes, patientsRes, appointmentsRes, workingHoursRes] = await Promise.allSettled([
+      const [profileRes, patientsRes, appointmentsRes, workingHoursRes] = await Promise.allSettled([
         doctorPanelApi.getProfile(),
-        doctorPanelApi.getPendingConsultations(),
         doctorPanelApi.getPatients(),
         appointmentApi.getDoctorAppointments(),
         appointmentApi.getWorkingHours(),
       ]);
 
       if (profileRes.status === 'fulfilled') setProfile(profileRes.value.data);
-      if (pendingRes.status === 'fulfilled') setPendingConsultations(pendingRes.value.data); else setPendingConsultations([]);
       if (patientsRes.status === 'fulfilled') setPatients(patientsRes.value.data); else setPatients([]);
       if (appointmentsRes.status === 'fulfilled') {
         const sorted = [...appointmentsRes.value.data].sort((a, b) => toDateTime(a) - toDateTime(b));
@@ -187,13 +209,13 @@ export const useDoctorPanelData = () => {
   }, []);
 
   return {
-    profile, setProfile, pendingConsultations, setPendingConsultations, patients, setPatients, appointments, setAppointments,
+    profile, setProfile, patients, setPatients, appointments, setAppointments,
     workingHours, setWorkingHours, workingDays, setWorkingDays, loading, hasLoaded: !!profile,
-    loadData, refreshAppointments, upcomingSchedule, activeAppointmentsCount, patientById,
+    loadData, refreshAppointments, upcomingSchedule, scheduleViewDate, setScheduleViewDate,
+    scheduleForViewDate, todayYmd, todayScheduleCount, activeAppointmentsCount, patientById,
     appointmentForm, handleFormChange, handleAssignAppointment, handleSaveWorkingHours,
     openCommentModal, closeCommentModal, saveComment,
     openMedicalRecord, closeMedicalRecord, medicalRecord: { modal: { open: medicalRecordModalVisible }, tab: medicalRecordTab, expandedSection: medicalRecordExpandedSection, historyOpen: medicalRecordHistoryOpen, showSickLeaveHistory: medicalRecordShowSickLeaveHistory, setTab, setExpandedSection, setHistoryOpen, setShowSickLeaveHistory, updateMedicalField, saveSection, addSickLeaveDraft, updateSickLeaveField, saveSickLeave, closeMedicalRecord: closeMedicalRecord },
     commentModal: { modal: { open: commentModalVisible }, closeModal: closeCommentModal, save: saveComment },
-    handleAcceptConsultation, handleRejectConsultation,
   };
 };

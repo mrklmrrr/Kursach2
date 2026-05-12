@@ -24,6 +24,12 @@ class ConsultationRepository {
     return consultation ? consultation.toObject() : null;
   }
 
+  async findByAppointmentId(appointmentId) {
+    if (!appointmentId) return null;
+    const consultation = await Consultation.findOne({ appointmentId }).lean();
+    return consultation || null;
+  }
+
   async findByPatientId(patientId) {
     // Ищем консультации пациента по legacyId (number) и при необходимости по строковому значению.
     // Это нужно для совместимости со старыми и новыми данными.
