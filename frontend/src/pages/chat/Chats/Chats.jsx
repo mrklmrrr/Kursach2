@@ -386,8 +386,12 @@ export default function Chats({ inDoctorPanel = false }) {
       });
     };
 
-    const handleChatUpdated = ({ chatId, message } = {}) => {
-      if (!chatId || !message) return;
+    const handleChatUpdated = (payload = {}) => {
+      const chatId = payload?.chatId;
+      const message = payload?.message && typeof payload.message === 'object'
+        ? payload.message
+        : payload;
+      if (!chatId || !message || typeof message !== 'object') return;
       setChats((prev) => {
         const idx = prev.findIndex((chat) => String(chat.id) === String(chatId));
         if (idx === -1) {

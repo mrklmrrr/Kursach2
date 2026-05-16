@@ -166,7 +166,7 @@ async function finalizeVideoCallForAll({
       });
       if (savedMessage) {
         const chatId = String(roomId);
-        io.to(`chat-${chatId}`).emit('new-message', savedMessage);
+        io.to(`chat-${chatId}`).emit('new-message', { chatId: String(chatId), message: savedMessage });
 
         const pushPayload = { chatId, message: savedMessage };
         emitToUser(consultation.doctorId, 'new-message', pushPayload);
@@ -304,7 +304,7 @@ function setupSocket(server, consultationRepository) {
           timestamp: new Date().toISOString()
         }, socket.userRole === 'doctor' ? 'patient' : 'doctor');
 
-        io.to(`chat-${chatId}`).emit('new-message', savedMessage);
+        io.to(`chat-${chatId}`).emit('new-message', { chatId: String(chatId), message: savedMessage });
         emitToUser(consultation.doctorId, 'chat-updated', { chatId: String(chatId), message: savedMessage });
         const patientSocketUserId = await resolvePatientSocketUserId(consultation.patientId);
         if (patientSocketUserId) {

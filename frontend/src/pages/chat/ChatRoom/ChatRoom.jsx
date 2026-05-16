@@ -8,6 +8,12 @@ import { getChatSocket } from '../../../services/chatSocket';
 import { useAuth } from '../../../hooks/useAuth';
 import { usePresenceSocket } from '../../../hooks/usePresenceSocket';
 import { useToast } from '../../../contexts/ToastProvider/useToast';
+import {
+  getMessageKey,
+  mergeMessageLists,
+  parseSocketMessagePayload,
+  upsertMessage
+} from '../../../utils/chatMessages';
 import { UserSidebar } from '../../../components/layout';
 import DoctorSidebar from '../../doctorPanel/components/DoctorSidebar/DoctorSidebar';
 import PatientProfileModal from '../../doctorPanel/components/modals/PatientProfileModal';
@@ -157,6 +163,7 @@ export default function ChatRoom() {
   const socketRef = useRef(null);
   const fileInputRef = useRef(null);
   const initialScrollDoneRef = useRef(false);
+  const joinedChatIdRef = useRef(null);
 
   const companionFromState = useMemo(() => location.state?.companion || null, [location.state]);
 
@@ -270,6 +277,9 @@ export default function ChatRoom() {
   useEffect(() => {
     const loadStart = performance.now();
     initialScrollDoneRef.current = false;
+    joinedChatIdRef.current = null;
+    setLoading(true);
+    setMessages([]);
     let cancelled = false;
 
     const loadMessages = async () => {
@@ -327,44 +337,33 @@ export default function ChatRoom() {
       try {
         const { data } = await chatApi.getMessages(id);
         const fresh = Array.isArray(data?.messages) ? data.messages : [];
-        setMessages((prev) => {
-          if (!Array.isArray(prev) || prev.length === 0) return fresh;
-          const byId = new Map();
-          prev.forEach((m) => byId.set(String(m._id || m.id || `${m.timestamp}-${m.message || ''}`), m));
-          fresh.forEach((m) => byId.set(String(m._id || m.id || `${m.timestamp}-${m.message || ''}`), m));
-          return Array.from(byId.values()).sort((a, b) => {
-            const ta = new Date(a.timestamp || 0).getTime();
-            const tb = new Date(b.timestamp || 0).getTime();
-            return ta - tb;
-          });
-        });
+        setMessages((prev) => mergeMessageLists(prev, fresh));
       } catch {
         /* сеть временно недоступна — оставляем локальное состояние */
       }
     };
 
+    const joinChatRoom = () => {
+      const chatId = String(id);
+      if (joinedChatIdRef.current === chatId) return;
+      joinedChatIdRef.current = chatId;
+      socket.emit('join-chat', id);
+    };
+
     const handleMessage = (payload) => {
-      const wrapped = payload && typeof payload === 'object' && payload.chatId != null && payload.message != null;
-      const newMessage = wrapped ? payload.message : payload;
-      if (wrapped && String(payload.chatId) !== String(id)) {
-        return;
-      }
-      setMessages((prev) => {
-        if (prev.some((m) => m._id === newMessage._id || m.id === newMessage.id)) {
-          return prev;
-        }
-        return [...prev, newMessage];
-      });
+      const newMessage = parseSocketMessagePayload(payload, id);
+      if (!newMessage) return;
+      setMessages((prev) => upsertMessage(prev, newMessage));
     };
 
     const handleChatHistory = (history) => {
       const messagesArray = Array.isArray(history) ? history : [];
-      setMessages(messagesArray);
+      setMessages((prev) => mergeMessageLists(prev, messagesArray));
     };
 
     const handleConnect = () => {
       setSocketConnected(true);
-      socket.emit('join-chat', id);
+      joinChatRoom();
     };
 
     const handleDisconnect = () => {
@@ -373,7 +372,8 @@ export default function ChatRoom() {
 
     const handleReconnect = () => {
       setSocketConnected(true);
-      socket.emit('join-chat', id);
+      joinedChatIdRef.current = null;
+      joinChatRoom();
       mergeMessagesFromServer();
     };
 
@@ -421,6 +421,7 @@ export default function ChatRoom() {
     }
 
     return () => {
+      joinedChatIdRef.current = null;
       window.removeEventListener('online', onBrowserOnline);
       socket.off('connect', handleConnect);
       socket.off('disconnect', handleDisconnect);
@@ -450,7 +451,7 @@ export default function ChatRoom() {
       messageType: 'text'
     };
     
-    setMessages((prev) => [...prev, tempMessage]);
+    setMessages((prev) => upsertMessage(prev, tempMessage));
     setInputMsg('');
 
     try {
@@ -458,16 +459,13 @@ export default function ChatRoom() {
       const { data: savedMessage } = await chatApi.sendMessage(id, messageText);
       if (savedMessage) {
         setMessages((prev) => {
-          const withoutTemp = prev.filter((m) => m._id !== tempMessage._id);
-          if (withoutTemp.some((m) => m._id === savedMessage._id || m.id === savedMessage.id)) {
-            return withoutTemp;
-          }
-          return [...withoutTemp, savedMessage];
+          const withoutTemp = prev.filter((m) => getMessageKey(m) !== getMessageKey(tempMessage));
+          return upsertMessage(withoutTemp, savedMessage);
         });
       }
     } catch (err) {
       console.error('Failed to send message:', err);
-      setMessages((prev) => prev.filter(m => m._id !== tempMessage._id));
+      setMessages((prev) => prev.filter((m) => getMessageKey(m) !== getMessageKey(tempMessage)));
       showToast('Не удалось отправить сообщение', 'error');
     }
   }, [id, inputMsg, isDoctor, user?.id, showToast]);
@@ -489,12 +487,7 @@ export default function ChatRoom() {
     try {
       const { data: savedMessage } = await chatApi.uploadAttachment(id, file, inputMsg.trim());
       if (savedMessage) {
-        setMessages((prev) => {
-          if (prev.some((m) => m._id === savedMessage._id || m.id === savedMessage.id)) {
-            return prev;
-          }
-          return [...prev, savedMessage];
-        });
+        setMessages((prev) => upsertMessage(prev, savedMessage));
       }
       setInputMsg('');
     } catch (err) {

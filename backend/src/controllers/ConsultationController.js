@@ -474,7 +474,8 @@ const ConsultationController = class {
       const { getIO } = require('../config/socket');
       const io = getIO();
       if (io) {
-        io.to(`chat-${chatId}`).emit('new-message', payload);
+        const wrapped = { chatId: String(chatId), message: payload };
+        io.to(`chat-${chatId}`).emit('new-message', wrapped);
       }
     } catch {
       // noop
@@ -487,14 +488,18 @@ const ConsultationController = class {
       const io = getIO();
       if (!io || !consultation) return;
 
-      io.to(`chat-${consultation._id}`).emit('new-message', payload);
-      emitToUser(consultation.doctorId, 'chat-updated', { chatId: String(consultation._id), message: payload });
+      const chatId = String(consultation._id);
+      const wrapped = { chatId, message: payload };
+      io.to(`chat-${chatId}`).emit('new-message', wrapped);
+      emitToUser(consultation.doctorId, 'chat-updated', wrapped);
 
       const patientLegacyId = consultation.patientId;
       if (patientLegacyId !== null && patientLegacyId !== undefined) {
         const patientUser = await User.findOne({ legacyId: patientLegacyId }).select('_id').lean();
         if (patientUser?._id) {
-          emitToUser(patientUser._id, 'chat-updated', { chatId: String(consultation._id), message: payload });
+          // Direct push helps when the client has not finished join-chat yet.
+          emitToUser(patientUser._id, 'new-message', wrapped);
+          emitToUser(patientUser._id, 'chat-updated', wrapped);
         }
       }
     } catch {
