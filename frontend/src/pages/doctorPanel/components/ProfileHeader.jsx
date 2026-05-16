@@ -1,4 +1,4 @@
-export default function ProfileHeader({ profile, isOnline, onToggleOnline }) {
+export default function ProfileHeader({ profile, isAvailable, onToggleOnline }) {
   return (
     <div className="profile-header">
       <div className="profile-main">
@@ -6,10 +6,11 @@ export default function ProfileHeader({ profile, isOnline, onToggleOnline }) {
         <p className="profile-specialty">{profile?.specialty}</p>
       </div>
       <button
-        className={`online-toggle ${isOnline ? 'online' : 'offline'}`}
+        type="button"
+        className={`online-toggle ${isAvailable ? 'online' : 'offline'}`}
         onClick={onToggleOnline}
       >
-        {isOnline ? '🟢 Онлайн' : '⚫ Оффлайн'}
+        {isAvailable ? '🟢 Доступен' : '⚫ Недоступен'}
       </button>
     </div>
   );

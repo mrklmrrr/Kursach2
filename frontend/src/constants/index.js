@@ -20,6 +20,7 @@ export const ROUTES = {
   EMERGENCY_WAIT: '/emergency/wait',
   PROFILE: '/profile',
   ADD_RELATIVE: '/profile/add-relative',
+  MEDICAL_CARD: '/profile/medical-card',
   CONFIRM: '/confirm',
   PAYMENT: '/payment',
   LOADER: '/loader',

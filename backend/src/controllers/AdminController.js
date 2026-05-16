@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const { roles } = require('../constants');
 const { logAudit } = require('../utils/auditHelper');
 const ApiError = require('../utils/ApiError');
+const { emitPresenceChange, isUserConnected } = require('../config/socket');
+const { mapDoctorPresence } = require('../utils/presence');
 
 class AdminController {
   constructor(doctorService, consultationService, authService) {
@@ -118,7 +120,8 @@ class AdminController {
     if (!doctor) {
       throw ApiError.notFound('Врач не найден');
     }
-    res.json(doctor);
+    emitPresenceChange(doctor.id || doctor._id);
+    res.json(mapDoctorPresence(doctor, isUserConnected));
   }
 
   /* ---------- Статистика ---------- */

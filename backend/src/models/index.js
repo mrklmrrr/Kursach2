@@ -2,6 +2,7 @@ const User = require('./User');
 const EmergencyRequest = require('./EmergencyRequest');
 const Consultation = require('./Consultation');
 const Dependent = require('./Dependent');
+const RelativeInvite = require('./RelativeInvite');
 const Appointment = require('./Appointment');
 const { MedicalRecord } = require('./MedicalRecord');
 const { ResearchType, ResearchResult } = require('./Research');
@@ -14,6 +15,7 @@ module.exports = {
   EmergencyRequest,
   Consultation,
   Dependent,
+  RelativeInvite,
   Appointment,
   MedicalRecord,
   ResearchType,

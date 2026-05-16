@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
+import { usePresenceSocket } from '../../../hooks/usePresenceSocket';
 import { doctorApi } from '../../../services/doctorApi';
 import { appointmentApi } from '../../../services/appointmentApi';
 import { videoRoomApi } from '../../../services/videoRoomApi';
@@ -38,7 +39,7 @@ const DAY_MAP = {
 };
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [joinWindowNow, setJoinWindowNow] = useState(() => Date.now());
@@ -71,6 +72,16 @@ export default function Home() {
         showToast(err.response?.data?.message || 'Не удалось загрузить список врачей', 'error');
       });
   }, [showToast]);
+
+  const handleDoctorPresence = useCallback((userId, isOnline) => {
+    setDoctors((prev) => prev.map((doc) => {
+      const docId = String(doc.id || doc._id || '');
+      if (docId !== userId) return doc;
+      return { ...doc, isOnline };
+    }));
+  }, []);
+
+  usePresenceSocket(token, handleDoctorPresence);
 
   useEffect(() => {
     const id = window.setInterval(() => setJoinWindowNow(Date.now()), 15000);

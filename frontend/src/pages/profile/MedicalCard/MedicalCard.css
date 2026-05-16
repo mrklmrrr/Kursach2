@@ -1,0 +1,113 @@
+.medical-card-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.medical-card-inner.page-shell {
+  flex: 1;
+  padding-bottom: 100px;
+}
+
+.medical-card-page-header {
+  margin-bottom: 16px;
+}
+
+.medical-card-title {
+  font-size: 1.35rem;
+  margin: 0 0 8px;
+  color: #1f2937;
+}
+
+.medical-card-lead {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.medical-card-patient-card {
+  margin-bottom: 14px;
+}
+
+.medical-card-patient-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 28px;
+  align-items: flex-start;
+}
+
+.medical-card-patient-label {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+}
+
+.medical-card-patient-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.medical-card-patient-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.95rem;
+  color: #374151;
+}
+
+.medical-card-section--page {
+  margin-bottom: 0;
+}
+
+.medical-card-section--page .medical-record-tabs {
+  flex-wrap: wrap;
+  margin-top: 0;
+}
+
+@media (min-width: 1024px) {
+  .medical-card-page .bottom-nav,
+  .medical-card-page .bottom-nav-shell {
+    display: none !important;
+  }
+
+  .medical-card-inner.page-shell {
+    max-width: 1200px;
+    padding-bottom: 28px;
+  }
+
+  .medical-card-page-header {
+    margin-bottom: 20px;
+  }
+
+  .medical-card-title {
+    font-size: 1.5rem;
+  }
+
+  .medical-card-patient-row {
+    gap: 24px 40px;
+  }
+
+  .medical-card-section--page {
+    padding: 22px 24px;
+  }
+}
+
+body.dark .medical-card-title,
+body.dark .medical-card-patient-name {
+  color: #f9fafb;
+}
+
+body.dark .medical-card-lead,
+body.dark .medical-card-patient-label {
+  color: #9ca3af;
+}
+
+body.dark .medical-card-patient-meta {
+  color: #d1d5db;
+}

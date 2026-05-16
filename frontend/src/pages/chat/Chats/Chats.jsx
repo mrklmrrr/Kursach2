@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { usePresenceSocket } from '@hooks/usePresenceSocket';
 import { useNavigate } from 'react-router-dom';
 import { AppHeader, BottomNav, UserSidebar } from '@components/layout';
 import { ChatItem } from '@components/features';
@@ -126,9 +127,7 @@ function normalizeChats(data, isDoctor, currentUserId, currentUserLegacyId) {
         ? (resolvedCompanion.avatarUrl || '')
         : (chat.doctorAvatarUrl || chat.doctorAvatar || ''),
       companion: resolvedCompanion,
-      isOnline: isDoctor
-        ? Boolean(resolvedCompanion.isOnline)
-        : Boolean(chat.doctorIsOnline)
+      isOnline: Boolean(resolvedCompanion.isOnline)
     };
   });
   
@@ -352,6 +351,23 @@ export default function Chats({ inDoctorPanel = false }) {
       setParticipantFilter('all');
     }
   }, [isDoctor]);
+
+  const handlePresenceChange = useCallback((userId, isOnline) => {
+    setChats((prev) => prev.map((chat) => {
+      const doctorMatch = String(chat.doctorId || '') === userId;
+      const patientMatch = String(chat.patientId || '') === userId
+        || String(chat.companion?.id || '') === userId;
+      const matches = isDoctor ? patientMatch : doctorMatch;
+      if (!matches) return chat;
+      return {
+        ...chat,
+        isOnline,
+        companion: chat.companion ? { ...chat.companion, isOnline } : chat.companion
+      };
+    }));
+  }, [isDoctor]);
+
+  usePresenceSocket(token, handlePresenceChange);
 
   useEffect(() => {
     if (!token) return undefined;

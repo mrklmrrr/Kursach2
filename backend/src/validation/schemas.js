@@ -14,19 +14,19 @@ const authSchemas = {
   register: {
     ...base,
     body: z.object({
-      firstName: z.string().min(1),
-      lastName: z.string().min(1),
-      phone: z.string().min(5),
-      birthDate: z.string().min(1),
-      gender: z.string().min(1),
-      password: z.string().min(6)
+      firstName: z.string().min(1, 'Введите имя'),
+      lastName: z.string().min(1, 'Введите фамилию'),
+      phone: z.string().min(5, 'Введите номер телефона'),
+      birthDate: z.string().min(1, 'Укажите дату рождения'),
+      gender: z.string().min(1, 'Выберите пол'),
+      password: z.string().min(6, 'Пароль — минимум 6 символов')
     })
   },
   login: {
     ...base,
     body: z.object({
-      phone: z.string().min(5),
-      password: z.string().min(1)
+      phone: z.string().min(5, 'Введите номер телефона'),
+      password: z.string().min(1, 'Введите пароль')
     })
   },
   adminLogin: {

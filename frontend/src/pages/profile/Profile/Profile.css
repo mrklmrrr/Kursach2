@@ -439,6 +439,8 @@ body.dark .prescription-date {
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 600;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .profile-tab-btn.active {
@@ -505,6 +507,29 @@ body.dark .prescription-date {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
+}
+
+.medical-record-tabs .profile-tab-btn {
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.medical-system-toggle,
+.medical-history-toggle,
+.prescription-toggle,
+.patient-lab-card-toggle,
+.patient-lab-show-more,
+.patient-lab-ai-btn,
+.patient-lab-photo-thumb {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.section-card--lux .btn.btn-primary,
+.section-card--lux .btn.btn-outline {
+  min-height: 44px;
+  touch-action: manipulation;
 }
 
 .medical-record-patient-info p {
@@ -1408,4 +1433,161 @@ body.dark .prescription-item ul {
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* Username (первичная установка и смена в настройках) */
+.username-section .username-lead,
+.username-change-form {
+  margin: 0;
+}
+
+.username-lead {
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+
+.username-row,
+.ar-username-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.username-at,
+.ar-at {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #4f46e5;
+  padding: 0 2px 0 4px;
+}
+
+.username-input {
+  flex: 1;
+}
+
+.username-hint {
+  font-size: 0.85rem;
+  margin: 0 0 12px;
+  color: #6b7280;
+}
+
+.username-hint.ok {
+  color: #059669;
+}
+
+.username-hint.bad {
+  color: #dc2626;
+}
+
+.settings-username-content {
+  padding: 12px 0 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.username-change-form .btn {
+  margin-top: 4px;
+}
+
+.profile-relative-username {
+  font-size: 0.82rem;
+  color: #4f46e5;
+  font-weight: 600;
+}
+
+/* Приглашения в родственники */
+.relative-invites-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.relative-invite-card {
+  display: flex;
+  gap: 14px;
+  padding: 18px 18px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(79, 70, 229, 0.28);
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.08), rgba(99, 102, 241, 0.04));
+  box-shadow: 0 10px 28px rgba(79, 70, 229, 0.1);
+}
+
+.relative-invite-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #4f46e5, #6366f1);
+  color: #fff;
+}
+
+.relative-invite-icon .material-icons {
+  font-size: 1.45rem;
+}
+
+.relative-invite-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.relative-invite-title {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.relative-invite-text,
+.relative-invite-question {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #4b5563;
+}
+
+.relative-invite-question {
+  font-weight: 600;
+  color: #374151;
+}
+
+.relative-invite-note {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.relative-invite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+body.dark .relative-invite-card {
+  border-color: rgba(129, 140, 248, 0.35);
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.18), rgba(17, 24, 39, 0.6));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+}
+
+body.dark .relative-invite-title {
+  color: #f3f4f6;
+}
+
+body.dark .relative-invite-text,
+body.dark .relative-invite-question {
+  color: #d1d5db;
+}
+
+body.dark .username-lead {
+  color: #9ca3af;
+}
+
+body.dark .settings-username-content {
+  border-bottom-color: #374151;
 }

@@ -4,11 +4,39 @@ import PatientLaboratorySection from './PatientLaboratorySection';
 import InstrumentalInvestigationsSection from './InstrumentalInvestigationsSection';
 import { prescriptionApi } from '../../../services/prescriptionApi';
 
-export const MedicalCardSection = ({ medicalRecord, laboratoryResults = [], instrumentalResults = [], loading, error, allLeaves, currentLeaf }) => {
-  const [medicalRecordOpen, setMedicalRecordOpen] = useState(false);
+const TAB_IDS = ['systems', 'sickLeave', 'laboratory', 'instrumental', 'prescriptions'];
+
+export const MedicalCardSection = ({
+  variant = 'inline',
+  initialTab = 'systems',
+  onTabChange,
+  medicalRecord,
+  laboratoryResults = [],
+  instrumentalResults = [],
+  loading,
+  error,
+  allLeaves,
+  currentLeaf
+}) => {
+  const isPage = variant === 'page';
+  const [medicalRecordOpen, setMedicalRecordOpen] = useState(isPage);
   const [expandedMedicalSection, setExpandedMedicalSection] = useState('');
   const [medicalHistoryOpen, setMedicalHistoryOpen] = useState(false);
-  const [medicalRecordTab, setMedicalRecordTab] = useState('systems');
+  const [medicalRecordTab, setMedicalRecordTab] = useState(
+    TAB_IDS.includes(initialTab) ? initialTab : 'systems'
+  );
+
+  /* Синхронизация только при смене вкладки из URL (страница медкарты), не при локальном клике */
+  useEffect(() => {
+    if (TAB_IDS.includes(initialTab)) {
+      setMedicalRecordTab(initialTab);
+    }
+  }, [initialTab]);
+
+  const selectTab = (tab) => {
+    setMedicalRecordTab(tab);
+    onTabChange?.(tab);
+  };
   const [showSickLeaveHistory, setShowSickLeaveHistory] = useState(false);
   const [prescriptions, setPrescriptions] = useState([]);
   const [prescriptionsLoading, setPrescriptionsLoading] = useState(false);
@@ -55,68 +83,73 @@ export const MedicalCardSection = ({ medicalRecord, laboratoryResults = [], inst
   };
 
   return (
-    <section className="section-card section-card--lux">
-      <h3>Медицинская карта</h3>
+    <section className={`section-card section-card--lux ${isPage ? 'medical-card-section--page' : ''}`}>
+      {!isPage && <h3>Медицинская карта</h3>}
       {loading && <p className="empty-info">Загрузка медицинской карты...</p>}
       {!loading && error && <p className="error-info">{error}</p>}
-      {!loading && !medicalRecordOpen && (
+      {!isPage && !loading && !medicalRecordOpen && (
         <p className="empty-info">
           Откройте карту, чтобы посмотреть записи врача по системам организма и лабораторные анализы.
         </p>
       )}
-      <button
-        className="btn btn-primary"
-        onClick={() => setMedicalRecordOpen((prev) => !prev)}
-        disabled={loading}
-      >
-        {medicalRecordOpen ? 'Скрыть карту' : 'Открыть карту'}
-      </button>
+      {!isPage && (
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => setMedicalRecordOpen((prev) => !prev)}
+          disabled={loading}
+        >
+          {medicalRecordOpen ? 'Скрыть карту' : 'Открыть карту'}
+        </button>
+      )}
 
-      {!loading && medicalRecordOpen && (
+      {!loading && (isPage || medicalRecordOpen) && (
         <>
           <div className="medical-record-tabs">
             <button
               type="button"
               className={`profile-tab-btn ${medicalRecordTab === 'systems' ? 'active' : ''}`}
-              onClick={() => setMedicalRecordTab('systems')}
+              onClick={() => selectTab('systems')}
             >
               Медицинская карта
             </button>
             <button
               type="button"
               className={`profile-tab-btn ${medicalRecordTab === 'sickLeave' ? 'active' : ''}`}
-              onClick={() => setMedicalRecordTab('sickLeave')}
+              onClick={() => selectTab('sickLeave')}
             >
               Лист нетрудоспособности
             </button>
             <button
               type="button"
               className={`profile-tab-btn ${medicalRecordTab === 'laboratory' ? 'active' : ''}`}
-              onClick={() => setMedicalRecordTab('laboratory')}
+              onClick={() => selectTab('laboratory')}
             >
               Лабораторные анализы
             </button>
             <button
               type="button"
               className={`profile-tab-btn ${medicalRecordTab === 'instrumental' ? 'active' : ''}`}
-              onClick={() => setMedicalRecordTab('instrumental')}
+              onClick={() => selectTab('instrumental')}
             >
               Инструментальные исследования
             </button>
             <button
               type="button"
               className={`profile-tab-btn ${medicalRecordTab === 'prescriptions' ? 'active' : ''}`}
-              onClick={() => setMedicalRecordTab('prescriptions')}
+              onClick={() => selectTab('prescriptions')}
             >
               Назначение
             </button>
           </div>
 
-          <div className="medical-record-patient-info">
-            <p><strong>Пациент:</strong> {medicalRecord?.patient?.name || '—'}</p>
-            <p><strong>Дата рождения:</strong> {medicalRecord?.patient?.birthDate ? String(medicalRecord.patient.birthDate).slice(0, 4) : '—'}</p>
-            <p><strong>Телефон:</strong> {medicalRecord?.patient?.phone || '—'}</p>
-          </div>
+          {!isPage && (
+            <div className="medical-record-patient-info">
+              <p><strong>Пациент:</strong> {medicalRecord?.patient?.name || '—'}</p>
+              <p><strong>Дата рождения:</strong> {medicalRecord?.patient?.birthDate ? String(medicalRecord.patient.birthDate).slice(0, 4) : '—'}</p>
+              <p><strong>Телефон:</strong> {medicalRecord?.patient?.phone || '—'}</p>
+            </div>
+          )}
 
           {/* Вкладка: Медицинская карта (системы организма) */}
           {medicalRecordTab === 'systems' && (

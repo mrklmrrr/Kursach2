@@ -43,11 +43,16 @@ export default function AddRelative() {
     }
     setSaving(true);
     try {
-      await dependentApi.create({
+      const { data } = await dependentApi.create({
         relativeUsername: u,
         relation: relationAcc,
         notes: notesAcc.trim() || undefined,
       });
+      if (data?.pending || data?.invite) {
+        showToast(data.message || 'Приглашение отправлено — ожидайте подтверждения', 'success');
+      } else {
+        showToast('Родственник добавлен', 'success');
+      }
       navigate('/profile');
     } catch (err) {
       showToast(err.response?.data?.message || 'Не удалось добавить', 'error');
@@ -133,7 +138,10 @@ export default function AddRelative() {
                 required
               />
             </div>
-            <p className="ar-hint">Человек должен быть зарегистрирован и указать такой же username в профиле.</p>
+            <p className="ar-hint">
+              Человек должен быть зарегистрирован и указать username в профиле. После отправки он получит запрос и
+              сможет подтвердить или отклонить связь.
+            </p>
 
             <label className="ar-label">Заметка (необязательно)</label>
             <textarea

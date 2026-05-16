@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { authApi, adminApi } from '../../services/authApi';
-import { disconnectChatSocket } from '../../services/chatSocket';
+import { disconnectChatSocket, getChatSocket } from '../../services/chatSocket';
 import { AuthContext } from '../authContext';
 
 // Cache for user data to avoid redundant getMe calls
@@ -60,8 +60,18 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
+    if (token) {
+      getChatSocket(token);
+    }
+  }, [token]);
+
+  useEffect(() => {
     const handleUnauthorized = () => {
       setUser(null);
+      const path = window.location.pathname;
+      if (path === '/login' || path === '/register' || path.startsWith('/admin')) {
+        return;
+      }
       window.location.href = '/login';
     };
     window.addEventListener('auth:unauthorized', handleUnauthorized);

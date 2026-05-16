@@ -3,7 +3,12 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { Button, Input } from '../../../components/ui';
 import { validate } from '../../../utils/validation';
+import { parseAuthFormError } from '../../../utils/apiError';
 import './AuthForms.css';
+
+function normalizePhone(value) {
+  return value.replace(/[\s()-]/g, '');
+}
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,8 +19,9 @@ export default function Login() {
   const [errors, setErrors] = useState({});
 
   const validateForm = () => {
+    const normalizedPhone = normalizePhone(phone);
     const errs = {};
-    const phoneErr = validate.phone(phone);
+    const phoneErr = validate.phone(normalizedPhone);
     if (phoneErr) errs.phone = phoneErr;
     const passErr = validate.password(password);
     if (passErr) errs.password = passErr;
@@ -25,14 +31,16 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const normalizedPhone = normalizePhone(phone);
     if (!validateForm()) return;
 
     try {
-      await login(phone, password);
+      await login(normalizedPhone, password);
       const redirectTo = location.state?.from || '/home';
       navigate(redirectTo, { replace: true });
     } catch (err) {
-      setErrors({ form: err.response?.data?.message || 'Ошибка входа' });
+      const { fieldErrors, form } = parseAuthFormError(err, 'Ошибка входа');
+      setErrors((prev) => ({ ...prev, ...fieldErrors, form }));
     }
   };
 
@@ -50,7 +58,9 @@ export default function Login() {
             value={phone}
             onChange={(e) => {
               setPhone(e.target.value);
-              if (errors.phone) setErrors({ ...errors, phone: '' });
+              if (errors.phone || errors.form) {
+                setErrors((prev) => ({ ...prev, phone: '', form: undefined }));
+              }
             }}
             required
           />
@@ -63,7 +73,9 @@ export default function Login() {
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);
-              if (errors.password) setErrors({ ...errors, password: '' });
+              if (errors.password || errors.form) {
+                setErrors((prev) => ({ ...prev, password: '', form: undefined }));
+              }
             }}
             required
           />

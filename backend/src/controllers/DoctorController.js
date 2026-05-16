@@ -1,4 +1,6 @@
 const ApiError = require('../utils/ApiError');
+const { isUserConnected } = require('../config/socket');
+const { mapDoctorPresence } = require('../utils/presence');
 
 class DoctorController {
   constructor(doctorService) {
@@ -7,7 +9,7 @@ class DoctorController {
 
   async getAll(req, res) {
     const doctors = await this.doctorService.getAll();
-    res.json(doctors);
+    res.json(doctors.map((doctor) => mapDoctorPresence(doctor, isUserConnected)));
   }
 
   async getById(req, res) {
@@ -15,7 +17,7 @@ class DoctorController {
     if (!doctor) {
       throw ApiError.notFound('Врач не найден');
     }
-    res.json(doctor);
+    res.json(mapDoctorPresence(doctor, isUserConnected));
   }
 }
 

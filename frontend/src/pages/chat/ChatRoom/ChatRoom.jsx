@@ -6,6 +6,7 @@ import { videoRoomApi } from '../../../services/videoRoomApi';
 import { doctorPanelApi } from '../../../services/doctorPanelApi';
 import { getChatSocket } from '../../../services/chatSocket';
 import { useAuth } from '../../../hooks/useAuth';
+import { usePresenceSocket } from '../../../hooks/usePresenceSocket';
 import { useToast } from '../../../contexts/ToastProvider/useToast';
 import { UserSidebar } from '../../../components/layout';
 import DoctorSidebar from '../../doctorPanel/components/DoctorSidebar/DoctorSidebar';
@@ -228,6 +229,23 @@ export default function ChatRoom() {
         )
       },
   [isDoctor, isCurrentUserPatientSide, chatMeta, doctor, patientFromState, companionFromState]);
+
+  const handlePresenceChange = useCallback((userId, isOnline) => {
+    setChatMeta((prev) => {
+      if (!prev) return prev;
+      const doctorId = String(prev.doctorId || doctor.id || '');
+      const patientId = String(prev.patientId || patientFromState?.id || '');
+      if (doctorId === userId) {
+        return { ...prev, doctorIsOnline: isOnline };
+      }
+      if (patientId === userId) {
+        return { ...prev, patientIsOnline: isOnline };
+      }
+      return prev;
+    });
+  }, [doctor.id, patientFromState?.id]);
+
+  usePresenceSocket(token, handlePresenceChange);
 
   // Smooth scroll only when new messages arrive (not on every render)
   const lastMessageCountRef = useRef(messages.length);

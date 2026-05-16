@@ -2,9 +2,11 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const config = require('./index');
 const { User, Consultation } = require('../models');
+const { roles } = require('../constants');
 const logger = require('../utils/logger');
 const { hasConsultationAccess } = require('../utils/chatAccess');
 const { isGeneralPractitionerSpecialty } = require('../constants/generalPractitioner');
+const { getPresenceForUser } = require('../utils/presence');
 
 /** Комната для push-уведомлений о экстренных заявках (врачи общей практики). */
 const EMERGENCY_GP_ROOM = 'emergency-gp';
@@ -49,13 +51,46 @@ function emitToEmergencyGp(eventName, payload) {
   }
 }
 
-async function updatePresence(userId, isOnline) {
+function isUserConnected(userId) {
+  if (!userId) return false;
+  return (userSockets.get(String(userId))?.size || 0) > 0;
+}
+
+/** Для пациентов и админов — флаг «в сети» в БД синхронизируется с socket. */
+async function updatePresence(userId, isOnline, role) {
   if (!userId) return;
+  if (role === roles.DOCTOR) return;
+
   try {
     await User.updateOne({ _id: userId }, { $set: { isOnline: Boolean(isOnline) } });
   } catch (err) {
-    logger.warn('Presence update failed', { userId: String(userId), isOnline: Boolean(isOnline), err: err?.message });
+    logger.warn('Presence update failed', {
+      userId: String(userId),
+      isOnline: Boolean(isOnline),
+      err: err?.message
+    });
   }
+}
+
+function emitPresenceChange(userId) {
+  if (!io || !userId) return;
+
+  void (async () => {
+    try {
+      const user = await User.findById(userId).select('role isOnline').lean();
+      if (!user) return;
+
+      const payload = {
+        userId: String(userId),
+        isOnline: getPresenceForUser(user, isUserConnected),
+        role: user.role
+      };
+
+      io.emit('user-presence', payload);
+    } catch (err) {
+      logger.warn('emitPresenceChange failed', { userId: String(userId), err: err?.message });
+    }
+  })();
 }
 
 async function resolvePatientSocketUserId(rawPatientId) {
@@ -186,7 +221,8 @@ function setupSocket(server, consultationRepository) {
   io.on('connection', (socket) => {
     logger.info('Socket client connected');
     registerUserSocket(socket.userId, socket.id);
-    updatePresence(socket.userId, true);
+    updatePresence(socket.userId, true, socket.userRole);
+    emitPresenceChange(socket.userId);
     const pendingInvite = pendingVideoInvites.get(String(socket.userId));
     if (pendingInvite) {
       socket.emit('video-call-incoming', pendingInvite);
@@ -596,7 +632,8 @@ function setupSocket(server, consultationRepository) {
       unregisterUserSocket(socket.userId, socket.id);
       const hasActiveSockets = (userSockets.get(String(socket.userId))?.size || 0) > 0;
       if (!hasActiveSockets) {
-        updatePresence(socket.userId, false);
+        updatePresence(socket.userId, false, socket.userRole);
+        emitPresenceChange(socket.userId);
       }
       logger.info('Socket client disconnected');
     });
@@ -609,4 +646,11 @@ function getIO() {
   return io;
 }
 
-module.exports = { setupSocket, getIO, emitToUser, emitToEmergencyGp };
+module.exports = {
+  setupSocket,
+  getIO,
+  emitToUser,
+  emitToEmergencyGp,
+  isUserConnected,
+  emitPresenceChange
+};

@@ -14,6 +14,7 @@ const {
   UserRepository,
   ConsultationRepository,
   DependentRepository,
+  RelativeInviteRepository,
   DoctorRepository,
   AppointmentRepository,
   MedicalRecordRepository,
@@ -138,6 +139,7 @@ async function startApp() {
   const userRepository = new UserRepository();
   const consultationRepository = new ConsultationRepository();
   const dependentRepository = new DependentRepository();
+  const relativeInviteRepository = new RelativeInviteRepository();
   const doctorRepository = new DoctorRepository();
   const appointmentRepository = new AppointmentRepository();
   const medicalRecordRepository = new MedicalRecordRepository();
@@ -147,7 +149,7 @@ async function startApp() {
   const doctorService = new DoctorService(doctorRepository, consultationRepository);
   const consultationService = new ConsultationService(consultationRepository);
   const paymentService = new PaymentService(consultationRepository);
-  const dependentService = new DependentService(dependentRepository, userRepository);
+  const dependentService = new DependentService(dependentRepository, userRepository, relativeInviteRepository);
   const appointmentService = new AppointmentService(
     appointmentRepository,
     userRepository,

@@ -1,5 +1,7 @@
 const { consultationStatus } = require('../constants');
 const ApiError = require('../utils/ApiError');
+const { emitPresenceChange, isUserConnected } = require('../config/socket');
+const { getPresenceForUser } = require('../utils/presence');
 
 class DoctorPanelController {
   constructor(doctorService, consultationService, dependentService, emergencyRequestService) {
@@ -15,7 +17,11 @@ class DoctorPanelController {
     if (!doctor) {
       throw ApiError.notFound('Профиль не найден');
     }
-    res.json(doctor);
+    res.json({
+      ...doctor,
+      isAvailable: Boolean(doctor.isOnline),
+      isOnline: getPresenceForUser({ ...doctor, role: 'doctor' }, isUserConnected)
+    });
   }
 
   /** Обновить профиль */
@@ -41,7 +47,12 @@ class DoctorPanelController {
     if (!doctor) {
       throw ApiError.notFound('Профиль не найден');
     }
-    res.json(doctor);
+    emitPresenceChange(req.userId);
+    res.json({
+      ...doctor,
+      isAvailable: Boolean(doctor.isOnline),
+      isOnline: getPresenceForUser({ ...doctor, role: 'doctor' }, isUserConnected)
+    });
   }
 
   /** Список всех консультаций врача */

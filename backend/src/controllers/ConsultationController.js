@@ -1,5 +1,7 @@
 const { hasConsultationAccess } = require('../utils/chatAccess');
 const { resolveAvatarUrl } = require('../utils/userSerializer');
+const { getPresenceForUser } = require('../utils/presence');
+const { isUserConnected } = require('../config/socket');
 const ApiError = require('../utils/ApiError');
 const { User } = require('../models');
 const { uploadChatFile, deleteChatFile } = require('../services/chatMediaStorage');
@@ -151,7 +153,7 @@ const ConsultationController = class {
         avatarUrl: resolveAvatarUrl(d.avatarUrl || ''),
         doctorName: d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim(),
         specialty: d.specialty || '',
-        isOnline: Boolean(d.isOnline)
+        isOnline: getPresenceForUser(d, isUserConnected)
       });
     });
 
@@ -163,7 +165,7 @@ const ConsultationController = class {
         role: p.role || 'patient',
         fullName: `${p.firstName || ''} ${p.lastName || ''}`.trim(),
         specialty: p.specialty || '',
-        isOnline: Boolean(p.isOnline)
+        isOnline: getPresenceForUser(p, isUserConnected)
       };
       patientMap.set(String(p.id || p._id), payload);
       if (p.legacyId != null) {
@@ -324,11 +326,14 @@ const ConsultationController = class {
     }
 
     const doctor = await this.doctorRepository.findById(consultation.doctorId);
+    const doctorUser = doctor
+      ? await User.findById(doctor.id || doctor._id).select('role isOnline').lean()
+      : null;
     const response = {
       consultationId: consultation._id,
       doctorName: doctor?.name || consultation.doctorName,
       specialty: doctor?.specialty || consultation.specialty,
-      doctorIsOnline: Boolean(doctor?.isOnline),
+      doctorIsOnline: getPresenceForUser(doctorUser, isUserConnected),
       messages: consultation.messages || []
     };
 
@@ -339,7 +344,7 @@ const ConsultationController = class {
         response.patientId = consultation.patientId;
         response.patientName = consultation.patientName;
         response.patientAvatarUrl = resolveAvatarUrl(patient.avatarUrl || '');
-        response.patientIsOnline = Boolean(patient.isOnline);
+        response.patientIsOnline = getPresenceForUser(patient, isUserConnected);
       }
     } else {
       // Include doctor info and avatar for patients

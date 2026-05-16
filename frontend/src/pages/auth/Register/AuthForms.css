@@ -25,6 +25,16 @@
   gap: 12px;
   width: 100%;
   max-width: 400px;
+  position: relative;
+}
+
+.auth-autofill-trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .register-content select {

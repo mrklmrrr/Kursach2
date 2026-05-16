@@ -1,5 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { doctorApi } from '../../../services/doctorApi';
+import { useAuth } from '../../../hooks/useAuth';
+import { usePresenceSocket } from '../../../hooks/usePresenceSocket';
 import { AppHeader, BottomNav, UserSidebar } from '../../../components/layout';
 import { DoctorCard } from '../../../components/features';
 import { Input } from '../../../components/ui';
@@ -7,6 +9,7 @@ import { EmptyState } from '../../../components/ui';
 import './Doctors.css';
 
 export default function Doctors() {
+  const { token } = useAuth();
   const [doctors, setDoctors] = useState([]);
   const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [loadingError, setLoadingError] = useState('');
@@ -42,6 +45,16 @@ export default function Doctors() {
       isMounted = false;
     };
   }, []);
+
+  const handleDoctorPresence = useCallback((userId, isOnline) => {
+    setDoctors((prev) => prev.map((doc) => {
+      const docId = String(doc.id || doc._id || '');
+      if (docId !== userId) return doc;
+      return { ...doc, isOnline };
+    }));
+  }, []);
+
+  usePresenceSocket(token, handleDoctorPresence);
 
   const filteredDoctors = useMemo(() => {
     const normalizedSearch = searchTerm.toLowerCase().trim();

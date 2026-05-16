@@ -93,22 +93,25 @@ const DoctorContent = ({ currentTab, activeTab, profile, onOpenPatientProfile, o
   }
 
   const handleToggleOnline = async () => {
-    const next = !profile?.isOnline;
+    const next = !profile?.isAvailable;
     try {
-      // Оптимистичное обновление UI
-      panelData.setProfile((prev) => ({ ...prev, isOnline: next }));
-      await doctorPanelApi.toggleOnline(next);
-      toast(next ? 'Вы в сети — пациенты видят вас онлайн' : 'Вы офлайн', 'success');
+      panelData.setProfile((prev) => ({ ...prev, isAvailable: next }));
+      const { data } = await doctorPanelApi.toggleOnline(next);
+      panelData.setProfile((prev) => ({ ...prev, ...data }));
+      toast(next ? 'Вы доступны для пациентов' : 'Вы недоступны для приёма', 'success');
     } catch (err) {
-      // Откат при ошибке
-      panelData.setProfile((prev) => ({ ...prev, isOnline: !next }));
+      panelData.setProfile((prev) => ({ ...prev, isAvailable: !next }));
       toast(err.message || 'Не удалось изменить статус', 'error');
     }
   };
 
   return (
     <div className="page-shell page-shell--flex-grow">
-      <ProfileHeader profile={profile} isOnline={profile?.isOnline} onToggleOnline={handleToggleOnline} />
+      <ProfileHeader
+        profile={profile}
+        isAvailable={profile?.isAvailable}
+        onToggleOnline={handleToggleOnline}
+      />
       <DoctorPanelStats
         upcomingScheduleCount={panelData.upcomingSchedule?.length ?? 0}
         activeAppointmentsCount={panelData.activeAppointmentsCount}

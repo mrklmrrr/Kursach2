@@ -27,14 +27,20 @@ function calculateAuthRetryDelay(attempt, maxDelay) {
   return Math.min(exponentialDelay + jitter, maxDelay);
 }
 
+/** 401 при неверном пароле на login/register — не сессия, а ошибка формы */
+function isCredentialAuthRequest(config) {
+  const url = config?.url || '';
+  return /\/auth\/(login|register)$/.test(url) || /\/admin\/login$/.test(url);
+}
+
 authApiInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
 
-    // Handle 401 unauthorized
-    if (status === 401) {
+    // 401 только для истёкшей сессии; при ошибке логина/регистрации форма не сбрасываем
+    if (status === 401 && !isCredentialAuthRequest(originalRequest)) {
       localStorage.removeItem('token');
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
       return Promise.reject(error);
@@ -74,8 +80,9 @@ export const authApi = {
   login: (phone, password) => authApiInstance.post('/auth/login', { phone, password }),
   getMe: () => authApiInstance.get('/auth/me'),
   updateUser: (updates) => authApiInstance.put('/auth/user', updates),
-  checkUsername: (username) => authApiInstance.get(`/auth/user/username/${username}`),
-  setUsername: (username) => authApiInstance.put('/auth/user/username', { username }),
+  checkUsername: (username) =>
+    authApiInstance.get('/auth/username/check', { params: { u: username } }),
+  setUsername: (username) => authApiInstance.patch('/auth/username', { username }),
   uploadAvatar: (fileOrFormData) => {
     const formData = fileOrFormData instanceof FormData ? fileOrFormData : new FormData();
     if (!(fileOrFormData instanceof FormData)) {
@@ -87,8 +94,8 @@ export const authApi = {
   },
   changePassword: (currentPassword, newPassword) =>
     authApiInstance.post('/auth/change-password', { currentPassword, newPassword }),
-  updateReminderPreferences: (preferences) => 
-    authApiInstance.put('/auth/user/reminder', preferences)
+  updateReminderPreferences: (preferences) =>
+    authApiInstance.patch('/auth/reminder-preferences', preferences)
 };
 
 export const adminApi = {

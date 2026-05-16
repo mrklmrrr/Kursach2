@@ -1,23 +1,21 @@
-import { useEffect, useState } from 'react';
+import { forwardRef, useMemo } from 'react';
 import DatePicker from 'react-datepicker';
-import { format, isValid, parse, parseISO } from 'date-fns';
+import { format, isValid, parse } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import 'react-datepicker/dist/react-datepicker.css';
 import './DateInput.css';
 
-const toDate = (value) => {
+const parseStoredDate = (value) => {
   if (!value) return null;
 
-  try {
-    return parseISO(value);
-  } catch {
-    return null;
+  const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (isoMatch) {
+    const parsed = new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
+    return isValid(parsed) ? parsed : null;
   }
-};
 
-const isoToDisplay = (value) => {
-  const parsed = toDate(value);
-  return parsed ? format(parsed, 'dd.MM.yyyy') : '';
+  const dotted = parse(value, 'dd.MM.yyyy', new Date());
+  return isValid(dotted) ? dotted : null;
 };
 
 const maskDateInput = (rawValue) => {
@@ -28,54 +26,81 @@ const maskDateInput = (rawValue) => {
   return [day, month, year].filter(Boolean).join('.');
 };
 
+const MaskedDateInput = forwardRef(function MaskedDateInput(
+  {
+    value,
+    onClick,
+    onChange,
+    className,
+    placeholder,
+    name,
+    id,
+    required,
+    onBlur,
+    autoComplete = 'off',
+    preventAutofill = false
+  },
+  ref
+) {
+  const handleInputChange = (event) => {
+    const maskedValue = maskDateInput(event.target.value);
+    onChange?.({
+      ...event,
+      target: { ...event.target, value: maskedValue }
+    });
+  };
+
+  const handleFocus = (event) => {
+    if (preventAutofill) {
+      event.target.removeAttribute('readonly');
+    }
+  };
+
+  return (
+    <input
+      ref={ref}
+      type="text"
+      name={name}
+      id={id}
+      value={value ?? ''}
+      onClick={onClick}
+      onChange={handleInputChange}
+      onFocus={handleFocus}
+      onBlur={onBlur}
+      className={className}
+      placeholder={placeholder}
+      required={required}
+      inputMode="numeric"
+      autoComplete={autoComplete}
+      readOnly={preventAutofill || undefined}
+      data-lpignore="true"
+      data-1p-ignore="true"
+    />
+  );
+});
+
 export default function DateInput({
   name,
   value,
   onChange,
   required = false,
   className = '',
-  placeholder = 'дд.мм.гггг'
+  placeholder = 'дд.мм.гггг',
+  id,
+  autoComplete = 'off',
+  preventAutofill = false
 }) {
-  const [inputValue, setInputValue] = useState(isoToDisplay(value));
-  const selectedDate = toDate(value);
+  const selectedDate = useMemo(() => parseStoredDate(value), [value]);
   const maxDate = new Date();
   const minDate = new Date(1900, 0, 1);
-
-  useEffect(() => {
-    setInputValue(isoToDisplay(value));
-  }, [value]);
+  const inputClassName = `date-input-field ${className}`.trim();
 
   const handleChange = (date) => {
+    if (date && !isValid(date)) return;
+    if (date && (date < minDate || date > maxDate)) return;
+
     const nextValue = date ? format(date, 'yyyy-MM-dd') : '';
-    setInputValue(date ? format(date, 'dd.MM.yyyy') : '');
     onChange?.({ target: { name, value: nextValue } });
-  };
-
-  const handleRawChange = (event) => {
-    const maskedValue = maskDateInput(event.target.value);
-    event.target.value = maskedValue;
-    setInputValue(maskedValue);
-
-    if (!maskedValue) {
-      onChange?.({ target: { name, value: '' } });
-      return;
-    }
-
-    if (maskedValue.length !== 10) return;
-
-    const parsed = parse(maskedValue, 'dd.MM.yyyy', new Date());
-    if (!isValid(parsed)) return;
-    if (parsed < minDate || parsed > maxDate) return;
-
-    onChange?.({ target: { name, value: format(parsed, 'yyyy-MM-dd') } });
-  };
-
-  const handleBlur = () => {
-    if (!inputValue) return;
-
-    if (inputValue.length !== 10) {
-      setInputValue(isoToDisplay(value));
-    }
   };
 
   return (
@@ -83,6 +108,17 @@ export default function DateInput({
       <DatePicker
         selected={selectedDate}
         onChange={handleChange}
+        customInput={
+          <MaskedDateInput
+            name={name}
+            id={id}
+            required={required}
+            className={inputClassName}
+            placeholder={placeholder}
+            autoComplete={autoComplete}
+            preventAutofill={preventAutofill}
+          />
+        }
         dateFormat="dd.MM.yyyy"
         locale={ru}
         showMonthDropdown
@@ -92,17 +128,14 @@ export default function DateInput({
         minDate={minDate}
         maxDate={maxDate}
         isClearable={!required}
-        required={required}
-        name={name}
         placeholderText={placeholder}
-        className={`date-input-field ${className}`.trim()}
         calendarClassName="date-input-calendar"
         popperClassName="date-input-popper"
-        value={inputValue}
-        onChangeRaw={handleRawChange}
-        onBlur={handleBlur}
+        shouldCloseOnSelect
       />
-      <span className="material-icons date-input-icon" aria-hidden="true">calendar_month</span>
+      <span className="material-icons date-input-icon" aria-hidden="true">
+        calendar_month
+      </span>
     </div>
   );
 }

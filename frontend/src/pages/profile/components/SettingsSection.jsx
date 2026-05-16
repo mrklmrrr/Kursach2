@@ -2,11 +2,17 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '../../../components/features/ThemeToggle/ThemeToggle';
 import { ROUTES } from '../../../constants';
+import { useAuth } from '../../../hooks/useAuth';
 import { PasswordChangeSection } from './PasswordChangeSection';
+import { UsernameChangeSection } from './UsernameChangeSection';
 
 export const SettingsSection = ({ onLogout }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [usernameOpen, setUsernameOpen] = useState(false);
+  const hasUsername = Boolean(String(user?.username || '').trim());
+  const showUsernameChange = user?.role === 'patient' && hasUsername;
 
   const handleLogout = () => {
     onLogout();
@@ -32,6 +38,22 @@ export const SettingsSection = ({ onLogout }) => {
         </span>
       </button>
       {passwordOpen && <PasswordChangeSection embedded />}
+      {showUsernameChange && (
+        <>
+          <button
+            type="button"
+            className="setting-row settings-action-row"
+            aria-expanded={usernameOpen}
+            onClick={() => setUsernameOpen((prev) => !prev)}
+          >
+            <span>Сменить username</span>
+            <span className="settings-chevron" aria-hidden>
+              {usernameOpen ? '▾' : '▸'}
+            </span>
+          </button>
+          {usernameOpen && <UsernameChangeSection embedded />}
+        </>
+      )}
       <div className="setting-row logout-row" onClick={handleLogout}>
         <span>Выйти из аккаунта</span>
         <span className="material-icons">logout</span>

@@ -11,6 +11,7 @@ import Consultation from '../pages/consultation/Consultation/Consultation';
 import VideoRoom from '../pages/video-room/VideoRoom/VideoRoom';
 import Profile from '../pages/profile/Profile/Profile';
 import AddRelative from '../pages/profile/AddRelative/AddRelative';
+import MedicalCardPage from '../pages/profile/MedicalCard/MedicalCard';
 import Payment from '../pages/payment/Payment/Payment';
 import Confirm from '../pages/payment/Confirm/Confirm';
 import LoaderPage from '../pages/payment/Loader/Loader';
@@ -47,6 +48,7 @@ export const routes = {
     { path: '/emergency/wait', element: <EmergencyWait /> },
     { path: '/profile', element: <Profile /> },
     { path: '/profile/add-relative', element: <AddRelative /> },
+    { path: '/profile/medical-card', element: <MedicalCardPage /> },
     { path: '/confirm', element: <Confirm /> },
     { path: '/payment', element: <Payment /> },
     { path: '/loader', element: <LoaderPage /> },
