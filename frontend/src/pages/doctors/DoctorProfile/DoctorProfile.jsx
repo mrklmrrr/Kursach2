@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doctorApi } from '../../../services/doctorApi';
 import { appointmentApi } from '../../../services/appointmentApi';
@@ -71,37 +71,7 @@ export default function DoctorProfile() {
     bookingSheetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [bookingOpen]);
 
-  if (loading) {
-    return <Loader text="Загрузка информации о враче..." />;
-  }
-
-  if (!doctor) {
-    return <div className="not-found">Врач не найден</div>;
-  }
-
-  const doctorRating = Number(doctor.rating) || 4.9;
-  const doctorPrice = Number(doctor.price) || 0;
-
-  const handleBookAppointment = () => {
-    if (bookingOpen) {
-      setBookingOpen(false);
-      setBookingDate('');
-      setSlots([]);
-      setSelectedTime('');
-      setConsultationType('online');
-      setDuration(30);
-      setBookingNotice({ type: '', text: '' });
-      setShowCustomDate(false);
-      return;
-    }
-    setBookingOpen(true);
-    const first = dateStrip[0]?.iso;
-    if (first) {
-      loadSlotsForDate(first);
-    }
-  };
-
-  const loadSlotsForDate = async (date) => {
+  const loadSlotsForDate = useCallback(async (date) => {
     setBookingDate(date);
     setSelectedTime('');
 
@@ -114,12 +84,13 @@ export default function DoctorProfile() {
     setLoadingSlots(true);
     try {
       const res = await appointmentApi.getAvailableSlots(id, date);
-      setSlots(res.data?.slots || []);
-      if ((res.data?.slots || []).length === 0) {
-        setBookingNotice({ type: 'info', text: 'На выбранную дату свободных слотов нет.' });
-      } else {
-        setBookingNotice({ type: '', text: '' });
-      }
+      const nextSlots = res.data?.slots || [];
+      setSlots(nextSlots);
+      setBookingNotice(
+        nextSlots.length === 0
+          ? { type: 'info', text: 'На выбранную дату свободных слотов нет.' }
+          : { type: '', text: '' }
+      );
     } catch (err) {
       setSlots([]);
       setBookingNotice({
@@ -129,7 +100,41 @@ export default function DoctorProfile() {
     } finally {
       setLoadingSlots(false);
     }
-  };
+  }, [id]);
+
+  const resetBooking = useCallback(() => {
+    setBookingOpen(false);
+    setBookingDate('');
+    setSlots([]);
+    setSelectedTime('');
+    setConsultationType('online');
+    setDuration(30);
+    setBookingNotice({ type: '', text: '' });
+    setShowCustomDate(false);
+  }, []);
+
+  const handleBookAppointment = useCallback(() => {
+    if (bookingOpen) {
+      resetBooking();
+      return;
+    }
+    setBookingOpen(true);
+    const first = dateStrip[0]?.iso;
+    if (first) {
+      loadSlotsForDate(first);
+    }
+  }, [bookingOpen, dateStrip, loadSlotsForDate, resetBooking]);
+
+  if (loading) {
+    return <Loader text="Загрузка информации о враче..." />;
+  }
+
+  if (!doctor) {
+    return <div className="not-found">Врач не найден</div>;
+  }
+
+  const doctorRating = Number(doctor.rating) || 4.9;
+  const doctorPrice = Number(doctor.price) || 0;
 
   const handleDateChange = async (e) => {
     await loadSlotsForDate(e.target.value);
@@ -278,10 +283,10 @@ export default function DoctorProfile() {
         </div>
 
         <div className="action-buttons">
-          <Button variant="primary" size="large" className="huge-btn" onClick={handleBookAppointment}>
+          <Button variant="primary" size="large" className="action-btn" onClick={handleBookAppointment}>
             Назначить запись — {doctorPrice} BYN
           </Button>
-          <Button variant="outline" size="large" onClick={handleStartChat} disabled={startingChat}>
+          <Button variant="outline" size="large" className="action-btn" onClick={handleStartChat} disabled={startingChat}>
             {startingChat ? 'Создание чата...' : 'Начать чат с врачом'}
           </Button>
         </div>
@@ -378,8 +383,8 @@ export default function DoctorProfile() {
 
             <Button
               variant="primary"
-              size="medium"
-              className="booking-confirm"
+              size="large"
+              className="booking-confirm action-btn"
               onClick={handleCreateAppointment}
               disabled={savingBooking}
             >
