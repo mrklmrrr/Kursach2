@@ -598,6 +598,7 @@ export default function ChatRoom() {
   };
 
   const handleStartVideoChat = async () => {
+    if (!isDoctor) return;
     try {
       setStartingVideo(true);
       const response = await videoRoomApi.createRoom(id);
@@ -719,16 +720,18 @@ export default function ChatRoom() {
             </div>
           </div>
         </button>
-        <button
-          type="button"
-          className="btn btn-primary btn-icon chat-room-header-video"
-          onClick={handleStartVideoChat}
-          disabled={startingVideo || isRingingOut}
-          title={isDoctor ? 'Начать видеовызов с пациентом' : 'Открыть видеоконсультацию'}
-          aria-label="Видео"
-        >
-          <span className="material-icons">{(startingVideo || isRingingOut) ? 'hourglass_top' : 'videocam'}</span>
-        </button>
+        {isDoctor && (
+          <button
+            type="button"
+            className="btn btn-primary btn-icon chat-room-header-video"
+            onClick={handleStartVideoChat}
+            disabled={startingVideo || isRingingOut}
+            title="Начать видеовызов с пациентом"
+            aria-label="Начать видеозвонок"
+          >
+            <span className="material-icons">{(startingVideo || isRingingOut) ? 'hourglass_top' : 'videocam'}</span>
+          </button>
+        )}
       </header>
 
       {isDoctor && isRingingOut && (
