@@ -4,7 +4,9 @@ import { Avatar } from '../../../components/ui';
 import { chatApi } from '../../../services/chatApi';
 import { videoRoomApi } from '../../../services/videoRoomApi';
 import { doctorPanelApi } from '../../../services/doctorPanelApi';
-import { getChatSocket } from '../../../services/chatSocket';
+import { getChatSocket, leaveChatRoom, markChatRead } from '../../../services/chatSocket';
+import { setActiveChatId } from '../../../services/activeChat';
+import { useChatUnread } from '../../../contexts/ChatUnreadProvider/ChatUnreadProvider';
 import { useAuth } from '../../../hooks/useAuth';
 import { usePresenceSocket } from '../../../hooks/usePresenceSocket';
 import { useToast } from '../../../contexts/ToastProvider/useToast';
@@ -147,6 +149,7 @@ export default function ChatRoom() {
   const location = useLocation();
   const { user, token } = useAuth();
   const { showToast } = useToast();
+  const { setUnreadForChat } = useChatUnread();
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState('');
   const [loading, setLoading] = useState(true);
@@ -275,6 +278,12 @@ export default function ChatRoom() {
   }, [messages, loading]);
 
   useEffect(() => {
+    setActiveChatId(id);
+    setUnreadForChat(id, 0);
+    return () => setActiveChatId(null);
+  }, [id, setUnreadForChat]);
+
+  useEffect(() => {
     const loadStart = performance.now();
     initialScrollDoneRef.current = false;
     joinedChatIdRef.current = null;
@@ -354,6 +363,24 @@ export default function ChatRoom() {
       const newMessage = parseSocketMessagePayload(payload, id);
       if (!newMessage) return;
       setMessages((prev) => upsertMessage(prev, newMessage));
+
+      const isSystem = newMessage.messageType === 'system' || newMessage.sender === 'system';
+      if (isSystem) return;
+
+      const currentUserId = user?.id != null ? String(user.id) : '';
+      const messageSenderId = newMessage.senderId != null ? String(newMessage.senderId) : '';
+      let isOwn = false;
+      if (currentUserId && messageSenderId) {
+        isOwn = currentUserId === messageSenderId;
+      } else if (isDoctor) {
+        isOwn = newMessage.sender === 'doctor';
+      } else {
+        isOwn = newMessage.sender === 'user';
+      }
+
+      if (!isOwn) {
+        markChatRead(id);
+      }
     };
 
     const handleChatHistory = (history) => {
@@ -421,6 +448,7 @@ export default function ChatRoom() {
     }
 
     return () => {
+      leaveChatRoom(id);
       joinedChatIdRef.current = null;
       window.removeEventListener('online', onBrowserOnline);
       socket.off('connect', handleConnect);
@@ -434,7 +462,7 @@ export default function ChatRoom() {
       socket.off('video-call-rejected', handleCallRejected);
       socketRef.current = null;
     };
-  }, [id, token, isDoctor, showToast]);
+  }, [id, token, isDoctor, showToast, user?.id]);
 
   const handleSend = useCallback(async () => {
     if (!inputMsg.trim()) return;

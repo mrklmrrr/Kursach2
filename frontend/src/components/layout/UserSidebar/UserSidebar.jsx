@@ -1,6 +1,8 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
+import { useChatUnread } from '@contexts/ChatUnreadProvider/ChatUnreadProvider';
 import { Avatar } from '@components/ui';
+import NavUnreadBadge from '../NavUnreadBadge/NavUnreadBadge';
 import './UserSidebar.css';
 
 const userNavItems = [
@@ -22,6 +24,7 @@ export default function UserSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { totalUnread } = useChatUnread();
 
   const name = user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Пользователь';
   const subtitle = user?.email || user?.phone || 'Личный кабинет';
@@ -47,6 +50,7 @@ export default function UserSidebar() {
           >
             <span className="material-icons">{item.icon}</span>
             <span>{item.label}</span>
+            {item.to === '/chats' ? <NavUnreadBadge count={totalUnread} /> : null}
           </NavLink>
         ))}
       </nav>

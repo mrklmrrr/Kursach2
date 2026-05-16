@@ -371,14 +371,21 @@ const ConsultationController = class {
       throw ApiError.badRequest('Текст сообщения обязателен');
     }
 
+    const receiverSide = this._resolveUnreadReceiverBySenderRole(req.userRole);
     const savedMessage = await this.consultationService.addMessage(consultation._id, {
       messageType: 'text',
       message: text,
       sender: this._resolveSender(req.userRole),
       senderId: String(req.userId),
       timestamp: new Date().toISOString()
-    }, this._resolveUnreadReceiverBySenderRole(req.userRole));
+    }, receiverSide);
 
+    try {
+      await this._resetUnreadIfReceiverViewing(consultation, receiverSide);
+    } catch (err) {
+      // Do not block delivery if unread reset fails
+      console.warn('[sendMessage] unread reset failed:', err?.message);
+    }
     await this._emitChatUpdateToParticipants(consultation, savedMessage);
     res.status(201).json(savedMessage);
   }
@@ -406,6 +413,7 @@ const ConsultationController = class {
         fileName: req.file.originalname || safeOriginal
       });
       const publicPath = `/api/media/chat/${String(gridFileId)}`;
+      const receiverSide = this._resolveUnreadReceiverBySenderRole(req.userRole);
       const savedMessage = await this.consultationService.addMessage(consultation._id, {
         messageType: fileType,
         message: String(req.body.message || '').trim(),
@@ -416,8 +424,13 @@ const ConsultationController = class {
         fileName: req.file.originalname,
         fileMimeType: req.file.mimetype,
         fileSize: req.file.size
-      }, this._resolveUnreadReceiverBySenderRole(req.userRole));
+      }, receiverSide);
 
+      try {
+        await this._resetUnreadIfReceiverViewing(consultation, receiverSide);
+      } catch (err) {
+        console.warn('[uploadAttachment] unread reset failed:', err?.message);
+      }
       await this._emitChatUpdateToParticipants(consultation, savedMessage);
       res.status(201).json(savedMessage);
     } catch (err) {
@@ -482,25 +495,51 @@ const ConsultationController = class {
     }
   }
 
+  async _resetUnreadIfReceiverViewing(consultation, receiverSide) {
+    const { resetUnreadForReceiversInRoom } = require('../utils/chatUnread');
+    return resetUnreadForReceiversInRoom(
+      this.consultationService.consultationRepository,
+      consultation,
+      receiverSide
+    );
+  }
+
   async _emitChatUpdateToParticipants(consultation, payload) {
     try {
       const { getIO, emitToUser } = require('../config/socket');
+      const { getUnreadCounts } = require('../utils/chatUnread');
       const io = getIO();
       if (!io || !consultation) return;
 
       const chatId = String(consultation._id);
+      const fresh = await this.consultationService.getById(chatId);
+      const unreadCounts = getUnreadCounts(fresh || consultation);
       const wrapped = { chatId, message: payload };
+
       io.to(`chat-${chatId}`).emit('new-message', wrapped);
-      emitToUser(consultation.doctorId, 'chat-updated', wrapped);
+
+      // Direct push to each participant (room join may lag behind first messages).
+      emitToUser(consultation.doctorId, 'new-message', wrapped);
+      emitToUser(consultation.doctorId, 'chat-updated', {
+        ...wrapped,
+        unreadCount: unreadCounts.doctor
+      });
 
       const patientLegacyId = consultation.patientId;
       if (patientLegacyId !== null && patientLegacyId !== undefined) {
         const patientUser = await User.findOne({ legacyId: patientLegacyId }).select('_id').lean();
         if (patientUser?._id) {
-          // Direct push helps when the client has not finished join-chat yet.
           emitToUser(patientUser._id, 'new-message', wrapped);
-          emitToUser(patientUser._id, 'chat-updated', wrapped);
+          emitToUser(patientUser._id, 'chat-updated', {
+            ...wrapped,
+            unreadCount: unreadCounts.patient
+          });
         }
+        emitToUser(patientLegacyId, 'new-message', wrapped);
+        emitToUser(patientLegacyId, 'chat-updated', {
+          ...wrapped,
+          unreadCount: unreadCounts.patient
+        });
       }
     } catch {
       // noop

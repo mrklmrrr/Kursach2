@@ -4,7 +4,7 @@ const config = require('./index');
 const { User, Consultation } = require('../models');
 const { roles } = require('../constants');
 const logger = require('../utils/logger');
-const { hasConsultationAccess } = require('../utils/chatAccess');
+const { hasConsultationAccess, resolveViewerSide } = require('../utils/chatAccess');
 const { isGeneralPractitionerSpecialty } = require('../constants/generalPractitioner');
 const { getPresenceForUser } = require('../utils/presence');
 
@@ -212,6 +212,8 @@ function setupSocket(server, consultationRepository) {
       });
       socket.userId = decoded.id;
       socket.userRole = decoded.role;
+      socket.data.userId = decoded.id;
+      socket.data.userRole = decoded.role;
       next();
     } catch {
       next(new Error('Неверный токен'));
@@ -264,12 +266,55 @@ function setupSocket(server, consultationRepository) {
         }
 
         socket.join(`chat-${chatId}`);
-        const viewerSide = String(consultation.doctorId) === String(socket.userId) ? 'doctor' : 'patient';
-        await consultationRepository.resetUnreadForViewer(chatId, viewerSide);
+        const viewerSide = await resolveViewerSide(
+          consultation,
+          socket.data.userId,
+          socket.data.userRole,
+          async (id) => User.findById(id).select('legacyId')
+        );
+        if (viewerSide) {
+          await consultationRepository.resetUnreadForViewer(chatId, viewerSide);
+          socket.emit('chat-read', { chatId: String(chatId), unreadCount: 0 });
+        }
         logger.debug('Client joined chat room', { chatId });
         socket.emit('chat-history', consultation.messages || []);
       } catch {
         socket.emit('chat-error', { message: 'Ошибка подключения к чату' });
+      }
+    });
+
+    socket.on('leave-chat', (chatId) => {
+      if (!chatId) return;
+      socket.leave(`chat-${String(chatId)}`);
+      logger.debug('Client left chat room', { chatId: String(chatId) });
+    });
+
+    socket.on('mark-chat-read', async (chatId) => {
+      try {
+        if (!chatId) return;
+        const consultation = await consultationRepository.findById(chatId);
+        if (!consultation) return;
+
+        const canAccess = await hasConsultationAccess(
+          consultation,
+          socket.data.userId,
+          socket.data.userRole,
+          async (id) => User.findById(id).select('legacyId')
+        );
+        if (!canAccess) return;
+
+        const { markConsultationReadForUser } = require('../utils/chatUnread');
+        const result = await markConsultationReadForUser(
+          consultationRepository,
+          consultation,
+          socket.data.userId,
+          socket.data.userRole
+        );
+        if (!result) return;
+
+        socket.emit('chat-read', { chatId: String(chatId), unreadCount: 0 });
+      } catch (err) {
+        logger.warn('mark-chat-read failed', { chatId: String(chatId), err: err?.message });
       }
     });
 
@@ -304,11 +349,39 @@ function setupSocket(server, consultationRepository) {
           timestamp: new Date().toISOString()
         }, socket.userRole === 'doctor' ? 'patient' : 'doctor');
 
-        io.to(`chat-${chatId}`).emit('new-message', { chatId: String(chatId), message: savedMessage });
-        emitToUser(consultation.doctorId, 'chat-updated', { chatId: String(chatId), message: savedMessage });
+        const receiverSide = socket.userRole === 'doctor' ? 'patient' : 'doctor';
+        try {
+          const { resetUnreadForReceiversInRoom } = require('../utils/chatUnread');
+          await resetUnreadForReceiversInRoom(consultationRepository, consultation, receiverSide);
+        } catch (resetErr) {
+          logger.warn('send-message: unread reset failed', { err: resetErr?.message });
+        }
+
+        const freshConsultation = await consultationRepository.findById(chatId);
+        const unreadCounts = freshConsultation?.unreadCounts || { doctor: 0, patient: 0 };
+        const wrapped = { chatId: String(chatId), message: savedMessage };
+
+        io.to(`chat-${chatId}`).emit('new-message', wrapped);
+        emitToUser(consultation.doctorId, 'new-message', wrapped);
+        emitToUser(consultation.doctorId, 'chat-updated', {
+          ...wrapped,
+          unreadCount: Number(unreadCounts.doctor || 0)
+        });
         const patientSocketUserId = await resolvePatientSocketUserId(consultation.patientId);
+        const patientLegacyId = consultation.patientId != null ? String(consultation.patientId) : '';
         if (patientSocketUserId) {
-          emitToUser(patientSocketUserId, 'chat-updated', { chatId: String(chatId), message: savedMessage });
+          emitToUser(patientSocketUserId, 'new-message', wrapped);
+          emitToUser(patientSocketUserId, 'chat-updated', {
+            ...wrapped,
+            unreadCount: Number(unreadCounts.patient || 0)
+          });
+        }
+        if (patientLegacyId) {
+          emitToUser(patientLegacyId, 'new-message', wrapped);
+          emitToUser(patientLegacyId, 'chat-updated', {
+            ...wrapped,
+            unreadCount: Number(unreadCounts.patient || 0)
+          });
         }
       } catch {
         socket.emit('chat-error', { message: 'Ошибка отправки сообщения' });

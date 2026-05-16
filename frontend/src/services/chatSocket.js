@@ -43,3 +43,21 @@ export function disconnectChatSocket() {
 export function getChatSocketIfConnected() {
   return socketInstance?.connected ? socketInstance : null;
 }
+
+/** Сбросить счётчик непрочитанных, пока пользователь в комнате чата. */
+export function markChatRead(chatId) {
+  if (!chatId) return;
+  const socket = socketInstance;
+  if (socket?.connected) {
+    socket.emit('mark-chat-read', String(chatId));
+  }
+}
+
+/** Покинуть комнату чата (например при возврате на /chats). */
+export function leaveChatRoom(chatId) {
+  if (!chatId) return;
+  const socket = socketInstance;
+  if (socket?.connected) {
+    socket.emit('leave-chat', String(chatId));
+  }
+}

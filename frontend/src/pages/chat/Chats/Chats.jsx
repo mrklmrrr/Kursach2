@@ -6,6 +6,7 @@ import { ChatItem } from '@components/features';
 import { Avatar, EmptyState } from '@components/ui';
 import { chatApi } from '@services/chatApi';
 import { getChatSocket } from '@services/chatSocket';
+import { useChatUnread } from '@contexts/ChatUnreadProvider/ChatUnreadProvider';
 import { doctorApi } from '@services/doctorApi';
 import { useAuth } from '@hooks/useAuth';
 import { useToast } from '@contexts/ToastProvider/useToast';
@@ -150,6 +151,7 @@ export default function Chats({ inDoctorPanel = false }) {
   const navigate = useNavigate();
   const { user, token } = useAuth();
   const { showToast } = useToast();
+  const { getChatUnread, syncFromChatsList } = useChatUnread();
   const isDoctor = user?.role === 'doctor';
   const isPatient = user?.role === 'patient';
   const [chats, setChats] = useState([]);
@@ -189,6 +191,7 @@ export default function Chats({ inDoctorPanel = false }) {
       if (isMountedRef.current) {
         const sorted = [...normalized].sort((a, b) => getChatSortTimestamp(b) - getChatSortTimestamp(a));
         setChats(sorted);
+        syncFromChatsList(sorted);
       }
       console.log('[Chats] Loaded', normalized.length, 'chats');
     } catch (err) {
@@ -205,7 +208,7 @@ export default function Chats({ inDoctorPanel = false }) {
       }
       console.log('[Chats] loadChats:', performance.now() - loadStart, 'ms');
     }
-  }, [user?.role, user?.id, user?.legacyId]);
+  }, [user?.role, user?.id, user?.legacyId, syncFromChatsList]);
 
   const loadChatsWithCacheCheck = useCallback(async () => {
     const loadWithCacheStart = performance.now();
@@ -411,17 +414,13 @@ export default function Chats({ inDoctorPanel = false }) {
           ? (message.message || 'Системное сообщение')
           : `${senderLabel}: ${content}`;
 
-        const isIncoming = sender !== (isDoctor ? 'doctor' : 'user') && sender !== 'system';
-        const nextUnread = isIncoming ? Number(prev[idx].unread || 0) + 1 : Number(prev[idx].unread || 0);
-
         const updatedChat = {
           ...prev[idx],
           lastMessage: lastMessageText,
           lastSender: sender,
           isInitialized: true,
           time: formatChatTime(message.timestamp || new Date().toISOString()),
-          lastMessageTimestamp: message.timestamp || new Date().toISOString(),
-          unread: nextUnread
+          lastMessageTimestamp: message.timestamp || new Date().toISOString()
         };
         const next = [...prev];
         next.splice(idx, 1);
@@ -568,7 +567,7 @@ export default function Chats({ inDoctorPanel = false }) {
         ) : filteredChats.length > 0 ? (
           <div className="chat-list">
             {filteredChats.map((chat) => (
-              <ChatItem key={chat.id} chat={chat} />
+              <ChatItem key={chat.id} chat={{ ...chat, unread: getChatUnread(chat.id) }} />
             ))}
           </div>
         ) : (

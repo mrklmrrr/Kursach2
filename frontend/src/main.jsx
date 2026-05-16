@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { AuthProvider } from './contexts/AuthProvider/AuthProvider';
+import { ChatUnreadProvider } from './contexts/ChatUnreadProvider/ChatUnreadProvider';
 import ToastProvider from './contexts/ToastProvider/ToastProvider';
 import ErrorBoundary from './components/common/ErrorBoundary/ErrorBoundary';
 
@@ -20,6 +21,7 @@ import './components/ui/Loader/Loader.css';
 // Layout component styles
 import './components/layout/AppHeader/AppHeader.css';
 import './components/layout/BottomNav/BottomNav.css';
+import './components/layout/NavUnreadBadge/NavUnreadBadge.css';
 import './components/layout/PageLayout/PageLayout.css';
 
 // Feature component styles
@@ -52,9 +54,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
       <AuthProvider>
-        <ToastProvider>
-          <App />
-        </ToastProvider>
+        <ChatUnreadProvider>
+          <ToastProvider>
+            <App />
+          </ToastProvider>
+        </ChatUnreadProvider>
       </AuthProvider>
     </ErrorBoundary>
   </React.StrictMode>

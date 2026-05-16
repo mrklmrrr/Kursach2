@@ -1,6 +1,8 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
+import { useChatUnread } from '@contexts/ChatUnreadProvider/ChatUnreadProvider';
 import { Avatar } from '@components/ui';
+import NavUnreadBadge from '@components/layout/NavUnreadBadge/NavUnreadBadge';
 
 const sidebarNav = [
   { id: 'requests', label: 'Заявки', icon: 'inbox', path: '/doctor/permit' },
@@ -17,6 +19,7 @@ export default function DoctorSidebar({ profile }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { totalUnread } = useChatUnread();
 
   const p = { ...(user || {}), ...(profile || {}) };
   const fullName = [p.firstName, p.lastName].filter(Boolean).join(' ').trim() || p.name || 'Врач';
@@ -51,6 +54,7 @@ export default function DoctorSidebar({ profile }) {
           >
             <span className="material-icons">{item.icon}</span>
             <span>{item.label}</span>
+            {item.to === '/doctor/chats' ? <NavUnreadBadge count={totalUnread} /> : null}
           </NavLink>
         ))}
       </nav>
