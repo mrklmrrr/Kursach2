@@ -1,0 +1,25 @@
+# Деплой бекенда Med24 (REST + Socket.IO) для iOS и веба в интернете.
+# Dashboard: https://dashboard.render.com → New → Blueprint → репозиторий Kursach2
+services:
+  - type: web
+    name: med24-api
+    runtime: node
+    region: frankfurt
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5001
+      - key: JWT_SECRET
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: FRONTEND_URL
+        value: https://med24-nine.vercel.app,http://localhost:5173
+      - key: PUBLIC_API_BASE
+        value: https://med24-api.onrender.com

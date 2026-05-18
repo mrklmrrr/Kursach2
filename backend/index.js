@@ -14,8 +14,8 @@ const { startApp } = require('./src/app');
 const config = require('./src/config');
 
 startApp().then(({ server }) => {
-  server.listen(config.port, () => {
-    logger.info(`🚀 Сервер запущен на http://localhost:${config.port}`);
+  server.listen(config.port, '0.0.0.0', () => {
+    logger.info(`🚀 Сервер запущен на порту ${config.port}`);
     const { startReminderWorker } = require('./src/workers/reminderWorker');
     startReminderWorker();
   });
