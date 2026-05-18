@@ -12,7 +12,9 @@ iOS и веб-логин нуждаются в **Node-бекенде** с HTTPS 
    - `MONGO_URI` — тот же MongoDB Atlas, что у веба
    - `JWT_SECRET` — тот же, что в `.env` (иначе старые токены не подойдут)
    - `ADMIN_EMAIL`, `ADMIN_PASSWORD` — по желанию
-5. После деплоя откройте URL вида `https://med24-api.onrender.com/api/health` — должен быть JSON: `{"status":"ok"}`.
+5. После деплоя откройте `https://med24-ly9x.onrender.com/api/health` — должен быть JSON: `{"status":"ok"}`.
+
+**Уже развёрнуто:** `https://med24-ly9x.onrender.com` (сервис `med24` в Render).
 
 **Важно:** на бесплатном плане сервер «засыпает»; первый запрос после паузы может идти 30–60 с.
 
@@ -22,8 +24,8 @@ iOS и веб-логин нуждаются в **Node-бекенде** с HTTPS 
 
 | Переменная | Значение |
 |------------|----------|
-| `VITE_API_URL` | `https://med24-api.onrender.com/api` |
-| `VITE_SOCKET_URL` | `https://med24-api.onrender.com` |
+| `VITE_API_URL` | `https://med24-ly9x.onrender.com/api` |
+| `VITE_SOCKET_URL` | `https://med24-ly9x.onrender.com` |
 
 Пересоберите деплой фронта.
 
@@ -32,7 +34,7 @@ iOS и веб-логин нуждаются в **Node-бекенде** с HTTPS 
 В `Med24Patient/Core/APIConfig.swift` укажите тот же хост:
 
 ```swift
-static let productionOrigin = "https://med24-api.onrender.com"
+static let productionOrigin = "https://med24-ly9x.onrender.com"
 ```
 
 На **реальном iPhone** уже включён `.production`. Пересоберите в Xcode.

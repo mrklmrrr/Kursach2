@@ -2,7 +2,7 @@
 # Dashboard: https://dashboard.render.com → New → Blueprint → репозиторий Kursach2
 services:
   - type: web
-    name: med24-api
+    name: med24
     runtime: node
     region: frankfurt
     plan: free
@@ -19,7 +19,13 @@ services:
         sync: false
       - key: MONGO_URI
         sync: false
+      - key: JWT_EXPIRES_IN
+        value: 30d
       - key: FRONTEND_URL
-        value: https://med24-nine.vercel.app,http://localhost:5173
+        value: https://med24-nine.vercel.app,http://localhost:5173,https://med24-ly9x.onrender.com
       - key: PUBLIC_API_BASE
-        value: https://med24-api.onrender.com
+        value: https://med24-ly9x.onrender.com
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
